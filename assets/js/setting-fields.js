@@ -148,8 +148,20 @@
         initSelect2: function () {
             const self = this;
 
+            // Check if Select2 is available
+            if (typeof $.fn.select2 === 'undefined') {
+                console.warn('Select2 is not loaded');
+                return;
+            }
+
             $('[data-select2="true"]').each(function () {
                 const $select = $(this);
+
+                // Skip if already initialized
+                if ($select.hasClass('select2-hidden-accessible')) {
+                    return;
+                }
+
                 const options = {
                     width: '100%',
                     allowClear: $select.data('allow-clear') === 'true',
@@ -219,7 +231,11 @@
                     options.maximumSelectionLength = parseInt($select.data('maximum-selection-length'));
                 }
 
-                $select.select2(options);
+                try {
+                    $select.select2(options);
+                } catch (e) {
+                    console.warn('Select2 initialization failed:', e);
+                }
             });
         },
 
