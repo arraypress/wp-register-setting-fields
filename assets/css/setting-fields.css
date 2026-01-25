@@ -511,20 +511,46 @@
 
 .setting-fields-repeater-table {
     margin-bottom: 10px;
+    border-collapse: collapse;
+}
+
+.setting-fields-repeater-table thead th {
+    background: #f0f0f1;
+    font-weight: 600;
+    text-align: left;
 }
 
 .setting-fields-repeater-table th,
 .setting-fields-repeater-table td {
-    padding: 10px;
+    padding: 10px 12px;
     vertical-align: middle;
+    border: 1px solid #c3c4c7;
+}
+
+.setting-fields-repeater-table tbody tr:nth-child(odd) {
+    background: #fff;
+}
+
+.setting-fields-repeater-table tbody tr:nth-child(even) {
+    background: #f9f9f9;
+}
+
+.setting-fields-repeater-table input[type="text"],
+.setting-fields-repeater-table input[type="email"],
+.setting-fields-repeater-table input[type="url"],
+.setting-fields-repeater-table textarea {
+    width: 100%;
+    max-width: none;
 }
 
 .setting-fields-repeater-sort-col {
     width: 30px;
+    text-align: center;
 }
 
 .setting-fields-repeater-actions-col {
     width: 40px;
+    text-align: center;
 }
 
 .setting-fields-repeater-sort {

@@ -33,7 +33,7 @@ class RestApi {
 	 *
 	 * @var string
 	 */
-	private string $namespace = 'arraypress-setting-fields/v1';
+	private string $namespace = 'setting-fields/v1';
 
 	/**
 	 * Whether routes have been registered.

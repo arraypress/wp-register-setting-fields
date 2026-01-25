@@ -133,7 +133,42 @@ class SettingFields {
 		}
 
 		$this->parse_config();
+
+		// Register with the central registry
+		Registry::register( $this->id, $this );
+
+		// Register REST API if we have AJAX fields
+		if ( $this->has_ajax_fields() ) {
+			RestApi::register();
+		}
+
 		$this->init_hooks();
+	}
+
+	/**
+	 * Check if any fields require AJAX.
+	 *
+	 * @return bool
+	 */
+	protected function has_ajax_fields(): bool {
+		$ajax_types = [ 'ajax', 'post_ajax', 'taxonomy_ajax', 'user_ajax' ];
+
+		foreach ( $this->fields as $field ) {
+			if ( in_array( $field['type'] ?? '', $ajax_types, true ) ) {
+				return true;
+			}
+
+			// Check nested fields
+			if ( ! empty( $field['sub_fields'] ) ) {
+				foreach ( $field['sub_fields'] as $sub_field ) {
+					if ( in_array( $sub_field['type'] ?? '', $ajax_types, true ) ) {
+						return true;
+					}
+				}
+			}
+		}
+
+		return false;
 	}
 
 	/**

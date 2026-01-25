@@ -53,18 +53,15 @@ class Registry {
 	}
 
 	/**
-	 * Register a new settings page.
+	 * Register a settings instance.
 	 *
-	 * @param string $id     Unique identifier.
-	 * @param array  $config Configuration array.
+	 * @param string        $id       Unique identifier.
+	 * @param SettingFields $settings Settings instance.
 	 *
-	 * @return SettingFields
+	 * @return void
 	 */
-	public function register( string $id, array $config ): SettingFields {
-		$settings = new SettingFields( $id, $config );
-		$this->settings[ $id ] = $settings;
-
-		return $settings;
+	public static function register( string $id, SettingFields $settings ): void {
+		self::instance()->settings[ $id ] = $settings;
 	}
 
 	/**
