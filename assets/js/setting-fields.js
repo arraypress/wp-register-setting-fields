@@ -146,96 +146,142 @@
          * Select2 Initialization
          */
         initSelect2: function () {
-            const self = this;
-
-            // Check if Select2 is available
-            if (typeof $.fn.select2 === 'undefined') {
-                console.warn('Select2 is not loaded');
-                return;
-            }
+            var self = this;
 
             $('[data-select2="true"]').each(function () {
-                const $select = $(this);
+                var $select = $(this);
 
                 // Skip if already initialized
                 if ($select.hasClass('select2-hidden-accessible')) {
                     return;
                 }
 
-                const options = {
-                    width: '100%',
-                    allowClear: $select.data('allow-clear') === 'true',
-                    placeholder: $select.data('placeholder') || ''
-                };
+                self.initSingleSelect2($select);
+            });
+        },
 
-                // AJAX configuration using REST API
-                if ($select.data('ajax') === 'true') {
-                    options.ajax = {
-                        url: settingFieldsData.restUrl + 'ajax',
-                        dataType: 'json',
-                        delay: 250,
-                        headers: {
-                            'X-WP-Nonce': settingFieldsData.restNonce
-                        },
-                        data: function (params) {
-                            const data = {
-                                settings_id: settingFieldsData.settingsId,
-                                field_key: $select.data('field-key'),
-                                field_type: $select.data('field-type') || 'ajax',
-                                search: params.term,
-                                page: params.page || 1
-                            };
+        /**
+         * Initialize a single Select2 field
+         */
+        initSingleSelect2: function ($select) {
+            var self = this;
 
-                            if ($select.data('post-type')) {
-                                data.post_type = $select.data('post-type');
-                            }
-                            if ($select.data('taxonomy')) {
-                                data.taxonomy = $select.data('taxonomy');
-                            }
-                            if ($select.data('role')) {
-                                data.role = $select.data('role');
-                            }
+            var options = {
+                width: '100%',
+                allowClear: $select.data('allow-clear') === 'true',
+                placeholder: $select.data('placeholder') || ''
+            };
 
-                            return data;
-                        },
-                        processResults: function (data, params) {
-                            params.page = params.page || 1;
+            // AJAX configuration using REST API
+            if ($select.data('ajax') === 'true') {
+                options.ajax = {
+                    url: settingFieldsData.restUrl + 'ajax',
+                    dataType: 'json',
+                    delay: 250,
+                    headers: {
+                        'X-WP-Nonce': settingFieldsData.restNonce
+                    },
+                    data: function (params) {
+                        var data = {
+                            settings_id: settingFieldsData.settingsId,
+                            field_key: $select.data('field-key'),
+                            field_type: $select.data('field-type') || 'ajax',
+                            search: params.term || ''
+                        };
 
-                            // Map value/label to id/text for Select2
-                            const results = (data.results || []).map(function (item) {
-                                return {
-                                    id: item.value,
-                                    text: item.label
-                                };
-                            });
+                        if ($select.data('post-type')) {
+                            data.post_type = $select.data('post-type');
+                        }
+                        if ($select.data('taxonomy')) {
+                            data.taxonomy = $select.data('taxonomy');
+                        }
+                        if ($select.data('role')) {
+                            data.role = $select.data('role');
+                        }
 
+                        return data;
+                    },
+                    processResults: function (data) {
+                        var results = (data.results || data || []).map(function (item) {
                             return {
-                                results: results,
-                                pagination: {
-                                    more: data.pagination && data.pagination.more
-                                }
+                                id: item.value,
+                                text: item.label
                             };
-                        },
-                        cache: true
-                    };
-                    options.minimumInputLength = parseInt($select.data('minimum-input')) || 2;
-                }
+                        });
 
-                // Tags support
-                if ($select.data('tags') === 'true') {
-                    options.tags = true;
-                }
+                        return {results: results};
+                    },
+                    cache: true
+                };
+                options.minimumInputLength = 0;
+            }
 
-                // Maximum selection
-                if ($select.data('maximum-selection-length')) {
-                    options.maximumSelectionLength = parseInt($select.data('maximum-selection-length'));
-                }
+            // Tags support
+            if ($select.data('tags') === 'true') {
+                options.tags = true;
+            }
 
-                try {
-                    $select.select2(options);
-                } catch (e) {
-                    console.warn('Select2 initialization failed:', e);
+            // Maximum selection
+            if ($select.data('maximum-selection-length')) {
+                options.maximumSelectionLength = parseInt($select.data('maximum-selection-length'));
+            }
+
+            $select.select2(options);
+
+            // Hydrate existing values for AJAX selects
+            if ($select.data('ajax') === 'true') {
+                var currentValues = $select.val();
+                if (currentValues && currentValues.length) {
+                    var ids = Array.isArray(currentValues) ? currentValues : [currentValues];
+                    ids = ids.filter(function (id) {
+                        return id && id !== '';
+                    });
+
+                    if (ids.length > 0) {
+                        this.hydrateSelect2($select, ids);
+                    }
                 }
+            }
+        },
+
+        /**
+         * Hydrate Select2 with labels for existing values
+         */
+        hydrateSelect2: function ($select, ids) {
+            var data = {
+                settings_id: settingFieldsData.settingsId,
+                field_key: $select.data('field-key'),
+                field_type: $select.data('field-type') || 'ajax',
+                include: ids.join(',')
+            };
+
+            if ($select.data('post-type')) {
+                data.post_type = $select.data('post-type');
+            }
+            if ($select.data('taxonomy')) {
+                data.taxonomy = $select.data('taxonomy');
+            }
+            if ($select.data('role')) {
+                data.role = $select.data('role');
+            }
+
+            $.ajax({
+                url: settingFieldsData.restUrl + 'ajax',
+                data: data,
+                headers: {
+                    'X-WP-Nonce': settingFieldsData.restNonce
+                }
+            }).done(function (response) {
+                var results = response.results || response;
+
+                $select.empty();
+
+                results.forEach(function (item) {
+                    var option = new Option(item.label, item.value, true, true);
+                    $select.append(option);
+                });
+
+                $select.trigger('change.select2');
             });
         },
 
@@ -432,7 +478,7 @@
             frame.on('select', function () {
                 const attachments = frame.state().get('selection').toJSON();
                 const $items = $field.find('.setting-fields-gallery-items');
-                const name = $field.closest('td').find('input[type="hidden"]').first().attr('name').replace('[]', '');
+                const name = $field.data('name');
 
                 attachments.forEach(function (attachment) {
                     const url = attachment.sizes && attachment.sizes.thumbnail

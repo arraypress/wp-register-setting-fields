@@ -40,8 +40,8 @@ trait AssetManager {
 	 * @return void
 	 */
 	protected function enqueue_assets(): void {
-		$this->enqueue_core_assets();
 		$this->enqueue_field_specific_assets();
+		$this->enqueue_core_assets();
 		$this->localize_scripts();
 	}
 
@@ -57,11 +57,26 @@ trait AssetManager {
 			'css/setting-fields.css'
 		);
 
+		// Build script dependencies
+		$script_deps = [ 'jquery' ];
+
+		$types_used = $this->get_field_types_used();
+
+		// Add Select2 dependency if ajax fields exist
+		if ( array_intersect( [ 'select2', 'select_multiple', 'post_ajax', 'taxonomy_ajax', 'user_ajax', 'ajax' ], $types_used ) ) {
+			$script_deps[] = 'arraypress-select2';
+		}
+
+		// Add color picker dependency
+		if ( in_array( 'color', $types_used, true ) ) {
+			$script_deps[] = 'wp-color-picker';
+		}
+
 		wp_enqueue_composer_script(
 			'arraypress-setting-fields',
 			__FILE__,
 			'js/setting-fields.js',
-			[ 'jquery' ]
+			$script_deps
 		);
 	}
 
@@ -96,14 +111,7 @@ trait AssetManager {
 		}
 
 		// Select2
-		if ( array_intersect( [
-			'select2',
-			'select_multiple',
-			'post_ajax',
-			'taxonomy_ajax',
-			'user_ajax',
-			'ajax'
-		], $types_used ) ) {
+		if ( array_intersect( [ 'select2', 'select_multiple', 'post_ajax', 'taxonomy_ajax', 'user_ajax', 'ajax' ], $types_used ) ) {
 			$this->enqueue_select2();
 		}
 
@@ -116,30 +124,22 @@ trait AssetManager {
 
 	/**
 	 * Enqueue Select2 library from composer assets.
-	 * Only loads if Select2 is not already registered by another plugin.
 	 *
 	 * @return void
 	 */
 	protected function enqueue_select2(): void {
-		// Check if select2 is already registered (by EDD, WooCommerce, etc.)
-		if ( ! wp_script_is( 'select2', 'registered' ) ) {
-			wp_enqueue_composer_style(
-				'select2',
-				__FILE__,
-				'css/select2.min.css'
-			);
+		wp_enqueue_composer_style(
+			'arraypress-select2',
+			__FILE__,
+			'css/select2.min.css'
+		);
 
-			wp_enqueue_composer_script(
-				'select2',
-				__FILE__,
-				'js/select2.min.js',
-				[ 'jquery' ]
-			);
-		} else {
-			// Use the already registered version
-			wp_enqueue_style( 'select2' );
-			wp_enqueue_script( 'select2' );
-		}
+		wp_enqueue_composer_script(
+			'arraypress-select2',
+			__FILE__,
+			'js/select2.min.js',
+			[ 'jquery' ]
+		);
 	}
 
 	/**

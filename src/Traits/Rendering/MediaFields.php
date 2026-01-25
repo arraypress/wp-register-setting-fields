@@ -142,7 +142,9 @@ trait MediaFields {
 		$max_items    = $field['max'] ?? 0;
 		$min_items    = $field['min'] ?? 0;
 		?>
-		<div class="setting-fields-gallery-field" data-max="<?php echo esc_attr( $max_items ); ?>"
+		<div class="setting-fields-gallery-field" 
+		     data-name="<?php echo esc_attr( $name ); ?>"
+		     data-max="<?php echo esc_attr( $max_items ); ?>"
 		     data-min="<?php echo esc_attr( $min_items ); ?>">
 			<div class="setting-fields-gallery-items">
 				<?php foreach ( $values as $attachment_id ) :
