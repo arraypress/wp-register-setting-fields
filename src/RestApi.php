@@ -2,14 +2,10 @@
 /**
  * REST API Handler for Ajax Fields
  *
- * Handles AJAX search and hydration requests for ajax field types.
- * Supports custom callbacks, post searches, taxonomy term searches, and user searches.
- *
  * @package     ArrayPress\RegisterSettingFields
  * @copyright   Copyright (c) 2025, ArrayPress Limited
  * @license     GPL2+
  * @version     1.0.0
- * @author      David Sherlock
  */
 
 declare( strict_types=1 );
@@ -23,8 +19,6 @@ use WP_REST_Response;
 
 /**
  * Class RestApi
- *
- * Manages REST API routes for ajax field types.
  */
 class RestApi {
 
@@ -44,8 +38,6 @@ class RestApi {
 
 	/**
 	 * Register the REST API routes.
-	 *
-	 * Call this early (e.g., on 'init' or when registering fields).
 	 *
 	 * @return void
 	 */
@@ -67,6 +59,7 @@ class RestApi {
 	public static function register_routes(): void {
 		$instance = new self();
 
+		// Ajax field search endpoint
 		register_rest_route( $instance->namespace, '/ajax', [
 			'methods'             => 'GET',
 			'callback'            => [ $instance, 'handle_request' ],
@@ -112,15 +105,66 @@ class RestApi {
 					'default'           => '',
 					'sanitize_callback' => 'sanitize_text_field',
 				],
-				'page'        => [
-					'type'              => 'integer',
-					'default'           => 1,
-					'sanitize_callback' => 'absint',
+			],
+		] );
+
+		// Email preview endpoint
+		register_rest_route( $instance->namespace, '/email/preview', [
+			'methods'             => 'POST',
+			'callback'            => [ $instance, 'handle_email_preview' ],
+			'permission_callback' => [ $instance, 'permission_check' ],
+			'args'                => [
+				'settings_id' => [
+					'required'          => true,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_key',
 				],
-				'per_page'    => [
-					'type'              => 'integer',
-					'default'           => 20,
-					'sanitize_callback' => 'absint',
+				'field_key'   => [
+					'required'          => true,
+					'type'              => 'string',
+					'sanitize_callback' => [ __CLASS__, 'sanitize_field_key' ],
+				],
+				'subject'     => [
+					'type'              => 'string',
+					'default'           => '',
+					'sanitize_callback' => 'sanitize_text_field',
+				],
+				'body'        => [
+					'type'    => 'string',
+					'default' => '',
+				],
+			],
+		] );
+
+		// Email send test endpoint
+		register_rest_route( $instance->namespace, '/email/send-test', [
+			'methods'             => 'POST',
+			'callback'            => [ $instance, 'handle_email_send_test' ],
+			'permission_callback' => [ $instance, 'permission_check' ],
+			'args'                => [
+				'settings_id' => [
+					'required'          => true,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_key',
+				],
+				'field_key'   => [
+					'required'          => true,
+					'type'              => 'string',
+					'sanitize_callback' => [ __CLASS__, 'sanitize_field_key' ],
+				],
+				'email'       => [
+					'required'          => true,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_email',
+				],
+				'subject'     => [
+					'type'              => 'string',
+					'default'           => '',
+					'sanitize_callback' => 'sanitize_text_field',
+				],
+				'body'        => [
+					'type'    => 'string',
+					'default' => '',
 				],
 			],
 		] );
@@ -134,7 +178,6 @@ class RestApi {
 	 * @return string Sanitized field key.
 	 */
 	public static function sanitize_field_key( string $value ): string {
-		// Allow dots for nested field paths (e.g., "resources.resource_person")
 		$parts = explode( '.', $value );
 		$parts = array_map( 'sanitize_key', $parts );
 
@@ -147,20 +190,13 @@ class RestApi {
 	 * @return bool
 	 */
 	public function permission_check(): bool {
-		/**
-		 * Filter the capability required for ajax field REST access.
-		 *
-		 * @param string $capability The required capability.
-		 */
-		$capability = apply_filters( 'arraypress_setting_fields_rest_capability', 'manage_options' );
+		$capability = apply_filters( 'setting_fields_rest_capability', 'manage_options' );
 
 		return current_user_can( $capability );
 	}
 
 	/**
 	 * Handle the AJAX request.
-	 *
-	 * Routes to appropriate handler based on field type.
 	 *
 	 * @param WP_REST_Request $request The request object.
 	 *
@@ -169,19 +205,124 @@ class RestApi {
 	public function handle_request( WP_REST_Request $request ) {
 		$field_type = $request->get_param( 'field_type' );
 
-		switch ( $field_type ) {
-			case 'post_ajax':
-				return $this->handle_post_search( $request );
+		return match ( $field_type ) {
+			'post_ajax'     => $this->handle_post_search( $request ),
+			'taxonomy_ajax' => $this->handle_taxonomy_search( $request ),
+			'user_ajax'     => $this->handle_user_search( $request ),
+			default         => $this->handle_custom_ajax( $request ),
+		};
+	}
 
-			case 'taxonomy_ajax':
-				return $this->handle_taxonomy_search( $request );
+	/**
+	 * Handle email preview request.
+	 *
+	 * Calls the preview_callback defined in the email_editor field config.
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_email_preview( WP_REST_Request $request ) {
+		$settings_id = $request->get_param( 'settings_id' );
+		$field_key   = $request->get_param( 'field_key' );
+		$subject     = $request->get_param( 'subject' );
+		$body        = wp_kses_post( $request->get_param( 'body' ) );
 
-			case 'user_ajax':
-				return $this->handle_user_search( $request );
+		$field = $this->get_field_config( $settings_id, $field_key );
 
-			case 'ajax':
-			default:
-				return $this->handle_custom_ajax( $request );
+		if ( ! $field ) {
+			return new WP_Error( 'invalid_field', __( 'Invalid field configuration.', 'setting-fields' ), [ 'status' => 400 ] );
+		}
+
+		if ( ( $field['type'] ?? '' ) !== 'email_editor' ) {
+			return new WP_Error( 'invalid_field_type', __( 'Field is not an email_editor type.', 'setting-fields' ), [ 'status' => 400 ] );
+		}
+
+		$callback = $field['preview_callback'] ?? null;
+
+		if ( ! is_callable( $callback ) ) {
+			// Fallback: return simple HTML preview
+			$html = sprintf(
+				'<!DOCTYPE html><html><head><meta charset="utf-8"><title>%s</title></head><body style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto;"><h2 style="margin-bottom: 20px;">%s</h2><hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">%s</body></html>',
+				esc_html( $subject ),
+				esc_html( $subject ),
+				$body
+			);
+
+			return new WP_REST_Response( [ 'html' => $html ], 200 );
+		}
+
+		try {
+			$result = call_user_func( $callback, $subject, $body );
+
+			// Handle different return types
+			if ( is_string( $result ) ) {
+				return new WP_REST_Response( [ 'html' => $result ], 200 );
+			}
+
+			if ( is_array( $result ) && isset( $result['html'] ) ) {
+				return new WP_REST_Response( $result, 200 );
+			}
+
+			return new WP_REST_Response( [ 'html' => (string) $result ], 200 );
+
+		} catch ( Exception $e ) {
+			return new WP_Error( 'preview_error', $e->getMessage(), [ 'status' => 500 ] );
+		}
+	}
+
+	/**
+	 * Handle email send test request.
+	 *
+	 * Calls the send_callback defined in the email_editor field config.
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_email_send_test( WP_REST_Request $request ) {
+		$settings_id = $request->get_param( 'settings_id' );
+		$field_key   = $request->get_param( 'field_key' );
+		$email       = $request->get_param( 'email' );
+		$subject     = $request->get_param( 'subject' );
+		$body        = wp_kses_post( $request->get_param( 'body' ) );
+
+		if ( ! is_email( $email ) ) {
+			return new WP_Error( 'invalid_email', __( 'Invalid email address.', 'setting-fields' ), [ 'status' => 400 ] );
+		}
+
+		$field = $this->get_field_config( $settings_id, $field_key );
+
+		if ( ! $field ) {
+			return new WP_Error( 'invalid_field', __( 'Invalid field configuration.', 'setting-fields' ), [ 'status' => 400 ] );
+		}
+
+		if ( ( $field['type'] ?? '' ) !== 'email_editor' ) {
+			return new WP_Error( 'invalid_field_type', __( 'Field is not an email_editor type.', 'setting-fields' ), [ 'status' => 400 ] );
+		}
+
+		$callback = $field['send_callback'] ?? null;
+
+		if ( ! is_callable( $callback ) ) {
+			return new WP_Error( 'no_callback', __( 'No send callback configured for this email field.', 'setting-fields' ), [ 'status' => 400 ] );
+		}
+
+		try {
+			$result = call_user_func( $callback, $email, $subject, $body );
+
+			if ( $result === true || ( is_array( $result ) && ! empty( $result['success'] ) ) ) {
+				return new WP_REST_Response( [
+					'success' => true,
+					'message' => sprintf( __( 'Test email sent to %s', 'setting-fields' ), $email ),
+				], 200 );
+			}
+
+			$message = is_array( $result ) && isset( $result['message'] ) ? $result['message'] : __( 'Failed to send test email.', 'setting-fields' );
+
+			return new WP_Error( 'send_failed', $message, [ 'status' => 500 ] );
+
+		} catch ( Exception $e ) {
+			return new WP_Error( 'send_error', $e->getMessage(), [ 'status' => 500 ] );
 		}
 	}
 
@@ -198,34 +339,20 @@ class RestApi {
 		$search      = $request->get_param( 'search' );
 		$include     = $request->get_param( 'include' );
 
-		// Get the field configuration - handle nested field paths
 		$field = $this->get_field_config( $settings_id, $field_key );
 
 		if ( ! $field ) {
-			return new WP_Error(
-				'invalid_field',
-				__( 'Invalid field configuration.', 'setting-fields' ),
-				[ 'status' => 400 ]
-			);
+			return new WP_Error( 'invalid_field', __( 'Invalid field configuration.', 'setting-fields' ), [ 'status' => 400 ] );
 		}
 
-		// Ensure it's an ajax type with a callback
 		if ( ( $field['type'] ?? '' ) !== 'ajax' ) {
-			return new WP_Error(
-				'invalid_field_type',
-				__( 'Field is not an ajax type.', 'setting-fields' ),
-				[ 'status' => 400 ]
-			);
+			return new WP_Error( 'invalid_field_type', __( 'Field is not an ajax type.', 'setting-fields' ), [ 'status' => 400 ] );
 		}
 
 		$callback = $field['ajax_callback'] ?? null;
 
 		if ( ! is_callable( $callback ) ) {
-			return new WP_Error(
-				'invalid_callback',
-				__( 'Invalid ajax callback.', 'setting-fields' ),
-				[ 'status' => 500 ]
-			);
+			return new WP_Error( 'invalid_callback', __( 'Invalid ajax callback.', 'setting-fields' ), [ 'status' => 500 ] );
 		}
 
 		// Parse include IDs if provided (for hydration)
@@ -238,14 +365,9 @@ class RestApi {
 		try {
 			$results = call_user_func( $callback, $search, $ids );
 
-			return $this->normalize_results( $results );
-
+			return $this->format_results( $results );
 		} catch ( Exception $e ) {
-			return new WP_Error(
-				'callback_error',
-				$e->getMessage(),
-				[ 'status' => 500 ]
-			);
+			return new WP_Error( 'callback_error', $e->getMessage(), [ 'status' => 500 ] );
 		}
 	}
 
@@ -260,8 +382,6 @@ class RestApi {
 		$search    = $request->get_param( 'search' );
 		$include   = $request->get_param( 'include' );
 		$post_type = $request->get_param( 'post_type' );
-		$page      = $request->get_param( 'page' );
-		$per_page  = min( $request->get_param( 'per_page' ), 100 );
 
 		// Parse post types (can be comma-separated)
 		$post_types = array_map( 'trim', explode( ',', $post_type ) );
@@ -281,8 +401,7 @@ class RestApi {
 		// Build query args
 		$args = [
 			'post_type'      => $post_types,
-			'posts_per_page' => $per_page,
-			'paged'          => $page,
+			'posts_per_page' => 20,
 			'orderby'        => 'title',
 			'order'          => 'ASC',
 			'post_status'    => 'publish',
@@ -294,26 +413,20 @@ class RestApi {
 			$args['posts_per_page'] = count( $include_ids );
 			$args['orderby']        = 'post__in';
 		} elseif ( ! empty( $search ) ) {
-			// Otherwise search by title
 			$args['s'] = $search;
 		}
 
-		$query   = new \WP_Query( $args );
+		$posts   = get_posts( $args );
 		$results = [];
 
-		foreach ( $query->posts as $post ) {
+		foreach ( $posts as $post ) {
 			$results[] = [
 				'value' => $post->ID,
 				'label' => $post->post_title,
 			];
 		}
 
-		return new WP_REST_Response( [
-			'results'    => $results,
-			'pagination' => [
-				'more' => $query->max_num_pages > $page,
-			],
-		], 200 );
+		return new WP_REST_Response( $results, 200 );
 	}
 
 	/**
@@ -327,17 +440,9 @@ class RestApi {
 		$search   = $request->get_param( 'search' );
 		$include  = $request->get_param( 'include' );
 		$taxonomy = $request->get_param( 'taxonomy' );
-		$page     = $request->get_param( 'page' );
-		$per_page = min( $request->get_param( 'per_page' ), 100 );
-		$offset   = ( $page - 1 ) * $per_page;
 
-		// Validate taxonomy exists
 		if ( ! taxonomy_exists( $taxonomy ) ) {
-			return new WP_Error(
-				'invalid_taxonomy',
-				__( 'Invalid taxonomy.', 'setting-fields' ),
-				[ 'status' => 400 ]
-			);
+			return new WP_Error( 'invalid_taxonomy', __( 'Invalid taxonomy.', 'setting-fields' ), [ 'status' => 400 ] );
 		}
 
 		// Parse include IDs if provided (for hydration)
@@ -351,8 +456,7 @@ class RestApi {
 		$args = [
 			'taxonomy'   => $taxonomy,
 			'hide_empty' => false,
-			'number'     => $per_page,
-			'offset'     => $offset,
+			'number'     => 20,
 			'orderby'    => 'name',
 			'order'      => 'ASC',
 		];
@@ -361,21 +465,11 @@ class RestApi {
 		if ( ! empty( $include_ids ) ) {
 			$args['include'] = $include_ids;
 			$args['number']  = count( $include_ids );
-			$args['offset']  = 0;
 		} elseif ( ! empty( $search ) ) {
-			// Otherwise search by name
 			$args['search'] = $search;
 		}
 
-		$terms = get_terms( $args );
-
-		// Get total for pagination
-		$total_args          = $args;
-		$total_args['number'] = 0;
-		$total_args['offset'] = 0;
-		$total_args['fields'] = 'count';
-		$total_terms          = get_terms( $total_args );
-
+		$terms   = get_terms( $args );
 		$results = [];
 
 		if ( ! is_wp_error( $terms ) ) {
@@ -387,12 +481,7 @@ class RestApi {
 			}
 		}
 
-		return new WP_REST_Response( [
-			'results'    => $results,
-			'pagination' => [
-				'more' => ( $offset + $per_page ) < $total_terms,
-			],
-		], 200 );
+		return new WP_REST_Response( $results, 200 );
 	}
 
 	/**
@@ -403,12 +492,9 @@ class RestApi {
 	 * @return WP_REST_Response
 	 */
 	protected function handle_user_search( WP_REST_Request $request ): WP_REST_Response {
-		$search   = $request->get_param( 'search' );
-		$include  = $request->get_param( 'include' );
-		$role     = $request->get_param( 'role' );
-		$page     = $request->get_param( 'page' );
-		$per_page = min( $request->get_param( 'per_page' ), 100 );
-		$offset   = ( $page - 1 ) * $per_page;
+		$search  = $request->get_param( 'search' );
+		$include = $request->get_param( 'include' );
+		$role    = $request->get_param( 'role' );
 
 		// Parse include IDs if provided (for hydration)
 		$include_ids = null;
@@ -419,8 +505,7 @@ class RestApi {
 
 		// Build query args
 		$args = [
-			'number'  => $per_page,
-			'offset'  => $offset,
+			'number'  => 20,
 			'orderby' => 'display_name',
 			'order'   => 'ASC',
 		];
@@ -438,16 +523,13 @@ class RestApi {
 		if ( ! empty( $include_ids ) ) {
 			$args['include'] = $include_ids;
 			$args['number']  = count( $include_ids );
-			$args['offset']  = 0;
 		} elseif ( ! empty( $search ) ) {
-			// Search by name or email
 			$args['search']         = '*' . $search . '*';
 			$args['search_columns'] = [ 'user_login', 'user_email', 'display_name' ];
 		}
 
-		$user_query  = new \WP_User_Query( $args );
-		$total_users = $user_query->get_total();
-		$results     = [];
+		$user_query = new \WP_User_Query( $args );
+		$results    = [];
 
 		foreach ( $user_query->get_results() as $user ) {
 			$results[] = [
@@ -456,49 +538,39 @@ class RestApi {
 			];
 		}
 
-		return new WP_REST_Response( [
-			'results'    => $results,
-			'pagination' => [
-				'more' => ( $offset + $per_page ) < $total_users,
-			],
-		], 200 );
+		return new WP_REST_Response( $results, 200 );
 	}
 
 	/**
-	 * Normalize results to consistent format.
+	 * Format results to consistent array structure.
 	 *
 	 * @param mixed $results Raw results from callback.
 	 *
 	 * @return WP_REST_Response
 	 */
-	protected function normalize_results( $results ): WP_REST_Response {
+	protected function format_results( $results ): WP_REST_Response {
 		if ( ! is_array( $results ) ) {
-			return new WP_REST_Response( [ 'results' => [] ], 200 );
+			return new WP_REST_Response( [], 200 );
 		}
 
-		$normalized = array_values( array_filter( array_map( function ( $item ) {
+		$formatted = [];
+		foreach ( $results as $item ) {
 			if ( is_array( $item ) && isset( $item['value'] ) ) {
-				return [
+				$formatted[] = [
 					'value' => $item['value'],
 					'label' => $item['label'] ?? $item['value'],
 				];
 			}
+		}
 
-			return null;
-		}, $results ) ) );
-
-		return new WP_REST_Response( [ 'results' => $normalized ], 200 );
+		return new WP_REST_Response( $formatted, 200 );
 	}
 
 	/**
 	 * Get field configuration, supporting nested field paths.
 	 *
-	 * Field key can be:
-	 * - Simple: "field_name"
-	 * - Nested: "parent_field.child_field" (for fields inside repeaters/groups)
-	 *
 	 * @param string $settings_id The settings ID.
-	 * @param string $field_key   The field key (may include dot notation for nesting).
+	 * @param string $field_key   The field key (may include dot notation).
 	 *
 	 * @return array|null The field configuration or null if not found.
 	 */
@@ -509,32 +581,22 @@ class RestApi {
 			return null;
 		}
 
-		// Get all fields from the settings instance
 		$fields = $settings->get_fields();
 
-		// Check if this is a nested field path (contains a dot)
+		// Check if this is a nested field path
 		if ( str_contains( $field_key, '.' ) ) {
-			$parts      = explode( '.', $field_key );
-			$parent_key = $parts[0];
-			$child_key  = $parts[1];
-
-			// Get the parent field (repeater or group)
+			$parts        = explode( '.', $field_key );
+			$parent_key   = $parts[0];
+			$child_key    = $parts[1];
 			$parent_field = $fields[ $parent_key ] ?? null;
 
-			if ( ! $parent_field ) {
+			if ( ! $parent_field || ! isset( $parent_field['sub_fields'] ) ) {
 				return null;
 			}
 
-			// Check if parent has sub_fields
-			if ( ! isset( $parent_field['sub_fields'] ) || ! is_array( $parent_field['sub_fields'] ) ) {
-				return null;
-			}
-
-			// Return the nested field config
 			return $parent_field['sub_fields'][ $child_key ] ?? null;
 		}
 
-		// Simple field path
 		return $fields[ $field_key ] ?? null;
 	}
 

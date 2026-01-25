@@ -180,6 +180,46 @@ class SettingFields {
 		add_action( 'admin_menu', [ $this, 'register_menu' ] );
 		add_action( 'admin_init', [ $this, 'register_settings' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'maybe_enqueue_assets' ] );
+
+		// Fix menu highlight for submenu pages
+		if ( ! empty( $this->config['parent_slug'] ) ) {
+			add_filter( 'parent_file', [ $this, 'fix_parent_menu_highlight' ] );
+			add_filter( 'submenu_file', [ $this, 'fix_submenu_highlight' ] );
+		}
+	}
+
+	/**
+	 * Fix parent menu highlight for settings pages.
+	 *
+	 * @param string $parent_file The parent file.
+	 *
+	 * @return string
+	 */
+	public function fix_parent_menu_highlight( string $parent_file ): string {
+		global $plugin_page;
+
+		if ( $plugin_page === $this->config['menu_slug'] ) {
+			return $this->config['parent_slug'];
+		}
+
+		return $parent_file;
+	}
+
+	/**
+	 * Fix submenu highlight for settings pages.
+	 *
+	 * @param string|null $submenu_file The submenu file.
+	 *
+	 * @return string|null
+	 */
+	public function fix_submenu_highlight( ?string $submenu_file ): ?string {
+		global $plugin_page;
+
+		if ( $plugin_page === $this->config['menu_slug'] ) {
+			return $this->config['menu_slug'];
+		}
+
+		return $submenu_file;
 	}
 
 	/**
