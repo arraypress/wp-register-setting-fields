@@ -186,15 +186,19 @@ trait ConfigParser {
 			case 'select':
 			case 'radio':
 			case 'button_group':
-				$field = wp_parse_args( $field, [
-					'options' => [],
-				] );
+				// Don't set empty options if optgroups already exists
+				if ( empty( $field['options'] ) && empty( $field['optgroups'] ) ) {
+					$field['options'] = [];
+				}
 				break;
 
 			case 'select2':
 			case 'select_multiple':
+				// Don't set empty options if optgroups already exists
+				if ( empty( $field['options'] ) && empty( $field['optgroups'] ) ) {
+					$field['options'] = [];
+				}
 				$field = wp_parse_args( $field, [
-					'options'  => [],
 					'multiple' => true,
 				] );
 				if ( $field['default'] === '' ) {
