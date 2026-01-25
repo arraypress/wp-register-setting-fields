@@ -13,11 +13,7 @@ declare( strict_types=1 );
 namespace ArrayPress\RegisterSettingFields\Utilities;
 
 use ArrayPress\RegisterSettingFields\Registry;
-use ArrayPress\RegisterSettingFields\RestApi;
 use ArrayPress\RegisterSettingFields\SettingFields;
-
-// Auto-register REST API routes
-RestApi::register();
 
 if ( ! function_exists( __NAMESPACE__ . '\\register_setting_fields' ) ) {
 	/**
@@ -29,7 +25,7 @@ if ( ! function_exists( __NAMESPACE__ . '\\register_setting_fields' ) ) {
 	 * @return SettingFields
 	 */
 	function register_setting_fields( string $id, array $config ): SettingFields {
-		return Registry::instance()->register( $id, $config );
+		return new SettingFields( $id, $config );
 	}
 }
 
