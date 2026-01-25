@@ -211,6 +211,14 @@ trait ComplexFields {
 	/**
 	 * Render an email editor field with merge tags.
 	 *
+	 * Supports:
+	 * - Optional enable/disable toggle
+	 * - Subject line
+	 * - TinyMCE body editor
+	 * - Merge tags with modal picker (searchable)
+	 * - Preview callback
+	 * - Send test callback
+	 *
 	 * @param array  $field Field configuration.
 	 * @param string $name  Input name.
 	 * @param string $id    Input id.
@@ -220,82 +228,155 @@ trait ComplexFields {
 	 */
 	protected function render_email_editor( array $field, string $name, string $id, $value ): void {
 		$value = wp_parse_args( (array) $value, [
+			'enabled' => $field['default_enabled'] ?? true,
 			'subject' => $field['default_subject'] ?? '',
 			'body'    => $field['default_body'] ?? '',
 		] );
 
-		$merge_tags     = $field['merge_tags'] ?? [];
-		$show_preview   = $field['show_preview'] ?? true;
-		$show_send_test = $field['show_send_test'] ?? true;
+		$merge_tags       = $field['merge_tags'] ?? [];
+		$show_enable      = $field['show_enable'] ?? false;
+		$show_preview     = $field['show_preview'] ?? true;
+		$show_send_test   = $field['show_send_test'] ?? true;
+		$preview_callback = $field['preview_callback'] ?? null;
+		$send_callback    = $field['send_callback'] ?? null;
+
+		// Build data attributes for JS callbacks
+		$data_attrs = [
+			'field-id' => $id,
+			'field-key' => $field['_key'] ?? '',
+		];
+
+		if ( $preview_callback && is_string( $preview_callback ) ) {
+			$data_attrs['preview-action'] = $preview_callback;
+		}
+
+		if ( $send_callback && is_string( $send_callback ) ) {
+			$data_attrs['send-action'] = $send_callback;
+		}
+
+		$data_string = '';
+		foreach ( $data_attrs as $key => $val ) {
+			$data_string .= sprintf( ' data-%s="%s"', esc_attr( $key ), esc_attr( $val ) );
+		}
 
 		?>
-		<div class="setting-fields-email-editor" data-field-id="<?php echo esc_attr( $id ); ?>">
+		<div class="setting-fields-email-editor"<?php echo $data_string; ?>>
 			
-			<!-- Subject Line -->
-			<div class="setting-fields-email-subject">
-				<label for="<?php echo esc_attr( $id ); ?>_subject">
-					<?php esc_html_e( 'Subject', 'setting-fields' ); ?>
-				</label>
-				<input type="text"
-				       name="<?php echo esc_attr( $name ); ?>[subject]"
-				       id="<?php echo esc_attr( $id ); ?>_subject"
-				       value="<?php echo esc_attr( $value['subject'] ); ?>"
-				       class="large-text" />
-			</div>
-
-			<!-- Body Editor -->
-			<div class="setting-fields-email-body">
-				<label for="<?php echo esc_attr( $id ); ?>_body">
-					<?php esc_html_e( 'Message', 'setting-fields' ); ?>
-				</label>
-				<?php
-				wp_editor( $value['body'], $id . '_body', [
-					'textarea_name' => $name . '[body]',
-					'textarea_rows' => $field['rows'] ?? 15,
-					'media_buttons' => $field['media_buttons'] ?? false,
-					'teeny'         => false,
-					'quicktags'     => true,
-				] );
-				?>
-			</div>
-
-			<!-- Merge Tags -->
-			<?php if ( ! empty( $merge_tags ) ) : ?>
-				<div class="setting-fields-email-merge-tags">
-					<p class="setting-fields-merge-tags-label">
-						<strong><?php esc_html_e( 'Available Merge Tags:', 'setting-fields' ); ?></strong>
-						<span class="setting-fields-merge-tags-help"><?php esc_html_e( 'Click a tag to insert it into the editor.', 'setting-fields' ); ?></span>
-					</p>
-					<div class="setting-fields-merge-tags-list">
-						<?php foreach ( $merge_tags as $tag => $label ) : ?>
-							<button type="button" 
-							        class="setting-fields-merge-tag button-secondary" 
-							        data-tag="<?php echo esc_attr( $tag ); ?>"
-							        data-editor="<?php echo esc_attr( $id ); ?>_body"
-							        title="<?php echo esc_attr( $label ); ?>">
-								<code><?php echo esc_html( $tag ); ?></code>
-								<span><?php echo esc_html( $label ); ?></span>
-							</button>
-						<?php endforeach; ?>
-					</div>
+			<?php if ( $show_enable ) : ?>
+				<!-- Enable/Disable Toggle -->
+				<div class="setting-fields-email-enable">
+					<label class="setting-fields-toggle-wrap">
+						<input type="hidden" name="<?php echo esc_attr( $name ); ?>[enabled]" value="0" />
+						<input type="checkbox"
+						       name="<?php echo esc_attr( $name ); ?>[enabled]"
+						       id="<?php echo esc_attr( $id ); ?>_enabled"
+						       value="1"
+						       class="setting-fields-email-enable-checkbox"
+							<?php checked( $value['enabled'], true ); ?> />
+						<span class="setting-fields-toggle-slider"></span>
+						<span class="setting-fields-toggle-label"><?php esc_html_e( 'Enable this email', 'setting-fields' ); ?></span>
+					</label>
 				</div>
 			<?php endif; ?>
 
-			<!-- Action Buttons -->
-			<?php if ( $show_preview || $show_send_test ) : ?>
-				<div class="setting-fields-email-actions">
-					<?php if ( $show_preview ) : ?>
-						<button type="button" class="button setting-fields-email-preview" data-field-id="<?php echo esc_attr( $id ); ?>">
-							<span class="dashicons dashicons-visibility"></span>
-							<?php esc_html_e( 'Preview', 'setting-fields' ); ?>
-						</button>
-					<?php endif; ?>
-					<?php if ( $show_send_test ) : ?>
-						<button type="button" class="button setting-fields-email-send-test" data-field-id="<?php echo esc_attr( $id ); ?>">
-							<span class="dashicons dashicons-email"></span>
-							<?php esc_html_e( 'Send Test Email', 'setting-fields' ); ?>
-						</button>
-					<?php endif; ?>
+			<div class="setting-fields-email-content<?php echo $show_enable && ! $value['enabled'] ? ' setting-fields-email-disabled' : ''; ?>">
+				
+				<!-- Subject Line -->
+				<div class="setting-fields-email-subject">
+					<label for="<?php echo esc_attr( $id ); ?>_subject">
+						<?php esc_html_e( 'Subject', 'setting-fields' ); ?>
+					</label>
+					<div class="setting-fields-email-subject-wrap">
+						<input type="text"
+						       name="<?php echo esc_attr( $name ); ?>[subject]"
+						       id="<?php echo esc_attr( $id ); ?>_subject"
+						       value="<?php echo esc_attr( $value['subject'] ); ?>"
+						       class="large-text setting-fields-email-subject-input" />
+						<?php if ( ! empty( $merge_tags ) ) : ?>
+							<button type="button" class="button setting-fields-insert-tag-btn" data-target="subject" title="<?php esc_attr_e( 'Insert merge tag', 'setting-fields' ); ?>">
+								<span class="dashicons dashicons-shortcode"></span>
+							</button>
+						<?php endif; ?>
+					</div>
+				</div>
+
+				<!-- Body Editor -->
+				<div class="setting-fields-email-body">
+					<div class="setting-fields-email-body-header">
+						<label for="<?php echo esc_attr( $id ); ?>_body">
+							<?php esc_html_e( 'Message', 'setting-fields' ); ?>
+						</label>
+						<?php if ( ! empty( $merge_tags ) ) : ?>
+							<button type="button" class="button setting-fields-insert-tag-btn" data-target="body" title="<?php esc_attr_e( 'Insert merge tag', 'setting-fields' ); ?>">
+								<span class="dashicons dashicons-shortcode"></span>
+								<?php esc_html_e( 'Insert Tag', 'setting-fields' ); ?>
+							</button>
+						<?php endif; ?>
+					</div>
+					<?php
+					wp_editor( $value['body'], $id . '_body', [
+						'textarea_name' => $name . '[body]',
+						'textarea_rows' => $field['rows'] ?? 15,
+						'media_buttons' => $field['media_buttons'] ?? false,
+						'teeny'         => false,
+						'quicktags'     => true,
+					] );
+					?>
+				</div>
+
+				<!-- Action Buttons -->
+				<?php if ( $show_preview || $show_send_test ) : ?>
+					<div class="setting-fields-email-actions">
+						<?php if ( $show_preview ) : ?>
+							<button type="button" class="button setting-fields-email-preview">
+								<span class="dashicons dashicons-visibility"></span>
+								<?php esc_html_e( 'Preview', 'setting-fields' ); ?>
+							</button>
+						<?php endif; ?>
+						<?php if ( $show_send_test ) : ?>
+							<button type="button" class="button setting-fields-email-send-test">
+								<span class="dashicons dashicons-email"></span>
+								<?php esc_html_e( 'Send Test Email', 'setting-fields' ); ?>
+							</button>
+						<?php endif; ?>
+					</div>
+				<?php endif; ?>
+
+			</div>
+
+			<?php if ( ! empty( $merge_tags ) ) : ?>
+				<!-- Merge Tags Modal -->
+				<div class="setting-fields-merge-tags-modal" style="display: none;">
+					<div class="setting-fields-modal-overlay"></div>
+					<div class="setting-fields-modal-content">
+						<div class="setting-fields-modal-header">
+							<h3><?php esc_html_e( 'Insert Merge Tag', 'setting-fields' ); ?></h3>
+							<button type="button" class="setting-fields-modal-close">&times;</button>
+						</div>
+						<div class="setting-fields-modal-search">
+							<input type="text" class="setting-fields-tag-search" placeholder="<?php esc_attr_e( 'Search tags...', 'setting-fields' ); ?>" />
+						</div>
+						<div class="setting-fields-modal-body">
+							<div class="setting-fields-tags-grid">
+								<?php foreach ( $merge_tags as $tag => $tag_config ) : 
+									$tag_label = is_array( $tag_config ) ? ( $tag_config['label'] ?? $tag ) : $tag_config;
+									$tag_description = is_array( $tag_config ) ? ( $tag_config['description'] ?? '' ) : '';
+									$tag_value = is_array( $tag_config ) ? ( $tag_config['tag'] ?? $tag ) : $tag;
+								?>
+									<button type="button" 
+									        class="setting-fields-tag-item" 
+									        data-tag="<?php echo esc_attr( $tag_value ); ?>"
+									        data-label="<?php echo esc_attr( $tag_label ); ?>">
+										<span class="setting-fields-tag-code"><?php echo esc_html( $tag_value ); ?></span>
+										<span class="setting-fields-tag-label"><?php echo esc_html( $tag_label ); ?></span>
+										<?php if ( $tag_description ) : ?>
+											<span class="setting-fields-tag-desc"><?php echo esc_html( $tag_description ); ?></span>
+										<?php endif; ?>
+									</button>
+								<?php endforeach; ?>
+							</div>
+						</div>
+					</div>
 				</div>
 			<?php endif; ?>
 		</div>

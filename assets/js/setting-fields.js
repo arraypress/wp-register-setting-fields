@@ -641,53 +641,244 @@
         },
 
         /**
-         * Email Editor - Merge Tags
+         * Email Editor - Merge Tags Modal & Callbacks
          */
         initEmailEditor: function() {
-            // Insert merge tag into editor
-            $(document).on('click', '.setting-fields-merge-tag', function(e) {
+            var self = this;
+            
+            // Enable/disable toggle
+            $(document).on('change', '.setting-fields-email-enable-checkbox', function() {
+                var $editor = $(this).closest('.setting-fields-email-editor');
+                var $content = $editor.find('.setting-fields-email-content');
+                
+                if ($(this).is(':checked')) {
+                    $content.removeClass('setting-fields-email-disabled');
+                } else {
+                    $content.addClass('setting-fields-email-disabled');
+                }
+            });
+            
+            // Open merge tags modal
+            $(document).on('click', '.setting-fields-insert-tag-btn', function(e) {
+                e.preventDefault();
+                
+                var $editor = $(this).closest('.setting-fields-email-editor');
+                var $modal = $editor.find('.setting-fields-merge-tags-modal');
+                var target = $(this).data('target'); // 'subject' or 'body'
+                
+                $modal.data('insert-target', target);
+                $modal.show();
+                $modal.find('.setting-fields-tag-search').val('').focus();
+                $modal.find('.setting-fields-tag-item').removeClass('hidden');
+            });
+            
+            // Close modal
+            $(document).on('click', '.setting-fields-modal-close, .setting-fields-modal-overlay', function(e) {
+                e.preventDefault();
+                $(this).closest('.setting-fields-merge-tags-modal').hide();
+            });
+            
+            // Close modal on escape
+            $(document).on('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    $('.setting-fields-merge-tags-modal').hide();
+                }
+            });
+            
+            // Search tags
+            $(document).on('input', '.setting-fields-tag-search', function() {
+                var query = $(this).val().toLowerCase();
+                var $modal = $(this).closest('.setting-fields-merge-tags-modal');
+                
+                $modal.find('.setting-fields-tag-item').each(function() {
+                    var tag = $(this).data('tag').toLowerCase();
+                    var label = $(this).data('label').toLowerCase();
+                    var desc = $(this).find('.setting-fields-tag-desc').text().toLowerCase();
+                    
+                    if (tag.indexOf(query) > -1 || label.indexOf(query) > -1 || desc.indexOf(query) > -1) {
+                        $(this).removeClass('hidden');
+                    } else {
+                        $(this).addClass('hidden');
+                    }
+                });
+            });
+            
+            // Insert tag from modal
+            $(document).on('click', '.setting-fields-tag-item', function(e) {
                 e.preventDefault();
                 
                 var tag = $(this).data('tag');
-                var editorId = $(this).data('editor');
+                var $modal = $(this).closest('.setting-fields-merge-tags-modal');
+                var $editor = $modal.closest('.setting-fields-email-editor');
+                var target = $modal.data('insert-target');
+                var fieldId = $editor.data('field-id');
                 
-                // Try to insert into TinyMCE if active
-                if (typeof tinyMCE !== 'undefined' && tinyMCE.get(editorId)) {
-                    var editor = tinyMCE.get(editorId);
-                    if (!editor.isHidden()) {
-                        editor.execCommand('mceInsertContent', false, tag);
-                        return;
+                if (target === 'subject') {
+                    // Insert into subject input
+                    var $input = $editor.find('.setting-fields-email-subject-input');
+                    self.insertAtCursor($input[0], tag);
+                } else {
+                    // Insert into TinyMCE editor
+                    var editorId = fieldId + '_body';
+                    
+                    if (typeof tinyMCE !== 'undefined' && tinyMCE.get(editorId)) {
+                        var editor = tinyMCE.get(editorId);
+                        if (!editor.isHidden()) {
+                            editor.execCommand('mceInsertContent', false, tag);
+                        } else {
+                            self.insertAtCursor($('#' + editorId)[0], tag);
+                        }
+                    } else {
+                        self.insertAtCursor($('#' + editorId)[0], tag);
                     }
                 }
                 
-                // Fallback to textarea
-                var $textarea = $('#' + editorId);
-                if ($textarea.length) {
-                    var textarea = $textarea[0];
-                    var startPos = textarea.selectionStart;
-                    var endPos = textarea.selectionEnd;
-                    var content = $textarea.val();
-                    
-                    $textarea.val(content.substring(0, startPos) + tag + content.substring(endPos));
-                    textarea.selectionStart = textarea.selectionEnd = startPos + tag.length;
-                    $textarea.focus();
-                }
+                $modal.hide();
             });
             
-            // Preview button
+            // Preview button - uses REST endpoint
             $(document).on('click', '.setting-fields-email-preview', function(e) {
                 e.preventDefault();
-                alert('Preview functionality requires custom implementation via hooks.');
+                
+                var $editor = $(this).closest('.setting-fields-email-editor');
+                var fieldKey = $editor.data('field-key');
+                var fieldId = $editor.data('field-id');
+                var settingsId = $editor.closest('.setting-fields-wrap').data('setting-id');
+                
+                // Get current values
+                var subject = $editor.find('.setting-fields-email-subject-input').val();
+                var editorId = fieldId + '_body';
+                var body = '';
+                
+                if (typeof tinyMCE !== 'undefined' && tinyMCE.get(editorId)) {
+                    body = tinyMCE.get(editorId).getContent();
+                } else {
+                    body = $('#' + editorId).val();
+                }
+                
+                var $btn = $(this);
+                $btn.prop('disabled', true);
+                
+                $.ajax({
+                    url: settingFieldsData.restUrl + 'email/preview',
+                    method: 'POST',
+                    headers: {
+                        'X-WP-Nonce': settingFieldsData.restNonce
+                    },
+                    data: {
+                        settings_id: settingsId,
+                        field_key: fieldKey,
+                        subject: subject,
+                        body: body
+                    },
+                    success: function(response) {
+                        if (response.html) {
+                            self.openPreviewWindow(response.html);
+                        } else {
+                            alert('Preview failed: No HTML returned');
+                        }
+                    },
+                    error: function(xhr) {
+                        var message = xhr.responseJSON && xhr.responseJSON.message 
+                            ? xhr.responseJSON.message 
+                            : 'Preview request failed';
+                        alert(message);
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false);
+                    }
+                });
             });
             
-            // Send test email button
+            // Send test email button - uses REST endpoint
             $(document).on('click', '.setting-fields-email-send-test', function(e) {
                 e.preventDefault();
+                
+                var $editor = $(this).closest('.setting-fields-email-editor');
+                var fieldKey = $editor.data('field-key');
+                var fieldId = $editor.data('field-id');
+                var settingsId = $editor.closest('.setting-fields-wrap').data('setting-id');
+                
                 var email = prompt('Enter email address to send test:');
-                if (email) {
-                    alert('Send test functionality requires custom implementation via hooks. Email: ' + email);
+                if (!email) return;
+                
+                // Get current values
+                var subject = $editor.find('.setting-fields-email-subject-input').val();
+                var editorId = fieldId + '_body';
+                var body = '';
+                
+                if (typeof tinyMCE !== 'undefined' && tinyMCE.get(editorId)) {
+                    body = tinyMCE.get(editorId).getContent();
+                } else {
+                    body = $('#' + editorId).val();
                 }
+                
+                var $btn = $(this);
+                $btn.prop('disabled', true).text('Sending...');
+                
+                $.ajax({
+                    url: settingFieldsData.restUrl + 'email/send-test',
+                    method: 'POST',
+                    headers: {
+                        'X-WP-Nonce': settingFieldsData.restNonce
+                    },
+                    data: {
+                        settings_id: settingsId,
+                        field_key: fieldKey,
+                        email: email,
+                        subject: subject,
+                        body: body
+                    },
+                    success: function(response) {
+                        alert(response.message || 'Test email sent successfully!');
+                    },
+                    error: function(xhr) {
+                        var message = xhr.responseJSON && xhr.responseJSON.message 
+                            ? xhr.responseJSON.message 
+                            : 'Failed to send test email';
+                        alert(message);
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false).html('<span class="dashicons dashicons-email"></span> Send Test Email');
+                    }
+                });
             });
+        },
+        
+        /**
+         * Insert text at cursor position in input/textarea
+         */
+        insertAtCursor: function(element, text) {
+            if (!element) return;
+            
+            var startPos = element.selectionStart || 0;
+            var endPos = element.selectionEnd || 0;
+            var value = element.value || '';
+            
+            element.value = value.substring(0, startPos) + text + value.substring(endPos);
+            element.selectionStart = element.selectionEnd = startPos + text.length;
+            element.focus();
+            
+            // Trigger change event
+            $(element).trigger('change');
+        },
+        
+        /**
+         * Open preview in new window
+         */
+        openPreviewWindow: function(html) {
+            var win = window.open('', 'email_preview', 'width=700,height=600,scrollbars=yes');
+            win.document.write(html);
+            win.document.close();
+        },
+        
+        /**
+         * Escape HTML for safe display
+         */
+        escapeHtml: function(text) {
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
     };
 

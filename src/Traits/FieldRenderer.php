@@ -47,6 +47,9 @@ trait FieldRenderer {
 	protected function render_field( string $key, array $field, string $name, string $id, $value ): void {
 		$type = $field['type'] ?? 'text';
 
+		// Store the field key in the field config for renderers that need it
+		$field['_key'] = $key;
+
 		/**
 		 * Allow custom field rendering.
 		 *

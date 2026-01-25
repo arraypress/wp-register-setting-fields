@@ -921,6 +921,27 @@ h4.setting-fields-heading-title {
     max-width: 800px;
 }
 
+.setting-fields-email-enable {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.setting-fields-email-enable .setting-fields-toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.setting-fields-email-enable .setting-fields-toggle-label {
+    font-weight: 500;
+}
+
+.setting-fields-email-content.setting-fields-email-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
 .setting-fields-email-subject {
     margin-bottom: 15px;
 }
@@ -931,66 +952,47 @@ h4.setting-fields-heading-title {
     margin-bottom: 5px;
 }
 
+.setting-fields-email-subject-wrap {
+    display: flex;
+    gap: 8px;
+}
+
+.setting-fields-email-subject-wrap input {
+    flex: 1;
+}
+
 .setting-fields-email-body {
     margin-bottom: 15px;
 }
 
-.setting-fields-email-body > label {
-    display: block;
-    font-weight: 600;
-    margin-bottom: 5px;
-}
-
-.setting-fields-email-merge-tags {
-    background: #f6f7f7;
-    border: 1px solid #c3c4c7;
-    border-radius: 4px;
-    padding: 12px 15px;
-    margin-bottom: 15px;
-}
-
-.setting-fields-merge-tags-label {
-    margin: 0 0 10px;
+.setting-fields-email-body-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 10px;
+    margin-bottom: 8px;
 }
 
-.setting-fields-merge-tags-help {
-    color: #646970;
-    font-size: 12px;
-    font-weight: normal;
+.setting-fields-email-body-header label {
+    font-weight: 600;
+    margin: 0;
 }
 
-.setting-fields-merge-tags-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.setting-fields-merge-tag {
+.setting-fields-insert-tag-btn {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    font-size: 12px;
-    cursor: pointer;
+    gap: 4px;
 }
 
-.setting-fields-merge-tag code {
-    background: #e0e0e0;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 11px;
-}
-
-.setting-fields-merge-tag span {
-    color: #646970;
+.setting-fields-insert-tag-btn .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
 }
 
 .setting-fields-email-actions {
     display: flex;
     gap: 10px;
+    margin-top: 15px;
 }
 
 .setting-fields-email-actions .button {
@@ -1003,4 +1005,132 @@ h4.setting-fields-heading-title {
     font-size: 16px;
     width: 16px;
     height: 16px;
+}
+
+/* Merge Tags Modal */
+.setting-fields-merge-tags-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.setting-fields-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.setting-fields-modal-content {
+    position: relative;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.setting-fields-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.setting-fields-modal-header h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.setting-fields-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    line-height: 1;
+}
+
+.setting-fields-modal-close:hover {
+    color: #d63638;
+}
+
+.setting-fields-modal-search {
+    padding: 12px 20px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.setting-fields-tag-search {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.setting-fields-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.setting-fields-tags-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.setting-fields-tag-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 12px 15px;
+    background: #f6f7f7;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s ease;
+}
+
+.setting-fields-tag-item:hover {
+    background: #e7f3ff;
+    border-color: #2271b1;
+}
+
+.setting-fields-tag-item.hidden {
+    display: none;
+}
+
+.setting-fields-tag-code {
+    font-family: monospace;
+    font-size: 13px;
+    color: #1d2327;
+    background: #e0e0e0;
+    padding: 2px 8px;
+    border-radius: 3px;
+}
+
+.setting-fields-tag-label {
+    font-weight: 500;
+    color: #1d2327;
+}
+
+.setting-fields-tag-desc {
+    font-size: 12px;
+    color: #646970;
 }
