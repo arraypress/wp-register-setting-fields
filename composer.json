@@ -1,0 +1,48 @@
+{
+  "name": "arraypress/wp-register-setting-fields",
+  "version": "1.0.0",
+  "description": "Lightweight library for registering WordPress settings pages with fields using the Settings API, featuring tabs, conditional field visibility, repeaters, and REST API integration.",
+  "homepage": "https://github.com/arraypress/wp-register-setting-fields/",
+  "type": "library",
+  "license": "GPL-2.0-or-later",
+  "authors": [
+    {
+      "name": "David Sherlock",
+      "homepage": "https://arraypress.com/"
+    }
+  ],
+  "require": {
+    "php": ">=7.4",
+    "arraypress/wp-composer-assets": "dev-main"
+  },
+  "autoload": {
+    "psr-4": {
+      "ArrayPress\\RegisterSettingFields\\": "src/"
+    },
+    "files": [
+      "src/Utilities/Functions.php"
+    ]
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true,
+    "preferred-install": "dist"
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "support": {
+    "issues": "https://github.com/arraypress/wp-register-setting-fields/issues",
+    "source": "https://github.com/arraypress/wp-register-setting-fields"
+  },
+  "keywords": [
+    "wordpress",
+    "settings",
+    "options",
+    "admin",
+    "tabs",
+    "repeater",
+    "gallery",
+    "conditional-logic",
+    "show-when"
+  ]
+}
