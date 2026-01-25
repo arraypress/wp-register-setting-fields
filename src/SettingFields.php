@@ -405,8 +405,9 @@ class SettingFields {
 							<span class="required">*</span>
 						<?php endif; ?>
 						<?php if ( ! empty( $field['tooltip'] ) ) : ?>
-							<span class="setting-fields-tooltip" title="<?php echo esc_attr( $field['tooltip'] ); ?>">
+							<span class="setting-fields-tooltip">
 								<span class="dashicons dashicons-info"></span>
+								<span class="setting-fields-tooltip-content"><?php echo esc_html( $field['tooltip'] ); ?></span>
 							</span>
 						<?php endif; ?>
 					</label>

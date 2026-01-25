@@ -24,6 +24,7 @@
             this.initRepeater();
             this.initButtonGroup();
             this.initDimensions();
+            this.initEmailEditor();
         },
 
         /**
@@ -636,6 +637,56 @@
                 const $field = $(this).closest('.setting-fields-dimensions-field');
                 const value = $(this).val();
                 $field.find('.setting-fields-dimensions-inputs input[type="number"]').val(value);
+            });
+        },
+
+        /**
+         * Email Editor - Merge Tags
+         */
+        initEmailEditor: function() {
+            // Insert merge tag into editor
+            $(document).on('click', '.setting-fields-merge-tag', function(e) {
+                e.preventDefault();
+                
+                var tag = $(this).data('tag');
+                var editorId = $(this).data('editor');
+                
+                // Try to insert into TinyMCE if active
+                if (typeof tinyMCE !== 'undefined' && tinyMCE.get(editorId)) {
+                    var editor = tinyMCE.get(editorId);
+                    if (!editor.isHidden()) {
+                        editor.execCommand('mceInsertContent', false, tag);
+                        return;
+                    }
+                }
+                
+                // Fallback to textarea
+                var $textarea = $('#' + editorId);
+                if ($textarea.length) {
+                    var textarea = $textarea[0];
+                    var startPos = textarea.selectionStart;
+                    var endPos = textarea.selectionEnd;
+                    var content = $textarea.val();
+                    
+                    $textarea.val(content.substring(0, startPos) + tag + content.substring(endPos));
+                    textarea.selectionStart = textarea.selectionEnd = startPos + tag.length;
+                    $textarea.focus();
+                }
+            });
+            
+            // Preview button
+            $(document).on('click', '.setting-fields-email-preview', function(e) {
+                e.preventDefault();
+                alert('Preview functionality requires custom implementation via hooks.');
+            });
+            
+            // Send test email button
+            $(document).on('click', '.setting-fields-email-send-test', function(e) {
+                e.preventDefault();
+                var email = prompt('Enter email address to send test:');
+                if (email) {
+                    alert('Send test functionality requires custom implementation via hooks. Email: ' + email);
+                }
             });
         }
     };
