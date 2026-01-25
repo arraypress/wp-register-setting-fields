@@ -731,11 +731,35 @@ tr[data-conditions].setting-field-hidden {
     }
 }
 
-
 /* Repeater empty state */
 .setting-fields-repeater-empty td {
     text-align: center;
     padding: 20px;
     color: #666;
     font-style: italic;
+}
+
+/* Tooltips */
+.setting-fields-tooltip {
+    display: inline-block;
+    margin-left: 5px;
+    cursor: help;
+    vertical-align: middle;
+}
+
+.setting-fields-tooltip .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: #646970;
+    transition: color 0.2s;
+}
+
+.setting-fields-tooltip:hover .dashicons {
+    color: #2271b1;
+}
+
+/* Native tooltip styling enhancement */
+.setting-fields-tooltip[title] {
+    position: relative;
 }
