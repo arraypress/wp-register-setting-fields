@@ -511,27 +511,42 @@
 
 .setting-fields-repeater-table {
     margin-bottom: 10px;
-    border-collapse: collapse;
+    border-spacing: 0;
+    border-collapse: separate;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    width: 100%;
 }
 
 .setting-fields-repeater-table thead th {
-    background: #f0f0f1;
+    background: #f6f7f7;
     font-weight: 600;
     text-align: left;
+    border-bottom: 1px solid #c3c4c7;
 }
 
 .setting-fields-repeater-table th,
 .setting-fields-repeater-table td {
     padding: 10px 12px;
     vertical-align: middle;
-    border: 1px solid #c3c4c7;
+    border-bottom: 1px solid #e0e0e0;
+    border-right: 1px solid #e0e0e0;
 }
 
-.setting-fields-repeater-table tbody tr:nth-child(odd) {
+.setting-fields-repeater-table th:last-child,
+.setting-fields-repeater-table td:last-child {
+    border-right: none;
+}
+
+.setting-fields-repeater-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.setting-fields-repeater-table tbody tr {
     background: #fff;
 }
 
-.setting-fields-repeater-table tbody tr:nth-child(even) {
+.setting-fields-repeater-table tbody tr:hover {
     background: #f9f9f9;
 }
 
@@ -546,6 +561,7 @@
 .setting-fields-repeater-sort-col {
     width: 30px;
     text-align: center;
+    background: #f9f9f9;
 }
 
 .setting-fields-repeater-actions-col {
@@ -731,6 +747,7 @@ tr[data-conditions].setting-field-hidden {
     }
 }
 
+
 /* Repeater empty state */
 .setting-fields-repeater-empty td {
     text-align: center;
@@ -762,4 +779,64 @@ tr[data-conditions].setting-field-hidden {
 /* Native tooltip styling enhancement */
 .setting-fields-tooltip[title] {
     position: relative;
+}
+
+/* Separator field */
+.setting-fields-separator {
+    padding: 15px 0 5px;
+}
+
+.setting-fields-separator-title {
+    margin: 0 0 5px;
+    padding: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d2327;
+    border-bottom: 1px solid #c3c4c7;
+    padding-bottom: 10px;
+}
+
+.setting-fields-separator-description {
+    margin: 5px 0 0;
+    color: #646970;
+    font-style: italic;
+}
+
+.setting-fields-separator-line {
+    border: none;
+    border-top: 1px solid #c3c4c7;
+    margin: 10px 0;
+}
+
+/* Heading field */
+.setting-fields-heading {
+    padding: 10px 0;
+}
+
+.setting-fields-heading-title {
+    margin: 0 0 5px;
+    padding: 0;
+    color: #1d2327;
+}
+
+h2.setting-fields-heading-title {
+    font-size: 1.3em;
+}
+
+h3.setting-fields-heading-title {
+    font-size: 1.1em;
+}
+
+h4.setting-fields-heading-title {
+    font-size: 1em;
+}
+
+.setting-fields-heading-description {
+    margin: 5px 0 0;
+    color: #646970;
+}
+
+/* Full-width rows for separator/heading/message */
+.setting-fields-row-fullwidth td {
+    padding-left: 0;
 }
