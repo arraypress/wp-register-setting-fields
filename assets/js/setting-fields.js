@@ -4,7 +4,7 @@
  * @package ArrayPress\WP\Register\SettingFields
  */
 
-(function ($) {
+(function($) {
     'use strict';
 
     const SettingFields = {
@@ -12,7 +12,7 @@
         /**
          * Initialize all functionality
          */
-        init: function () {
+        init: function() {
             this.initConditionalLogic();
             this.initSelect2();
             this.initColorPicker();
@@ -29,33 +29,33 @@
         /**
          * Conditional Logic
          */
-        initConditionalLogic: function () {
+        initConditionalLogic: function() {
             const self = this;
             const $rows = $('tr[data-conditions]');
 
             if (!$rows.length) return;
 
             // Initial check
-            $rows.each(function () {
+            $rows.each(function() {
                 self.evaluateConditions($(this));
             });
 
             // Listen for changes
-            $('.setting-fields-form').on('change', 'input, select, textarea', function () {
-                $rows.each(function () {
+            $('.setting-fields-form').on('change', 'input, select, textarea', function() {
+                $rows.each(function() {
                     self.evaluateConditions($(this));
                 });
             });
         },
 
-        evaluateConditions: function ($row) {
+        evaluateConditions: function($row) {
             const self = this;
             const conditions = $row.data('conditions');
             if (!conditions || !conditions.length) return;
 
             let allMet = true;
 
-            conditions.forEach(function (condition) {
+            conditions.forEach(function(condition) {
                 const $field = $('[name*="[' + condition.field + ']"]');
                 if (!$field.length) return;
 
@@ -74,14 +74,14 @@
             }
         },
 
-        getFieldValue: function ($field) {
+        getFieldValue: function($field) {
             const type = $field.attr('type');
             const tagName = $field.prop('tagName').toLowerCase();
 
             if (type === 'checkbox') {
                 if ($field.length > 1) {
                     // Checkbox group
-                    return $field.filter(':checked').map(function () {
+                    return $field.filter(':checked').map(function() {
                         return $(this).val();
                     }).get();
                 }
@@ -99,7 +99,7 @@
             return $field.val();
         },
 
-        checkCondition: function (current, expected, operator) {
+        checkCondition: function(current, expected, operator) {
             switch (operator) {
                 case '=':
                 case '==':
@@ -145,10 +145,10 @@
         /**
          * Select2 Initialization
          */
-        initSelect2: function () {
+        initSelect2: function() {
             var self = this;
 
-            $('[data-select2="true"]').each(function () {
+            $('.setting-fields-select2').each(function() {
                 var $select = $(this);
 
                 // Skip if already initialized
@@ -163,17 +163,17 @@
         /**
          * Initialize a single Select2 field
          */
-        initSingleSelect2: function ($select) {
+        initSingleSelect2: function($select) {
             var self = this;
 
             var options = {
                 width: '100%',
-                allowClear: $select.data('allow-clear') === 'true',
+                allowClear: $select.data('allow-clear') === 'true' || $select.data('allow-clear') === true,
                 placeholder: $select.data('placeholder') || ''
             };
 
             // AJAX configuration using REST API
-            if ($select.data('ajax') === 'true') {
+            if ($select.data('ajax') === 'true' || $select.data('ajax') === true) {
                 options.ajax = {
                     url: settingFieldsData.restUrl + 'ajax',
                     dataType: 'json',
@@ -181,14 +181,14 @@
                     headers: {
                         'X-WP-Nonce': settingFieldsData.restNonce
                     },
-                    data: function (params) {
+                    data: function(params) {
                         var data = {
                             settings_id: settingFieldsData.settingsId,
                             field_key: $select.data('field-key'),
                             field_type: $select.data('field-type') || 'ajax',
                             search: params.term || ''
                         };
-
+                        
                         if ($select.data('post-type')) {
                             data.post_type = $select.data('post-type');
                         }
@@ -198,18 +198,18 @@
                         if ($select.data('role')) {
                             data.role = $select.data('role');
                         }
-
+                        
                         return data;
                     },
-                    processResults: function (data) {
-                        var results = (data.results || data || []).map(function (item) {
+                    processResults: function(data) {
+                        var results = (data.results || data || []).map(function(item) {
                             return {
                                 id: item.value,
                                 text: item.label
                             };
                         });
-
-                        return {results: results};
+                        
+                        return { results: results };
                     },
                     cache: true
                 };
@@ -217,7 +217,7 @@
             }
 
             // Tags support
-            if ($select.data('tags') === 'true') {
+            if ($select.data('tags') === 'true' || $select.data('tags') === true) {
                 options.tags = true;
             }
 
@@ -229,14 +229,12 @@
             $select.select2(options);
 
             // Hydrate existing values for AJAX selects
-            if ($select.data('ajax') === 'true') {
+            if ($select.data('ajax') === 'true' || $select.data('ajax') === true) {
                 var currentValues = $select.val();
                 if (currentValues && currentValues.length) {
                     var ids = Array.isArray(currentValues) ? currentValues : [currentValues];
-                    ids = ids.filter(function (id) {
-                        return id && id !== '';
-                    });
-
+                    ids = ids.filter(function(id) { return id && id !== ''; });
+                    
                     if (ids.length > 0) {
                         this.hydrateSelect2($select, ids);
                     }
@@ -247,7 +245,7 @@
         /**
          * Hydrate Select2 with labels for existing values
          */
-        hydrateSelect2: function ($select, ids) {
+        hydrateSelect2: function($select, ids) {
             var data = {
                 settings_id: settingFieldsData.settingsId,
                 field_key: $select.data('field-key'),
@@ -271,12 +269,12 @@
                 headers: {
                     'X-WP-Nonce': settingFieldsData.restNonce
                 }
-            }).done(function (response) {
+            }).done(function(response) {
                 var results = response.results || response;
-
+                
                 $select.empty();
-
-                results.forEach(function (item) {
+                
+                results.forEach(function(item) {
                     var option = new Option(item.label, item.value, true, true);
                     $select.append(option);
                 });
@@ -288,12 +286,12 @@
         /**
          * Color Picker
          */
-        initColorPicker: function () {
-            $('.setting-fields-color-picker').each(function () {
+        initColorPicker: function() {
+            $('.setting-fields-color-picker').each(function() {
                 const $input = $(this);
                 const options = {
                     defaultColor: $input.data('default-color') || false,
-                    change: function (event, ui) {
+                    change: function(event, ui) {
                         $input.trigger('change');
                     }
                 };
@@ -315,10 +313,10 @@
         /**
          * Code Editor
          */
-        initCodeEditor: function () {
+        initCodeEditor: function() {
             if (typeof wp.codeEditor === 'undefined') return;
 
-            $('.setting-fields-code-editor').each(function () {
+            $('.setting-fields-code-editor').each(function() {
                 const $textarea = $(this);
                 const mime = $textarea.data('mime') || 'text/html';
 
@@ -337,8 +335,8 @@
         /**
          * Range Slider
          */
-        initRangeSlider: function () {
-            $('.setting-fields-range').on('input', function () {
+        initRangeSlider: function() {
+            $('.setting-fields-range').on('input', function() {
                 const $input = $(this);
                 const $value = $('.setting-fields-range-value[data-target="' + $input.attr('id') + '"]');
                 $value.text($input.val());
@@ -348,18 +346,18 @@
         /**
          * Image Fields
          */
-        initImageFields: function () {
+        initImageFields: function() {
             const self = this;
 
             // Select/Change Image
-            $(document).on('click', '.setting-fields-image-select, .setting-fields-image-change', function (e) {
+            $(document).on('click', '.setting-fields-image-select, .setting-fields-image-change', function(e) {
                 e.preventDefault();
                 const $field = $(this).closest('.setting-fields-image-field');
                 self.openMediaFrame($field, 'image');
             });
 
             // Remove Image
-            $(document).on('click', '.setting-fields-image-remove', function (e) {
+            $(document).on('click', '.setting-fields-image-remove', function(e) {
                 e.preventDefault();
                 const $field = $(this).closest('.setting-fields-image-field');
                 $field.find('.setting-fields-image-value').val('').trigger('change');
@@ -372,18 +370,18 @@
         /**
          * File Fields
          */
-        initFileFields: function () {
+        initFileFields: function() {
             const self = this;
 
             // Select/Change File
-            $(document).on('click', '.setting-fields-file-select, .setting-fields-file-change', function (e) {
+            $(document).on('click', '.setting-fields-file-select, .setting-fields-file-change', function(e) {
                 e.preventDefault();
                 const $field = $(this).closest('.setting-fields-file-field');
                 self.openMediaFrame($field, 'file');
             });
 
             // Remove File
-            $(document).on('click', '.setting-fields-file-remove', function (e) {
+            $(document).on('click', '.setting-fields-file-remove', function(e) {
                 e.preventDefault();
                 const $field = $(this).closest('.setting-fields-file-field');
                 $field.find('.setting-fields-file-value').val('').trigger('change');
@@ -397,7 +395,7 @@
         /**
          * Open Media Frame
          */
-        openMediaFrame: function ($field, type) {
+        openMediaFrame: function($field, type) {
             const self = this;
             const library = $field.data('library') || (type === 'image' ? 'image' : 'all');
 
@@ -410,19 +408,19 @@
             };
 
             if (library !== 'all') {
-                frameOptions.library = {type: library};
+                frameOptions.library = { type: library };
             }
 
             const frame = wp.media(frameOptions);
 
-            frame.on('select', function () {
+            frame.on('select', function() {
                 const attachment = frame.state().get('selection').first().toJSON();
 
                 if (type === 'image') {
-                    const url = attachment.sizes && attachment.sizes.thumbnail
-                        ? attachment.sizes.thumbnail.url
+                    const url = attachment.sizes && attachment.sizes.thumbnail 
+                        ? attachment.sizes.thumbnail.url 
                         : attachment.url;
-
+                    
                     $field.find('.setting-fields-image-value').val(attachment.id).trigger('change');
                     $field.find('.setting-fields-image-preview').removeClass('hidden').find('img').attr('src', url);
                     $field.find('.setting-fields-image-select').addClass('hidden');
@@ -442,18 +440,18 @@
         /**
          * Gallery Fields
          */
-        initGalleryFields: function () {
+        initGalleryFields: function() {
             const self = this;
 
             // Add Images
-            $(document).on('click', '.setting-fields-gallery-add', function (e) {
+            $(document).on('click', '.setting-fields-gallery-add', function(e) {
                 e.preventDefault();
                 const $field = $(this).closest('.setting-fields-gallery-field');
                 self.openGalleryFrame($field);
             });
 
             // Remove Image
-            $(document).on('click', '.setting-fields-gallery-remove', function (e) {
+            $(document).on('click', '.setting-fields-gallery-remove', function(e) {
                 e.preventDefault();
                 $(this).closest('.setting-fields-gallery-item').remove();
             });
@@ -467,22 +465,22 @@
             });
         },
 
-        openGalleryFrame: function ($field) {
+        openGalleryFrame: function($field) {
             const frame = wp.media({
                 title: settingFieldsData.i18n.selectImages,
-                button: {text: settingFieldsData.i18n.useImages},
-                library: {type: 'image'},
+                button: { text: settingFieldsData.i18n.useImages },
+                library: { type: 'image' },
                 multiple: true
             });
 
-            frame.on('select', function () {
+            frame.on('select', function() {
                 const attachments = frame.state().get('selection').toJSON();
                 const $items = $field.find('.setting-fields-gallery-items');
                 const name = $field.data('name');
 
-                attachments.forEach(function (attachment) {
-                    const url = attachment.sizes && attachment.sizes.thumbnail
-                        ? attachment.sizes.thumbnail.url
+                attachments.forEach(function(attachment) {
+                    const url = attachment.sizes && attachment.sizes.thumbnail 
+                        ? attachment.sizes.thumbnail.url 
                         : attachment.url;
 
                     const $item = $('<div class="setting-fields-gallery-item" data-id="' + attachment.id + '">' +
@@ -502,18 +500,18 @@
         /**
          * Repeater
          */
-        initRepeater: function () {
+        initRepeater: function() {
             const self = this;
 
             // Add Row
-            $(document).on('click', '.setting-fields-repeater-add', function (e) {
+            $(document).on('click', '.setting-fields-repeater-add', function(e) {
                 e.preventDefault();
                 const $repeater = $(this).closest('.setting-fields-repeater');
                 self.addRepeaterRow($repeater);
             });
 
             // Remove Row
-            $(document).on('click', '.setting-fields-repeater-remove', function (e) {
+            $(document).on('click', '.setting-fields-repeater-remove', function(e) {
                 e.preventDefault();
                 if (confirm(settingFieldsData.i18n.confirmRemove)) {
                     $(this).closest('.setting-fields-repeater-row').remove();
@@ -521,7 +519,7 @@
             });
 
             // Toggle Row
-            $(document).on('click', '.setting-fields-repeater-toggle', function (e) {
+            $(document).on('click', '.setting-fields-repeater-toggle', function(e) {
                 e.preventDefault();
                 $(this).closest('.setting-fields-repeater-row').toggleClass('setting-fields-repeater-row--collapsed');
             });
@@ -533,19 +531,19 @@
                 cursor: 'move',
                 opacity: 0.65,
                 placeholder: 'setting-fields-repeater-placeholder',
-                update: function () {
+                update: function() {
                     self.reindexRepeater($(this).closest('.setting-fields-repeater'));
                 }
             });
         },
 
-        addRepeaterRow: function ($repeater) {
+        addRepeaterRow: function($repeater) {
             const template = $repeater.find('.setting-fields-repeater-template').html();
             const $rows = $repeater.find('.setting-fields-repeater-rows');
             const newIndex = $rows.find('.setting-fields-repeater-row').length;
 
             const newRow = template.replace(/\{\{INDEX\}\}/g, newIndex);
-
+            
             if ($repeater.hasClass('setting-fields-repeater--table')) {
                 $rows.append(newRow);
             } else {
@@ -557,9 +555,9 @@
             this.initRowFields($newRow);
         },
 
-        initRowFields: function ($row) {
+        initRowFields: function($row) {
             // Initialize Select2 in new row
-            $row.find('[data-select2="true"]').each(function () {
+            $row.find('[data-select2="true"]').each(function() {
                 if (!$(this).hasClass('select2-hidden-accessible')) {
                     $(this).select2({
                         width: '100%',
@@ -570,27 +568,27 @@
             });
 
             // Initialize Color Picker in new row
-            $row.find('.setting-fields-color-picker').each(function () {
+            $row.find('.setting-fields-color-picker').each(function() {
                 if (!$(this).closest('.wp-picker-container').length) {
                     $(this).wpColorPicker();
                 }
             });
         },
 
-        reindexRepeater: function ($repeater) {
+        reindexRepeater: function($repeater) {
             const name = $repeater.data('name');
             const id = $repeater.data('id');
 
-            $repeater.find('.setting-fields-repeater-row').each(function (index) {
+            $repeater.find('.setting-fields-repeater-row').each(function(index) {
                 $(this).attr('data-index', index);
-
-                $(this).find('[name]').each(function () {
+                
+                $(this).find('[name]').each(function() {
                     const currentName = $(this).attr('name');
                     const newName = currentName.replace(/\[\d+\]/, '[' + index + ']');
                     $(this).attr('name', newName);
                 });
 
-                $(this).find('[id]').each(function () {
+                $(this).find('[id]').each(function() {
                     const currentId = $(this).attr('id');
                     const newId = currentId.replace(/_\d+_/, '_' + index + '_');
                     $(this).attr('id', newId);
@@ -601,21 +599,21 @@
         /**
          * Button Group
          */
-        initButtonGroup: function () {
+        initButtonGroup: function() {
             // Handle radio change
-            $(document).on('change', '.setting-fields-button-group input[type="radio"]', function () {
+            $(document).on('change', '.setting-fields-button-group input[type="radio"]', function() {
                 const $group = $(this).closest('.setting-fields-button-group');
                 $group.find('label').removeClass('button-primary');
-                $group.find('input:checked').each(function () {
+                $group.find('input:checked').each(function() {
                     $(this).next('label').addClass('button-primary');
                 });
             });
 
             // Handle label click as backup
-            $(document).on('click', '.setting-fields-button-group label', function (e) {
+            $(document).on('click', '.setting-fields-button-group label', function(e) {
                 const $label = $(this);
                 const $input = $label.prev('input[type="radio"]');
-
+                
                 if ($input.length && !$input.prop('checked')) {
                     $input.prop('checked', true).trigger('change');
                 }
@@ -625,12 +623,12 @@
         /**
          * Dimensions Link
          */
-        initDimensions: function () {
-            $(document).on('click', '.setting-fields-dimensions-link', function (e) {
+        initDimensions: function() {
+            $(document).on('click', '.setting-fields-dimensions-link', function(e) {
                 e.preventDefault();
                 const $field = $(this).closest('.setting-fields-dimensions-field');
                 const isLinked = $field.attr('data-linked') === 'true';
-
+                
                 $field.attr('data-linked', !isLinked ? 'true' : 'false');
                 $(this).find('.dashicons')
                     .toggleClass('dashicons-admin-links', !isLinked)
@@ -638,7 +636,7 @@
             });
 
             // Sync linked values
-            $(document).on('input', '.setting-fields-dimensions-field[data-linked="true"] input[type="number"]', function () {
+            $(document).on('input', '.setting-fields-dimensions-field[data-linked="true"] input[type="number"]', function() {
                 const $field = $(this).closest('.setting-fields-dimensions-field');
                 const value = $(this).val();
                 $field.find('.setting-fields-dimensions-inputs input[type="number"]').val(value);
@@ -647,7 +645,7 @@
     };
 
     // Initialize on document ready
-    $(document).ready(function () {
+    $(document).ready(function() {
         SettingFields.init();
     });
 
