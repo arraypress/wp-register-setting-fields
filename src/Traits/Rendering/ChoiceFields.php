@@ -111,7 +111,7 @@ trait ChoiceFields {
 
 		$extra = [
 			'class'            => 'setting-fields-select2 ' . ( $field['class'] ?? '' ),
-			'data-select2'     => 'true',
+			'data-init-select2' => 'true',
 			'data-allow-clear' => $field['allow_clear'] ?? true ? 'true' : 'false',
 			'style'            => 'width: 100%; max-width: 400px;',
 		];
