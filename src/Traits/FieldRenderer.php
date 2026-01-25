@@ -112,9 +112,11 @@ trait FieldRenderer {
 			'group' => $this->render_group( $field, $name, $id, $value ),
 			'repeater' => $this->render_repeater( $field, $name, $id, $value ),
 
-			// Content
+			// Content/Layout
 			'html' => $this->render_html( $field ),
 			'message' => $this->render_message( $field ),
+			'separator' => $this->render_separator( $field, $name, $id, $value ),
+			'heading' => $this->render_heading( $field, $name, $id, $value ),
 
 			// Default fallback
 			default => $this->render_text_input( $field, $name, $id, $value, 'text' ),

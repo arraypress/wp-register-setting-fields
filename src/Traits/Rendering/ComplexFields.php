@@ -147,4 +147,64 @@ trait ComplexFields {
 		<?php
 	}
 
+	/**
+	 * Render a separator/divider field.
+	 *
+	 * @param array  $field Field configuration.
+	 * @param string $name  Input name.
+	 * @param string $id    Input id.
+	 * @param mixed  $value Current value.
+	 *
+	 * @return void
+	 */
+	protected function render_separator( array $field, string $name, string $id, $value ): void {
+		$title       = $field['title'] ?? '';
+		$description = $field['description'] ?? '';
+
+		?>
+		<div class="setting-fields-separator">
+			<?php if ( ! empty( $title ) ) : ?>
+				<h3 class="setting-fields-separator-title"><?php echo esc_html( $title ); ?></h3>
+			<?php endif; ?>
+			<?php if ( ! empty( $description ) ) : ?>
+				<p class="setting-fields-separator-description"><?php echo wp_kses_post( $description ); ?></p>
+			<?php endif; ?>
+			<?php if ( empty( $title ) && empty( $description ) ) : ?>
+				<hr class="setting-fields-separator-line" />
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render a heading field.
+	 *
+	 * @param array  $field Field configuration.
+	 * @param string $name  Input name.
+	 * @param string $id    Input id.
+	 * @param mixed  $value Current value.
+	 *
+	 * @return void
+	 */
+	protected function render_heading( array $field, string $name, string $id, $value ): void {
+		$title       = $field['title'] ?? $field['label'] ?? '';
+		$description = $field['description'] ?? '';
+		$level       = $field['level'] ?? 'h3';
+
+		// Sanitize heading level
+		$allowed_levels = [ 'h2', 'h3', 'h4', 'h5', 'h6' ];
+		if ( ! in_array( $level, $allowed_levels, true ) ) {
+			$level = 'h3';
+		}
+
+		?>
+		<div class="setting-fields-heading">
+			<<?php echo $level; ?> class="setting-fields-heading-title"><?php echo esc_html( $title ); ?></<?php echo $level; ?>>
+			<?php if ( ! empty( $description ) ) : ?>
+				<p class="setting-fields-heading-description"><?php echo wp_kses_post( $description ); ?></p>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
 }
