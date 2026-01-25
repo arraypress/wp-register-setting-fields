@@ -29,16 +29,33 @@
     padding: 15px 10px;
 }
 
-.setting-fields-wrap .form-table input[type="text"],
-.setting-fields-wrap .form-table input[type="email"],
-.setting-fields-wrap .form-table input[type="url"],
-.setting-fields-wrap .form-table input[type="tel"],
-.setting-fields-wrap .form-table input[type="password"],
-.setting-fields-wrap .form-table input[type="number"],
-.setting-fields-wrap .form-table select,
+/* Default input sizing - but respect WordPress size classes */
+.setting-fields-wrap .form-table input[type="text"]:not(.small-text):not(.large-text),
+.setting-fields-wrap .form-table input[type="email"]:not(.small-text):not(.large-text),
+.setting-fields-wrap .form-table input[type="url"]:not(.small-text):not(.large-text),
+.setting-fields-wrap .form-table input[type="tel"]:not(.small-text):not(.large-text),
+.setting-fields-wrap .form-table input[type="password"]:not(.small-text):not(.large-text),
+.setting-fields-wrap .form-table select:not(.small-text):not(.large-text),
 .setting-fields-wrap .form-table textarea {
     width: 100%;
     max-width: 400px;
+}
+
+/* Number inputs default to small */
+.setting-fields-wrap .form-table input[type="number"] {
+    width: auto;
+}
+
+/* Ensure small-text stays small */
+.setting-fields-wrap .form-table .small-text {
+    width: 50px !important;
+    max-width: none;
+}
+
+/* Ensure large-text expands */
+.setting-fields-wrap .form-table .large-text {
+    width: 100% !important;
+    max-width: 100%;
 }
 
 /* ==========================================================================
@@ -512,38 +529,33 @@
 .setting-fields-repeater-table {
     margin-bottom: 10px;
     border-spacing: 0;
-    border-collapse: separate;
+    border-collapse: collapse;
+    width: 100%;
+    background: #fff;
     border: 1px solid #c3c4c7;
     border-radius: 4px;
-    width: 100%;
 }
 
 .setting-fields-repeater-table thead th {
     background: #f6f7f7;
     font-weight: 600;
+    font-size: 12px;
     text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: #50575e;
+    padding: 10px 12px;
     border-bottom: 1px solid #c3c4c7;
 }
 
-.setting-fields-repeater-table th,
-.setting-fields-repeater-table td {
-    padding: 10px 12px;
+.setting-fields-repeater-table tbody td {
+    padding: 12px;
     vertical-align: middle;
-    border-bottom: 1px solid #e0e0e0;
-    border-right: 1px solid #e0e0e0;
-}
-
-.setting-fields-repeater-table th:last-child,
-.setting-fields-repeater-table td:last-child {
-    border-right: none;
+    border-bottom: 1px solid #e5e5e5;
 }
 
 .setting-fields-repeater-table tbody tr:last-child td {
     border-bottom: none;
-}
-
-.setting-fields-repeater-table tbody tr {
-    background: #fff;
 }
 
 .setting-fields-repeater-table tbody tr:hover {
@@ -553,34 +565,55 @@
 .setting-fields-repeater-table input[type="text"],
 .setting-fields-repeater-table input[type="email"],
 .setting-fields-repeater-table input[type="url"],
+.setting-fields-repeater-table input[type="tel"],
+.setting-fields-repeater-table select,
 .setting-fields-repeater-table textarea {
     width: 100%;
     max-width: none;
 }
 
-.setting-fields-repeater-sort-col {
-    width: 30px;
+.setting-fields-repeater-table thead th.setting-fields-repeater-sort-col,
+.setting-fields-repeater-table tbody td:first-child {
+    width: 32px;
+    min-width: 32px;
+    max-width: 32px;
+    padding: 8px;
     text-align: center;
     background: #f9f9f9;
+    border-right: 1px solid #e5e5e5;
 }
 
-.setting-fields-repeater-actions-col {
+.setting-fields-repeater-table thead th.setting-fields-repeater-actions-col,
+.setting-fields-repeater-table tbody td:last-child {
     width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+    padding: 8px;
     text-align: center;
+    border-left: 1px solid #e5e5e5;
 }
 
 .setting-fields-repeater-sort {
     cursor: move;
+    color: #a7aaad;
+    display: inline-block;
+}
+
+.setting-fields-repeater-sort:hover {
     color: #646970;
 }
 
 .setting-fields-repeater-remove {
-    color: #d63638;
-    padding: 0;
+    color: #a7aaad;
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    transition: color 0.15s;
 }
 
 .setting-fields-repeater-remove:hover {
-    color: #a02020;
+    color: #d63638;
 }
 
 .setting-fields-repeater-row--block {
@@ -756,61 +789,103 @@ tr[data-conditions].setting-field-hidden {
     font-style: italic;
 }
 
-/* Tooltips */
+/* Tooltips - EDD style */
 .setting-fields-tooltip {
     display: inline-block;
-    margin-left: 5px;
+    margin-left: 4px;
     cursor: help;
     vertical-align: middle;
+    position: relative;
 }
 
 .setting-fields-tooltip .dashicons {
     font-size: 16px;
     width: 16px;
     height: 16px;
-    color: #646970;
-    transition: color 0.2s;
+    color: #787c82;
+    transition: color 0.15s ease;
 }
 
 .setting-fields-tooltip:hover .dashicons {
     color: #2271b1;
 }
 
-/* Native tooltip styling enhancement */
-.setting-fields-tooltip[title] {
-    position: relative;
+.setting-fields-tooltip .setting-fields-tooltip-content {
+    display: none;
+    position: absolute;
+    z-index: 100000;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 8px;
+    padding: 8px 12px;
+    min-width: 200px;
+    max-width: 300px;
+    background: #1d2327;
+    color: #fff;
+    font-size: 12px;
+    line-height: 1.5;
+    font-weight: 400;
+    text-align: left;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    white-space: normal;
 }
 
-/* Separator field */
+.setting-fields-tooltip .setting-fields-tooltip-content::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #1d2327;
+}
+
+.setting-fields-tooltip:hover .setting-fields-tooltip-content {
+    display: block;
+}
+
+/* Separator field - clean HR style */
 .setting-fields-separator {
-    padding: 15px 0 5px;
+    padding: 25px 0 15px;
 }
 
-.setting-fields-separator-title {
-    margin: 0 0 5px;
-    padding: 0;
-    font-size: 14px;
-    font-weight: 600;
-    color: #1d2327;
-    border-bottom: 1px solid #c3c4c7;
-    padding-bottom: 10px;
-}
-
-.setting-fields-separator-description {
-    margin: 5px 0 0;
-    color: #646970;
-    font-style: italic;
+.setting-fields-separator-wrap {
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
 .setting-fields-separator-line {
+    flex: 1;
+    height: 1px;
+    background: #c3c4c7;
     border: none;
-    border-top: 1px solid #c3c4c7;
-    margin: 10px 0;
+    margin: 0;
+}
+
+.setting-fields-separator-title {
+    margin: 0;
+    padding: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1d2327;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.setting-fields-separator-description {
+    margin: 8px 0 0;
+    padding: 0;
+    color: #646970;
+    font-size: 13px;
 }
 
 /* Heading field */
 .setting-fields-heading {
-    padding: 10px 0;
+    padding: 20px 0 10px;
 }
 
 .setting-fields-heading-title {
@@ -839,4 +914,93 @@ h4.setting-fields-heading-title {
 /* Full-width rows for separator/heading/message */
 .setting-fields-row-fullwidth td {
     padding-left: 0;
+}
+
+/* Email Editor Field */
+.setting-fields-email-editor {
+    max-width: 800px;
+}
+
+.setting-fields-email-subject {
+    margin-bottom: 15px;
+}
+
+.setting-fields-email-subject label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.setting-fields-email-body {
+    margin-bottom: 15px;
+}
+
+.setting-fields-email-body > label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.setting-fields-email-merge-tags {
+    background: #f6f7f7;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 12px 15px;
+    margin-bottom: 15px;
+}
+
+.setting-fields-merge-tags-label {
+    margin: 0 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.setting-fields-merge-tags-help {
+    color: #646970;
+    font-size: 12px;
+    font-weight: normal;
+}
+
+.setting-fields-merge-tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.setting-fields-merge-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.setting-fields-merge-tag code {
+    background: #e0e0e0;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+}
+
+.setting-fields-merge-tag span {
+    color: #646970;
+}
+
+.setting-fields-email-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.setting-fields-email-actions .button {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.setting-fields-email-actions .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
 }

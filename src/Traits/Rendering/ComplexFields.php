@@ -163,14 +163,15 @@ trait ComplexFields {
 
 		?>
 		<div class="setting-fields-separator">
-			<?php if ( ! empty( $title ) ) : ?>
-				<h3 class="setting-fields-separator-title"><?php echo esc_html( $title ); ?></h3>
-			<?php endif; ?>
+			<div class="setting-fields-separator-wrap">
+				<hr class="setting-fields-separator-line" />
+				<?php if ( ! empty( $title ) ) : ?>
+					<span class="setting-fields-separator-title"><?php echo esc_html( $title ); ?></span>
+					<hr class="setting-fields-separator-line" />
+				<?php endif; ?>
+			</div>
 			<?php if ( ! empty( $description ) ) : ?>
 				<p class="setting-fields-separator-description"><?php echo wp_kses_post( $description ); ?></p>
-			<?php endif; ?>
-			<?php if ( empty( $title ) && empty( $description ) ) : ?>
-				<hr class="setting-fields-separator-line" />
 			<?php endif; ?>
 		</div>
 		<?php
@@ -202,6 +203,100 @@ trait ComplexFields {
 			<<?php echo $level; ?> class="setting-fields-heading-title"><?php echo esc_html( $title ); ?></<?php echo $level; ?>>
 			<?php if ( ! empty( $description ) ) : ?>
 				<p class="setting-fields-heading-description"><?php echo wp_kses_post( $description ); ?></p>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render an email editor field with merge tags.
+	 *
+	 * @param array  $field Field configuration.
+	 * @param string $name  Input name.
+	 * @param string $id    Input id.
+	 * @param mixed  $value Current value.
+	 *
+	 * @return void
+	 */
+	protected function render_email_editor( array $field, string $name, string $id, $value ): void {
+		$value = wp_parse_args( (array) $value, [
+			'subject' => $field['default_subject'] ?? '',
+			'body'    => $field['default_body'] ?? '',
+		] );
+
+		$merge_tags     = $field['merge_tags'] ?? [];
+		$show_preview   = $field['show_preview'] ?? true;
+		$show_send_test = $field['show_send_test'] ?? true;
+
+		?>
+		<div class="setting-fields-email-editor" data-field-id="<?php echo esc_attr( $id ); ?>">
+			
+			<!-- Subject Line -->
+			<div class="setting-fields-email-subject">
+				<label for="<?php echo esc_attr( $id ); ?>_subject">
+					<?php esc_html_e( 'Subject', 'setting-fields' ); ?>
+				</label>
+				<input type="text"
+				       name="<?php echo esc_attr( $name ); ?>[subject]"
+				       id="<?php echo esc_attr( $id ); ?>_subject"
+				       value="<?php echo esc_attr( $value['subject'] ); ?>"
+				       class="large-text" />
+			</div>
+
+			<!-- Body Editor -->
+			<div class="setting-fields-email-body">
+				<label for="<?php echo esc_attr( $id ); ?>_body">
+					<?php esc_html_e( 'Message', 'setting-fields' ); ?>
+				</label>
+				<?php
+				wp_editor( $value['body'], $id . '_body', [
+					'textarea_name' => $name . '[body]',
+					'textarea_rows' => $field['rows'] ?? 15,
+					'media_buttons' => $field['media_buttons'] ?? false,
+					'teeny'         => false,
+					'quicktags'     => true,
+				] );
+				?>
+			</div>
+
+			<!-- Merge Tags -->
+			<?php if ( ! empty( $merge_tags ) ) : ?>
+				<div class="setting-fields-email-merge-tags">
+					<p class="setting-fields-merge-tags-label">
+						<strong><?php esc_html_e( 'Available Merge Tags:', 'setting-fields' ); ?></strong>
+						<span class="setting-fields-merge-tags-help"><?php esc_html_e( 'Click a tag to insert it into the editor.', 'setting-fields' ); ?></span>
+					</p>
+					<div class="setting-fields-merge-tags-list">
+						<?php foreach ( $merge_tags as $tag => $label ) : ?>
+							<button type="button" 
+							        class="setting-fields-merge-tag button-secondary" 
+							        data-tag="<?php echo esc_attr( $tag ); ?>"
+							        data-editor="<?php echo esc_attr( $id ); ?>_body"
+							        title="<?php echo esc_attr( $label ); ?>">
+								<code><?php echo esc_html( $tag ); ?></code>
+								<span><?php echo esc_html( $label ); ?></span>
+							</button>
+						<?php endforeach; ?>
+					</div>
+				</div>
+			<?php endif; ?>
+
+			<!-- Action Buttons -->
+			<?php if ( $show_preview || $show_send_test ) : ?>
+				<div class="setting-fields-email-actions">
+					<?php if ( $show_preview ) : ?>
+						<button type="button" class="button setting-fields-email-preview" data-field-id="<?php echo esc_attr( $id ); ?>">
+							<span class="dashicons dashicons-visibility"></span>
+							<?php esc_html_e( 'Preview', 'setting-fields' ); ?>
+						</button>
+					<?php endif; ?>
+					<?php if ( $show_send_test ) : ?>
+						<button type="button" class="button setting-fields-email-send-test" data-field-id="<?php echo esc_attr( $id ); ?>">
+							<span class="dashicons dashicons-email"></span>
+							<?php esc_html_e( 'Send Test Email', 'setting-fields' ); ?>
+						</button>
+					<?php endif; ?>
+				</div>
 			<?php endif; ?>
 		</div>
 		<?php
