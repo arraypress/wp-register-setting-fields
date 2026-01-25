@@ -541,10 +541,23 @@
          * Button Group
          */
         initButtonGroup: function() {
+            // Handle radio change
             $(document).on('change', '.setting-fields-button-group input[type="radio"]', function() {
                 const $group = $(this).closest('.setting-fields-button-group');
                 $group.find('label').removeClass('button-primary');
-                $(this).next('label').addClass('button-primary');
+                $group.find('input:checked').each(function() {
+                    $(this).next('label').addClass('button-primary');
+                });
+            });
+
+            // Handle label click as backup
+            $(document).on('click', '.setting-fields-button-group label', function(e) {
+                const $label = $(this);
+                const $input = $label.prev('input[type="radio"]');
+                
+                if ($input.length && !$input.prop('checked')) {
+                    $input.prop('checked', true).trigger('change');
+                }
             });
         },
 

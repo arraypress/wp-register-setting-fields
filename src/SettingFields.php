@@ -105,6 +105,10 @@ class SettingFields {
 		'show_title'    => true,
 		'show_tabs'     => true,
 		'submit_button' => true,
+		// Branded header options
+		'logo'          => '',        // URL to logo image
+		'header_title'  => '',        // Title next to logo (defaults to page_title)
+		'header_class'  => '',        // Additional CSS class for header
 	];
 
 	/**
@@ -190,9 +194,15 @@ class SettingFields {
 		// Get current tab
 		$current_tab = $this->get_current_tab();
 
+		// Check if we have a branded header
+		$has_branded_header = ! empty( $this->config['logo'] );
+
 		?>
-		<div class="wrap setting-fields-wrap" data-setting-id="<?php echo esc_attr( $this->id ); ?>">
-			<?php if ( $this->config['show_title'] ) : ?>
+		<div class="wrap setting-fields-wrap<?php echo $has_branded_header ? ' setting-fields-wrap--branded' : ''; ?>" data-setting-id="<?php echo esc_attr( $this->id ); ?>">
+
+			<?php if ( $has_branded_header ) : ?>
+				<?php $this->render_branded_header(); ?>
+			<?php elseif ( $this->config['show_title'] ) : ?>
 				<h1><?php echo esc_html( $this->config['page_title'] ); ?></h1>
 			<?php endif; ?>
 
@@ -214,6 +224,32 @@ class SettingFields {
 				}
 				?>
 			</form>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the branded header with logo and title.
+	 *
+	 * @return void
+	 */
+	protected function render_branded_header(): void {
+		$logo_url     = $this->config['logo'];
+		$header_title = ! empty( $this->config['header_title'] ) ? $this->config['header_title'] : $this->config['page_title'];
+		$header_class = 'setting-fields-header';
+
+		if ( ! empty( $this->config['header_class'] ) ) {
+			$header_class .= ' ' . $this->config['header_class'];
+		}
+
+		?>
+		<div class="<?php echo esc_attr( $header_class ); ?>">
+			<div class="setting-fields-header-branding">
+				<?php if ( $logo_url ) : ?>
+					<img src="<?php echo esc_url( $logo_url ); ?>" alt="" class="setting-fields-header-logo">
+				<?php endif; ?>
+				<h1 class="setting-fields-header-title"><?php echo esc_html( $header_title ); ?></h1>
+			</div>
 		</div>
 		<?php
 	}

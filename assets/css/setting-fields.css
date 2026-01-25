@@ -1,7 +1,7 @@
 /**
  * Setting Fields Styles
  *
- * @package ArrayPress\WP\Register\SettingFields
+ * @package ArrayPress\RegisterSettingFields
  */
 
 /* ==========================================================================
@@ -9,11 +9,70 @@
    ========================================================================== */
 
 .setting-fields-wrap {
-    max-width: 1200px;
+    margin-right: 20px;
 }
 
 .setting-fields-wrap h1 {
     margin-bottom: 20px;
+}
+
+.setting-fields-wrap .form-table {
+    margin-top: 0;
+}
+
+.setting-fields-wrap .form-table th {
+    width: 200px;
+    padding: 20px 10px 20px 0;
+}
+
+.setting-fields-wrap .form-table td {
+    padding: 15px 10px;
+}
+
+.setting-fields-wrap .form-table input[type="text"],
+.setting-fields-wrap .form-table input[type="email"],
+.setting-fields-wrap .form-table input[type="url"],
+.setting-fields-wrap .form-table input[type="tel"],
+.setting-fields-wrap .form-table input[type="password"],
+.setting-fields-wrap .form-table input[type="number"],
+.setting-fields-wrap .form-table select,
+.setting-fields-wrap .form-table textarea {
+    width: 100%;
+    max-width: 400px;
+}
+
+/* ==========================================================================
+   Branded Header
+   ========================================================================== */
+
+.setting-fields-header {
+    background: #fff;
+    border-bottom: 1px solid #c3c4c7;
+    margin: -20px -20px 20px -20px;
+    padding: 20px;
+}
+
+.setting-fields-header-branding {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.setting-fields-header-logo {
+    max-height: 40px;
+    width: auto;
+}
+
+.setting-fields-header-title {
+    margin: 0;
+    padding: 0;
+    font-size: 23px;
+    font-weight: 400;
+    line-height: 1.3;
+}
+
+.setting-fields-wrap--branded .setting-fields-tabs {
+    margin-top: 0;
 }
 
 /* ==========================================================================
@@ -121,15 +180,24 @@
 
 .setting-fields-checkbox-group-item,
 .setting-fields-radio-item {
-    display: block;
+    display: inline-block;
+    margin-right: 15px;
     margin-bottom: 8px;
 }
 
 .setting-fields-checkbox-group-item:last-child,
 .setting-fields-radio-item:last-child {
-    margin-bottom: 0;
+    margin-right: 0;
 }
 
+/* Vertical layout */
+.setting-fields-checkbox-group:not(.setting-fields-checkbox-group--horizontal) .setting-fields-checkbox-group-item,
+.setting-fields-radio-group:not(.setting-fields-radio-group--horizontal) .setting-fields-radio-item {
+    display: block;
+    margin-right: 0;
+}
+
+/* Horizontal layout */
 .setting-fields-checkbox-group--horizontal,
 .setting-fields-radio-group--horizontal {
     display: flex;
@@ -140,6 +208,7 @@
 .setting-fields-checkbox-group--horizontal .setting-fields-checkbox-group-item,
 .setting-fields-radio-group--horizontal .setting-fields-radio-item {
     margin-bottom: 0;
+    margin-right: 0;
 }
 
 /* ==========================================================================

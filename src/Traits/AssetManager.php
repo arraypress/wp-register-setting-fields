@@ -108,19 +108,19 @@ trait AssetManager {
 	}
 
 	/**
-	 * Enqueue Select2 library.
+	 * Enqueue Select2 library from composer assets.
 	 *
 	 * @return void
 	 */
 	protected function enqueue_select2(): void {
 		wp_enqueue_composer_style(
-			'select2',
+			'arraypress-select2',
 			__FILE__,
 			'css/select2.min.css'
 		);
 
 		wp_enqueue_composer_script(
-			'select2',
+			'arraypress-select2',
 			__FILE__,
 			'js/select2.min.js',
 			[ 'jquery' ]
