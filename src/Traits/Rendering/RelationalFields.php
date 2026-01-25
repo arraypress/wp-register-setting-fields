@@ -91,13 +91,11 @@ trait RelationalFields {
 		}
 
 		$extra = [
-			'class'              => 'setting-fields-ajax-select ' . ( $field['class'] ?? '' ),
-			'data-select2'       => 'true',
+			'class'              => 'setting-fields-select2 setting-fields-ajax-select ' . ( $field['class'] ?? '' ),
 			'data-ajax'          => 'true',
 			'data-field-key'     => $field_key,
 			'data-field-type'    => 'post_ajax',
 			'data-post-type'     => $post_type,
-			'data-minimum-input' => $field['min_input'] ?? 2,
 			'data-allow-clear'   => 'true',
 			'style'              => 'width: 100%; max-width: 400px;',
 		];
@@ -238,13 +236,11 @@ trait RelationalFields {
 		}
 
 		$extra = [
-			'class'              => 'setting-fields-ajax-select ' . ( $field['class'] ?? '' ),
-			'data-select2'       => 'true',
+			'class'              => 'setting-fields-select2 setting-fields-ajax-select ' . ( $field['class'] ?? '' ),
 			'data-ajax'          => 'true',
 			'data-field-key'     => $field_key,
 			'data-field-type'    => 'taxonomy_ajax',
 			'data-taxonomy'      => $taxonomy,
-			'data-minimum-input' => $field['min_input'] ?? 2,
 			'data-allow-clear'   => 'true',
 			'style'              => 'width: 100%; max-width: 400px;',
 		];
@@ -359,13 +355,11 @@ trait RelationalFields {
 		}
 
 		$extra = [
-			'class'              => 'setting-fields-ajax-select ' . ( $field['class'] ?? '' ),
-			'data-select2'       => 'true',
+			'class'              => 'setting-fields-select2 setting-fields-ajax-select ' . ( $field['class'] ?? '' ),
 			'data-ajax'          => 'true',
 			'data-field-key'     => $field_key,
 			'data-field-type'    => 'user_ajax',
 			'data-role'          => is_array( $role ) ? implode( ',', $role ) : $role,
-			'data-minimum-input' => $field['min_input'] ?? 2,
 			'data-allow-clear'   => 'true',
 			'style'              => 'width: 100%; max-width: 400px;',
 		];

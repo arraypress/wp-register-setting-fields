@@ -30,7 +30,8 @@ trait ChoiceFields {
 	 * @return void
 	 */
 	protected function render_select( array $field, string $name, string $id, $value ): void {
-		$options = $field['options'] ?? [];
+		// Support both 'options' and 'optgroups' keys
+		$options = $field['options'] ?? $field['optgroups'] ?? [];
 
 		$extra = [
 			'class' => 'setting-fields-select ' . ( $field['class'] ?? '' ),

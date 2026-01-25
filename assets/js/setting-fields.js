@@ -542,13 +542,11 @@
             const $rows = $repeater.find('.setting-fields-repeater-rows');
             const newIndex = $rows.find('.setting-fields-repeater-row').length;
 
+            // Hide empty state row if present
+            $rows.find('.setting-fields-repeater-empty').hide();
+
             const newRow = template.replace(/\{\{INDEX\}\}/g, newIndex);
-            
-            if ($repeater.hasClass('setting-fields-repeater--table')) {
-                $rows.append(newRow);
-            } else {
-                $rows.append(newRow);
-            }
+            $rows.append(newRow);
 
             // Re-initialize any special fields in the new row
             const $newRow = $rows.find('.setting-fields-repeater-row').last();
@@ -556,14 +554,12 @@
         },
 
         initRowFields: function($row) {
+            var self = this;
+            
             // Initialize Select2 in new row
-            $row.find('[data-select2="true"]').each(function() {
+            $row.find('.setting-fields-select2').each(function() {
                 if (!$(this).hasClass('select2-hidden-accessible')) {
-                    $(this).select2({
-                        width: '100%',
-                        allowClear: $(this).data('allow-clear') === 'true',
-                        placeholder: $(this).data('placeholder') || ''
-                    });
+                    self.initSingleSelect2($(this));
                 }
             });
 

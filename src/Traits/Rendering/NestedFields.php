@@ -143,6 +143,13 @@ trait NestedFields {
 					</tr>
 					</thead>
 					<tbody class="setting-fields-repeater-rows">
+					<?php if ( empty( $value ) ) : ?>
+						<tr class="setting-fields-repeater-empty">
+							<td colspan="<?php echo count( $sub_fields ) + ( $sortable ? 2 : 1 ); ?>">
+								<?php esc_html_e( 'No items yet. Click the button below to add one.', 'setting-fields' ); ?>
+							</td>
+						</tr>
+					<?php endif; ?>
 					<?php
 					foreach ( $value as $index => $row ) {
 						$this->render_repeater_row_table( $sub_fields, $name, $id, $index, $row, $sortable );

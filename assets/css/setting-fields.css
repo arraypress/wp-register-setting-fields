@@ -704,3 +704,12 @@ tr[data-conditions].setting-field-hidden {
         border-radius: 0 0 3px 3px;
     }
 }
+
+
+/* Repeater empty state */
+.setting-fields-repeater-empty td {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+}

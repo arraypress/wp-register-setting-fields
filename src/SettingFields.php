@@ -347,6 +347,19 @@ class SettingFields {
 		// Build conditional logic data attributes
 		$row_attrs = $this->get_conditional_attributes( $field );
 
+		// Message and HTML fields get full-width rendering (no label column)
+		$type = $field['type'] ?? 'text';
+		if ( in_array( $type, [ 'message', 'html' ], true ) ) {
+			?>
+			<tr<?php echo $row_attrs; ?> class="setting-fields-row-fullwidth">
+				<td colspan="2">
+					<?php $this->render_field( $field_key, $field, $field_name, $field_id, $value ); ?>
+				</td>
+			</tr>
+			<?php
+			return;
+		}
+
 		?>
 		<tr<?php echo $row_attrs; ?>>
 			<th scope="row">
