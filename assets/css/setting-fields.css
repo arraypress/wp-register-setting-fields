@@ -12,10 +12,6 @@
     margin-right: 20px;
 }
 
-.setting-fields-wrap h1 {
-    margin-bottom: 20px;
-}
-
 .setting-fields-wrap .form-table {
     margin-top: 0;
 }
@@ -101,10 +97,26 @@
 /* Notices container - below header */
 .setting-fields-notices {
     margin: 20px 0;
+    clear: both;
 }
 
-.setting-fields-notices .notice {
-    margin: 10px 0;
+.setting-fields-notices:empty {
+    display: none;
+    margin: 0;
+}
+
+/* Force notices out of the header area */
+.setting-fields-wrap .notice,
+.setting-fields-wrap .updated,
+.setting-fields-wrap .error {
+    margin: 15px 0 !important;
+}
+
+/* Hide any notices that WordPress injects before our container */
+.setting-fields-header + .notice,
+.setting-fields-header + .updated,
+.setting-fields-header + .error {
+    display: none;
 }
 
 /* ==========================================================================
@@ -116,6 +128,8 @@
     gap: 0;
     margin: 0;
     padding: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .setting-fields-tab {
@@ -129,18 +143,30 @@
     font-weight: 500;
     border-bottom: 3px solid transparent;
     margin-bottom: -1px;
-    transition: all 0.15s ease;
+    transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+    white-space: nowrap;
+    position: relative;
 }
 
 .setting-fields-tab:hover {
     color: #1d2327;
     background: rgba(0, 0, 0, 0.02);
+    border-bottom-color: rgba(34, 113, 177, 0.3);
+}
+
+.setting-fields-tab:focus {
+    outline: none;
+    box-shadow: inset 0 0 0 1px rgba(34, 113, 177, 0.3);
 }
 
 .setting-fields-tab-active {
     color: #1d2327;
     border-bottom-color: #2271b1;
     background: #fff;
+}
+
+.setting-fields-tab-active:hover {
+    border-bottom-color: #2271b1;
 }
 
 .setting-fields-tab .dashicons {
@@ -553,20 +579,22 @@
     gap: 12px;
 }
 
-.setting-fields-dimension-input {
+.setting-fields-dimension-input,
+.setting-fields-dimension-unit,
+.setting-fields-dimension-link {
     display: flex;
     flex-direction: column;
-    align-items: center;
     gap: 6px;
 }
 
-.setting-fields-dimension-input label {
+.setting-fields-dimension-input label,
+.setting-fields-dimension-unit label,
+.setting-fields-dimension-link label {
     font-size: 11px;
     font-weight: 500;
     color: #646970;
     text-transform: uppercase;
     letter-spacing: 0.3px;
-    order: -1;
 }
 
 .setting-fields-dimension-input input {
@@ -576,29 +604,37 @@
     border-radius: 4px;
 }
 
-.setting-fields-dimension-unit {
-    display: flex;
-    align-items: flex-end;
-    padding-bottom: 1px;
-}
-
 .setting-fields-dimension-unit select {
-    min-width: 65px;
+    min-width: 70px;
     height: 36px;
     border-radius: 4px;
 }
 
-.setting-fields-dimension-unit-label {
-    color: #646970;
-    padding: 8px 10px;
+.setting-fields-dimension-unit-static {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 70px;
+    height: 36px;
+    padding: 0 12px;
+    background: #f6f7f7;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    color: #50575e;
     font-weight: 500;
 }
 
 .setting-fields-dimensions-link {
-    display: flex;
-    align-items: flex-end;
-    padding-bottom: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
     color: #646970;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
 }
 
 .setting-fields-dimensions-link:hover {
@@ -984,24 +1020,88 @@ tr[data-conditions].setting-field-hidden {
    Responsive Adjustments
    ========================================================================== */
 
+/* Tablet and below */
 @media screen and (max-width: 782px) {
+    /* Header adjustments */
+    .setting-fields-header {
+        margin: -8px -10px 0 -10px;
+    }
+
+    .setting-fields-header-top {
+        padding: 12px 15px;
+    }
+
+    .setting-fields-header-title {
+        font-size: 18px;
+    }
+
+    .setting-fields-header-logo {
+        max-height: 28px;
+    }
+
+    .setting-fields-header-tabs {
+        padding: 0 10px;
+    }
+
+    /* Tabs scroll horizontally on mobile */
+    .setting-fields-tabs-nav {
+        gap: 0;
+        padding-bottom: 2px;
+    }
+
+    .setting-fields-tab {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+
+    /* Form table adjustments */
+    .setting-fields-wrap .form-table th {
+        width: 100%;
+        display: block;
+        padding: 15px 10px 5px 0;
+    }
+
+    .setting-fields-wrap .form-table td {
+        display: block;
+        padding: 5px 10px 15px;
+    }
+
+    .setting-fields-wrap .form-table input[type="text"],
+    .setting-fields-wrap .form-table input[type="email"],
+    .setting-fields-wrap .form-table input[type="url"],
+    .setting-fields-wrap .form-table input[type="tel"],
+    .setting-fields-wrap .form-table input[type="password"],
+    .setting-fields-wrap .form-table select,
+    .setting-fields-wrap .form-table textarea {
+        max-width: 100%;
+    }
+
+    /* Dimensions field */
     .setting-fields-dimensions-inputs {
         flex-direction: column;
         align-items: flex-start;
     }
 
-    .setting-fields-repeater-row--row .setting-fields-repeater-row-content {
-        flex-direction: column;
+    .setting-fields-dimension-input {
+        width: 100%;
     }
 
+    .setting-fields-dimension-input input {
+        width: 100%;
+    }
+
+    /* Button group */
     .setting-fields-button-group {
         flex-direction: column;
+        width: 100%;
     }
 
     .setting-fields-button-group .setting-fields-button-group-item {
         margin-left: 0;
         margin-top: -1px;
         border-radius: 0;
+        width: 100%;
+        justify-content: center;
     }
 
     .setting-fields-button-group .setting-fields-button-group-item:first-of-type {
@@ -1011,6 +1111,113 @@ tr[data-conditions].setting-field-hidden {
 
     .setting-fields-button-group .setting-fields-button-group-item:last-of-type {
         border-radius: 0 0 3px 3px;
+    }
+
+    /* Repeater */
+    .setting-fields-repeater-row--row .setting-fields-repeater-row-content {
+        flex-direction: column;
+    }
+
+    .setting-fields-repeater-table {
+        display: block;
+        overflow-x: auto;
+    }
+
+    /* Range slider */
+    .setting-fields-range-wrapper {
+        flex-wrap: wrap;
+    }
+
+    .setting-fields-range {
+        width: 100%;
+        order: 2;
+    }
+
+    .setting-fields-range-value {
+        order: 1;
+    }
+
+    /* Email editor */
+    .setting-fields-email-editor {
+        max-width: 100%;
+    }
+
+    .setting-fields-email-subject-wrap {
+        flex-direction: column;
+    }
+
+    .setting-fields-email-actions {
+        flex-direction: column;
+    }
+
+    .setting-fields-email-actions .button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Sortable */
+    .setting-fields-sortable {
+        max-width: 100%;
+    }
+
+    /* Link field */
+    .setting-fields-link-field {
+        max-width: 100%;
+    }
+
+    /* Gallery */
+    .setting-fields-gallery-item {
+        width: 80px;
+        height: 80px;
+    }
+
+    /* Modal */
+    .setting-fields-modal-content {
+        width: 95%;
+        max-height: 90vh;
+        margin: 10px;
+    }
+
+    /* Tooltips - show below on mobile */
+    .setting-fields-tooltip .setting-fields-tooltip-content {
+        min-width: 150px;
+        max-width: 250px;
+        font-size: 11px;
+    }
+}
+
+/* Small mobile */
+@media screen and (max-width: 480px) {
+    .setting-fields-wrap {
+        margin-right: 10px;
+    }
+
+    .setting-fields-header {
+        margin: -8px -10px 0 -10px;
+    }
+
+    .setting-fields-header-branding {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .setting-fields-tab {
+        padding: 8px 10px;
+    }
+
+    .setting-fields-tab .dashicons {
+        display: none;
+    }
+
+    /* Hide tab text, show only icons if available */
+    .setting-fields-gallery-item {
+        width: 60px;
+        height: 60px;
+    }
+
+    .setting-fields-image-preview {
+        max-width: 100%;
     }
 }
 
@@ -1147,11 +1354,11 @@ h4.setting-fields-heading-title {
 
 /* Full-width rows for separator/heading/message/email_editor */
 .setting-fields-row-fullwidth th {
-    display: none;
+    display: none !important;
 }
 
 .setting-fields-row-fullwidth td {
-    padding-left: 0;
+    padding-left: 0 !important;
 }
 
 /* Email Editor Field */

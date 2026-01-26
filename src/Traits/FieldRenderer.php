@@ -66,6 +66,12 @@ trait FieldRenderer {
 			return;
 		}
 
+		// Check for custom render callback first
+		if ( ! empty( $field['render_callback'] ) && is_callable( $field['render_callback'] ) ) {
+			call_user_func( $field['render_callback'], $field, $name, $id, $value );
+			return;
+		}
+
 		// Dispatch to appropriate renderer
 		match ( $type ) {
 			// Basic text inputs
@@ -122,6 +128,9 @@ trait FieldRenderer {
 			'message' => $this->render_message( $field ),
 			'separator' => $this->render_separator( $field, $name, $id, $value ),
 			'heading' => $this->render_heading( $field, $name, $id, $value ),
+
+			// Custom type with callback
+			'custom' => $this->render_custom( $field, $name, $id, $value ),
 
 			// Default fallback
 			default => $this->render_text_input( $field, $name, $id, $value, 'text' ),

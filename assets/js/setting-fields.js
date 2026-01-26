@@ -13,6 +13,7 @@
          * Initialize all functionality
          */
         init: function() {
+            this.repositionNotices();
             this.initConditionalLogic();
             this.initSelect2();
             this.initColorPicker();
@@ -26,6 +27,26 @@
             this.initDimensions();
             this.initEmailEditor();
             this.initSortable();
+        },
+
+        /**
+         * Move any stray notices into our notices container
+         */
+        repositionNotices: function() {
+            var $wrap = $('.setting-fields-wrap');
+            var $noticesContainer = $wrap.find('.setting-fields-notices');
+            
+            if (!$noticesContainer.length) return;
+            
+            // Move any notices that appear before or after the header into our container
+            $wrap.find('.notice, .updated, .error').not('.setting-fields-notices .notice, .setting-fields-notices .updated, .setting-fields-notices .error').each(function() {
+                $(this).appendTo($noticesContainer);
+            });
+            
+            // Also catch notices WordPress injects at wrap level
+            $wrap.siblings('.notice, .updated, .error').each(function() {
+                $(this).appendTo($noticesContainer);
+            });
         },
 
         /**

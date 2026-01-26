@@ -105,6 +105,9 @@ trait ComplexFields {
 			<div class="setting-fields-dimensions-inputs">
 				<?php foreach ( $show_sides as $side ) : ?>
 					<div class="setting-fields-dimension-input">
+						<label for="<?php echo esc_attr( $id ); ?>_<?php echo esc_attr( $side ); ?>">
+							<?php echo esc_html( $labels[ $side ] ); ?>
+						</label>
 						<input type="number"
 						       name="<?php echo esc_attr( $name ); ?>[<?php echo esc_attr( $side ); ?>]"
 						       id="<?php echo esc_attr( $id ); ?>_<?php echo esc_attr( $side ); ?>"
@@ -114,14 +117,14 @@ trait ComplexFields {
 							<?php if ( isset( $field['min'] ) ) : ?>min="<?php echo esc_attr( $field['min'] ); ?>"<?php endif; ?>
 							<?php if ( isset( $field['max'] ) ) : ?>max="<?php echo esc_attr( $field['max'] ); ?>"<?php endif; ?>
 						/>
-						<label for="<?php echo esc_attr( $id ); ?>_<?php echo esc_attr( $side ); ?>">
-							<?php echo esc_html( $labels[ $side ] ); ?>
-						</label>
 					</div>
 				<?php endforeach; ?>
 
 				<?php if ( count( $units ) > 1 ) : ?>
 					<div class="setting-fields-dimension-unit">
+						<label for="<?php echo esc_attr( $id ); ?>_unit">
+							<?php esc_html_e( 'Unit', 'setting-fields' ); ?>
+						</label>
 						<select name="<?php echo esc_attr( $name ); ?>[unit]" id="<?php echo esc_attr( $id ); ?>_unit">
 							<?php foreach ( $units as $unit ) : ?>
 								<option value="<?php echo esc_attr( $unit ); ?>" <?php selected( $value['unit'], $unit ); ?>>
@@ -131,16 +134,22 @@ trait ComplexFields {
 						</select>
 					</div>
 				<?php else : ?>
-					<input type="hidden" name="<?php echo esc_attr( $name ); ?>[unit]"
-					       value="<?php echo esc_attr( $units[0] ); ?>"/>
-					<span class="setting-fields-dimension-unit-label"><?php echo esc_html( $units[0] ); ?></span>
+					<div class="setting-fields-dimension-unit">
+						<label><?php esc_html_e( 'Unit', 'setting-fields' ); ?></label>
+						<input type="hidden" name="<?php echo esc_attr( $name ); ?>[unit]"
+						       value="<?php echo esc_attr( $units[0] ); ?>"/>
+						<span class="setting-fields-dimension-unit-static"><?php echo esc_html( $units[0] ); ?></span>
+					</div>
 				<?php endif; ?>
 
 				<?php if ( $linked !== false ) : ?>
-					<button type="button" class="button-link setting-fields-dimensions-link"
-					        title="<?php esc_attr_e( 'Link values', 'setting-fields' ); ?>">
-						<span class="dashicons dashicons-admin-links"></span>
-					</button>
+					<div class="setting-fields-dimension-link">
+						<label>&nbsp;</label>
+						<button type="button" class="button-link setting-fields-dimensions-link"
+						        title="<?php esc_attr_e( 'Link values', 'setting-fields' ); ?>">
+							<span class="dashicons dashicons-admin-links"></span>
+						</button>
+					</div>
 				<?php endif; ?>
 			</div>
 		</div>
@@ -450,6 +459,26 @@ trait ComplexFields {
 			</ul>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Render a custom field using a callback.
+	 *
+	 * @param array  $field Field configuration.
+	 * @param string $name  Input name.
+	 * @param string $id    Input id.
+	 * @param mixed  $value Current value.
+	 *
+	 * @return void
+	 */
+	protected function render_custom( array $field, string $name, string $id, $value ): void {
+		if ( ! empty( $field['callback'] ) && is_callable( $field['callback'] ) ) {
+			call_user_func( $field['callback'], $field, $name, $id, $value );
+		} elseif ( ! empty( $field['render_callback'] ) && is_callable( $field['render_callback'] ) ) {
+			call_user_func( $field['render_callback'], $field, $name, $id, $value );
+		} else {
+			echo '<p class="description">' . esc_html__( 'Custom field callback not defined.', 'setting-fields' ) . '</p>';
+		}
 	}
 
 }

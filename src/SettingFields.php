@@ -27,531 +27,570 @@ use ArrayPress\RegisterSettingFields\Traits\ConditionalLogic;
  */
 class SettingFields {
 
-    use AssetManager;
-    use ConfigParser;
-    use FieldRenderer;
-    use FieldSanitizer;
-    use SettingsRegistration;
-    use TabManager;
-    use ConditionalLogic;
+	use AssetManager;
+	use ConfigParser;
+	use FieldRenderer;
+	use FieldSanitizer;
+	use SettingsRegistration;
+	use TabManager;
+	use ConditionalLogic;
 
-    /**
-     * Unique identifier for this settings group.
-     *
-     * @var string
-     */
-    protected string $id;
+	/**
+	 * Unique identifier for this settings group.
+	 *
+	 * @var string
+	 */
+	protected string $id;
 
-    /**
-     * Configuration array.
-     *
-     * @var array
-     */
-    protected array $config;
+	/**
+	 * Configuration array.
+	 *
+	 * @var array
+	 */
+	protected array $config;
 
-    /**
-     * Parsed fields array.
-     *
-     * @var array
-     */
-    protected array $fields = [];
+	/**
+	 * Parsed fields array.
+	 *
+	 * @var array
+	 */
+	protected array $fields = [];
 
-    /**
-     * Parsed tabs array.
-     *
-     * @var array
-     */
-    protected array $tabs = [];
+	/**
+	 * Parsed tabs array.
+	 *
+	 * @var array
+	 */
+	protected array $tabs = [];
 
-    /**
-     * Parsed sections array.
-     *
-     * @var array
-     */
-    protected array $sections = [];
+	/**
+	 * Parsed sections array.
+	 *
+	 * @var array
+	 */
+	protected array $sections = [];
 
-    /**
-     * Current option values.
-     *
-     * @var array
-     */
-    protected array $values = [];
+	/**
+	 * Current option values.
+	 *
+	 * @var array
+	 */
+	protected array $values = [];
 
-    /**
-     * Settings page hook suffix.
-     *
-     * @var string
-     */
-    protected string $hook_suffix = '';
+	/**
+	 * Settings page hook suffix.
+	 *
+	 * @var string
+	 */
+	protected string $hook_suffix = '';
 
-    /**
-     * Default configuration values.
-     *
-     * @var array
-     */
-    protected array $defaults = [
-            'page_title'    => 'Settings',
-            'menu_title'    => 'Settings',
-            'menu_slug'     => '',
-            'capability'    => 'manage_options',
-            'parent_slug'   => '',
-            'icon'          => 'dashicons-admin-generic',
-            'position'      => null,
-            'option_name'   => '',
-            'option_group'  => '',
-            'tabs'          => [],
-            'sections'      => [],
-            'fields'        => [],
-            'show_title'    => true,
-            'show_tabs'     => true,
-            'submit_button' => true,
-        // Branded header options
-            'logo'          => '',        // URL to logo image
-            'header_title'  => '',        // Title next to logo (defaults to page_title)
-            'header_class'  => '',        // Additional CSS class for header
-    ];
+	/**
+	 * Default configuration values.
+	 *
+	 * @var array
+	 */
+	protected array $defaults = [
+		'page_title'    => 'Settings',
+		'menu_title'    => 'Settings',
+		'menu_slug'     => '',
+		'capability'    => 'manage_options',
+		'parent_slug'   => '',
+		'icon'          => 'dashicons-admin-generic',
+		'position'      => null,
+		'option_name'   => '',
+		'option_group'  => '',
+		'tabs'          => [],
+		'sections'      => [],
+		'fields'        => [],
+		'show_title'    => true,
+		'show_tabs'     => true,
+		'submit_button' => true,
+		// Branded header options
+		'logo'          => '',        // URL to logo image
+		'header_title'  => '',        // Title next to logo (defaults to page_title)
+		'header_class'  => '',        // Additional CSS class for header
+		// Help screen options
+		'help_tabs'     => [],        // Array of help tabs
+		'help_sidebar'  => '',        // Help sidebar content
+	];
 
-    /**
-     * Constructor.
-     *
-     * @param string $id     Unique identifier for this settings group.
-     * @param array  $config Configuration array.
-     */
-    public function __construct( string $id, array $config ) {
-        $this->id     = sanitize_key( $id );
-        $this->config = wp_parse_args( $config, $this->defaults );
+	/**
+	 * Constructor.
+	 *
+	 * @param string $id     Unique identifier for this settings group.
+	 * @param array  $config Configuration array.
+	 */
+	public function __construct( string $id, array $config ) {
+		$this->id     = sanitize_key( $id );
+		$this->config = wp_parse_args( $config, $this->defaults );
 
-        // Set defaults based on ID if not provided
-        if ( empty( $this->config['menu_slug'] ) ) {
-            $this->config['menu_slug'] = $this->id;
-        }
-        if ( empty( $this->config['option_name'] ) ) {
-            $this->config['option_name'] = $this->id;
-        }
-        if ( empty( $this->config['option_group'] ) ) {
-            $this->config['option_group'] = $this->id . '_group';
-        }
+		// Set defaults based on ID if not provided
+		if ( empty( $this->config['menu_slug'] ) ) {
+			$this->config['menu_slug'] = $this->id;
+		}
+		if ( empty( $this->config['option_name'] ) ) {
+			$this->config['option_name'] = $this->id;
+		}
+		if ( empty( $this->config['option_group'] ) ) {
+			$this->config['option_group'] = $this->id . '_group';
+		}
 
-        $this->parse_config();
+		$this->parse_config();
 
-        // Register with the central registry
-        Registry::register( $this->id, $this );
+		// Register with the central registry
+		Registry::register( $this->id, $this );
 
-        // Register REST API if we have AJAX fields
-        if ( $this->has_ajax_fields() ) {
-            RestApi::register();
-        }
+		// Register REST API if we have AJAX fields
+		if ( $this->has_ajax_fields() ) {
+			RestApi::register();
+		}
 
-        $this->init_hooks();
-    }
+		$this->init_hooks();
+	}
 
-    /**
-     * Check if any fields require AJAX.
-     *
-     * @return bool
-     */
-    protected function has_ajax_fields(): bool {
-        $ajax_types = [ 'ajax', 'post_ajax', 'taxonomy_ajax', 'user_ajax' ];
+	/**
+	 * Check if any fields require AJAX.
+	 *
+	 * @return bool
+	 */
+	protected function has_ajax_fields(): bool {
+		$ajax_types = [ 'ajax', 'post_ajax', 'taxonomy_ajax', 'user_ajax' ];
 
-        foreach ( $this->fields as $field ) {
-            if ( in_array( $field['type'] ?? '', $ajax_types, true ) ) {
-                return true;
-            }
+		foreach ( $this->fields as $field ) {
+			if ( in_array( $field['type'] ?? '', $ajax_types, true ) ) {
+				return true;
+			}
 
-            // Check nested fields
-            if ( ! empty( $field['sub_fields'] ) ) {
-                foreach ( $field['sub_fields'] as $sub_field ) {
-                    if ( in_array( $sub_field['type'] ?? '', $ajax_types, true ) ) {
-                        return true;
-                    }
-                }
-            }
-        }
+			// Check nested fields
+			if ( ! empty( $field['sub_fields'] ) ) {
+				foreach ( $field['sub_fields'] as $sub_field ) {
+					if ( in_array( $sub_field['type'] ?? '', $ajax_types, true ) ) {
+						return true;
+					}
+				}
+			}
+		}
 
-        return false;
-    }
+		return false;
+	}
 
-    /**
-     * Initialize WordPress hooks.
-     *
-     * @return void
-     */
-    protected function init_hooks(): void {
-        add_action( 'admin_menu', [ $this, 'register_menu' ] );
-        add_action( 'admin_init', [ $this, 'register_settings' ] );
-        add_action( 'admin_enqueue_scripts', [ $this, 'maybe_enqueue_assets' ] );
+	/**
+	 * Initialize WordPress hooks.
+	 *
+	 * @return void
+	 */
+	protected function init_hooks(): void {
+		add_action( 'admin_menu', [ $this, 'register_menu' ] );
+		add_action( 'admin_init', [ $this, 'register_settings' ] );
+		add_action( 'admin_enqueue_scripts', [ $this, 'maybe_enqueue_assets' ] );
 
-        // Fix menu highlight for submenu pages
-        if ( ! empty( $this->config['parent_slug'] ) ) {
-            add_filter( 'parent_file', [ $this, 'fix_parent_menu_highlight' ] );
-            add_filter( 'submenu_file', [ $this, 'fix_submenu_highlight' ] );
-        }
-    }
+		// Fix menu highlight for submenu pages
+		if ( ! empty( $this->config['parent_slug'] ) ) {
+			add_filter( 'parent_file', [ $this, 'fix_parent_menu_highlight' ] );
+			add_filter( 'submenu_file', [ $this, 'fix_submenu_highlight' ] );
+		}
+	}
 
-    /**
-     * Fix parent menu highlight for settings pages.
-     *
-     * @param string $parent_file The parent file.
-     *
-     * @return string
-     */
-    public function fix_parent_menu_highlight( string $parent_file ): string {
-        global $plugin_page;
+	/**
+	 * Fix parent menu highlight for settings pages.
+	 *
+	 * @param string $parent_file The parent file.
+	 *
+	 * @return string
+	 */
+	public function fix_parent_menu_highlight( string $parent_file ): string {
+		global $plugin_page;
 
-        if ( $plugin_page === $this->config['menu_slug'] ) {
-            return $this->config['parent_slug'];
-        }
+		if ( $plugin_page === $this->config['menu_slug'] ) {
+			return $this->config['parent_slug'];
+		}
 
-        return $parent_file;
-    }
+		return $parent_file;
+	}
 
-    /**
-     * Fix submenu highlight for settings pages.
-     *
-     * @param string|null $submenu_file The submenu file.
-     *
-     * @return string|null
-     */
-    public function fix_submenu_highlight( ?string $submenu_file ): ?string {
-        global $plugin_page;
+	/**
+	 * Fix submenu highlight for settings pages.
+	 *
+	 * @param string|null $submenu_file The submenu file.
+	 *
+	 * @return string|null
+	 */
+	public function fix_submenu_highlight( ?string $submenu_file ): ?string {
+		global $plugin_page;
 
-        if ( $plugin_page === $this->config['menu_slug'] ) {
-            return $this->config['menu_slug'];
-        }
+		if ( $plugin_page === $this->config['menu_slug'] ) {
+			return $this->config['menu_slug'];
+		}
 
-        return $submenu_file;
-    }
+		return $submenu_file;
+	}
 
-    /**
-     * Register the admin menu page.
-     *
-     * @return void
-     */
-    public function register_menu(): void {
-        if ( ! empty( $this->config['parent_slug'] ) ) {
-            $this->hook_suffix = add_submenu_page(
-                    $this->config['parent_slug'],
-                    $this->config['page_title'],
-                    $this->config['menu_title'],
-                    $this->config['capability'],
-                    $this->config['menu_slug'],
-                    [ $this, 'render_page' ]
-            );
-        } else {
-            $this->hook_suffix = add_menu_page(
-                    $this->config['page_title'],
-                    $this->config['menu_title'],
-                    $this->config['capability'],
-                    $this->config['menu_slug'],
-                    [ $this, 'render_page' ],
-                    $this->config['icon'],
-                    $this->config['position']
-            );
-        }
-    }
+	/**
+	 * Register the admin menu page.
+	 *
+	 * @return void
+	 */
+	public function register_menu(): void {
+		if ( ! empty( $this->config['parent_slug'] ) ) {
+			$this->hook_suffix = add_submenu_page(
+				$this->config['parent_slug'],
+				$this->config['page_title'],
+				$this->config['menu_title'],
+				$this->config['capability'],
+				$this->config['menu_slug'],
+				[ $this, 'render_page' ]
+			);
+		} else {
+			$this->hook_suffix = add_menu_page(
+				$this->config['page_title'],
+				$this->config['menu_title'],
+				$this->config['capability'],
+				$this->config['menu_slug'],
+				[ $this, 'render_page' ],
+				$this->config['icon'],
+				$this->config['position']
+			);
+		}
 
-    /**
-     * Render the settings page.
-     *
-     * @return void
-     */
-    public function render_page(): void {
-        if ( ! current_user_can( $this->config['capability'] ) ) {
-            return;
-        }
+		// Register help tabs after we have the hook suffix
+		if ( ! empty( $this->config['help_tabs'] ) || ! empty( $this->config['help_sidebar'] ) ) {
+			add_action( 'load-' . $this->hook_suffix, [ $this, 'register_help_tabs' ] );
+		}
+	}
 
-        // Load current values
-        $this->values = get_option( $this->config['option_name'], [] );
-        if ( ! is_array( $this->values ) ) {
-            $this->values = [];
-        }
+	/**
+	 * Register help tabs for the settings screen.
+	 *
+	 * @return void
+	 */
+	public function register_help_tabs(): void {
+		$screen = get_current_screen();
 
-        // Get current tab
-        $current_tab = $this->get_current_tab();
+		if ( ! $screen ) {
+			return;
+		}
 
-        ?>
-        <div class="wrap setting-fields-wrap" data-setting-id="<?php echo esc_attr( $this->id ); ?>">
+		// Add help tabs
+		if ( ! empty( $this->config['help_tabs'] ) ) {
+			foreach ( $this->config['help_tabs'] as $tab_id => $tab ) {
+				$screen->add_help_tab( [
+					'id'       => $this->id . '_' . $tab_id,
+					'title'    => $tab['title'] ?? $tab_id,
+					'content'  => $tab['content'] ?? '',
+					'callback' => $tab['callback'] ?? null,
+					'priority' => $tab['priority'] ?? 10,
+				] );
+			}
+		}
 
-            <?php $this->render_header( $current_tab ); ?>
+		// Set help sidebar
+		if ( ! empty( $this->config['help_sidebar'] ) ) {
+			$screen->set_help_sidebar( $this->config['help_sidebar'] );
+		}
+	}
 
-            <div class="setting-fields-notices">
-                <?php settings_errors( $this->config['option_group'] ); ?>
-            </div>
+	/**
+	 * Render the settings page.
+	 *
+	 * @return void
+	 */
+	public function render_page(): void {
+		if ( ! current_user_can( $this->config['capability'] ) ) {
+			return;
+		}
 
-            <form method="post" action="options.php" class="setting-fields-form">
-                <?php
-                settings_fields( $this->config['option_group'] );
+		// Load current values
+		$this->values = get_option( $this->config['option_name'], [] );
+		if ( ! is_array( $this->values ) ) {
+			$this->values = [];
+		}
 
-                // Render fields for current tab
-                $this->render_fields_for_tab( $current_tab );
+		// Get current tab
+		$current_tab = $this->get_current_tab();
 
-                if ( $this->config['submit_button'] ) {
-                    submit_button();
-                }
-                ?>
-            </form>
-        </div>
-        <?php
-    }
+		?>
+		<div class="wrap setting-fields-wrap" data-setting-id="<?php echo esc_attr( $this->id ); ?>">
 
-    /**
-     * Render the modern header with optional logo and integrated tabs.
-     *
-     * @param string $current_tab Current active tab.
-     *
-     * @return void
-     */
-    protected function render_header( string $current_tab ): void {
-        $logo_url     = $this->config['logo'] ?? '';
-        $header_title = ! empty( $this->config['header_title'] ) ? $this->config['header_title'] : $this->config['page_title'];
-        $show_title   = $this->config['show_title'] ?? true;
+			<?php $this->render_header( $current_tab ); ?>
 
-        ?>
-        <div class="setting-fields-header">
-            <div class="setting-fields-header-top">
-                <div class="setting-fields-header-branding">
-                    <?php if ( $logo_url ) : ?>
-                        <img src="<?php echo esc_url( $logo_url ); ?>" alt="" class="setting-fields-header-logo">
-                    <?php endif; ?>
-                    <?php if ( $show_title ) : ?>
-                        <h1 class="setting-fields-header-title"><?php echo esc_html( $header_title ); ?></h1>
-                    <?php endif; ?>
-                </div>
-            </div>
+			<div class="setting-fields-notices">
+				<?php settings_errors( $this->config['option_group'] ); ?>
+			</div>
 
-            <?php if ( $this->config['show_tabs'] && ! empty( $this->tabs ) ) : ?>
-                <div class="setting-fields-header-tabs">
-                    <?php $this->render_tabs( $current_tab ); ?>
-                </div>
-            <?php endif; ?>
-        </div>
-        <?php
-    }
+			<form method="post" action="options.php" class="setting-fields-form">
+				<?php
+				settings_fields( $this->config['option_group'] );
 
-    /**
-     * Render fields for a specific tab.
-     *
-     * @param string $tab Tab key.
-     *
-     * @return void
-     */
-    protected function render_fields_for_tab( string $tab ): void {
-        $tab_fields = $this->get_fields_for_tab( $tab );
+				// Render fields for current tab
+				$this->render_fields_for_tab( $current_tab );
 
-        if ( empty( $tab_fields ) ) {
-            return;
-        }
+				if ( $this->config['submit_button'] ) {
+					submit_button();
+				}
+				?>
+			</form>
+		</div>
+		<?php
+	}
 
-        // Group fields by section
-        $sections = $this->get_sections_for_tab( $tab );
+	/**
+	 * Render the modern header with optional logo and integrated tabs.
+	 *
+	 * @param string $current_tab Current active tab.
+	 *
+	 * @return void
+	 */
+	protected function render_header( string $current_tab ): void {
+		$logo_url     = $this->config['logo'] ?? '';
+		$header_title = ! empty( $this->config['header_title'] ) ? $this->config['header_title'] : $this->config['page_title'];
+		$show_title   = $this->config['show_title'] ?? true;
 
-        if ( ! empty( $sections ) ) {
-            foreach ( $sections as $section_key => $section ) {
-                $section_fields = array_filter( $tab_fields, function ( $field ) use ( $section_key ) {
-                    return isset( $field['section'] ) && $field['section'] === $section_key;
-                } );
+		?>
+		<div class="setting-fields-header">
+			<div class="setting-fields-header-top">
+				<div class="setting-fields-header-branding">
+					<?php if ( $logo_url ) : ?>
+						<img src="<?php echo esc_url( $logo_url ); ?>" alt="" class="setting-fields-header-logo">
+					<?php endif; ?>
+					<?php if ( $show_title ) : ?>
+						<h1 class="setting-fields-header-title"><?php echo esc_html( $header_title ); ?></h1>
+					<?php endif; ?>
+				</div>
+			</div>
 
-                if ( ! empty( $section_fields ) ) {
-                    $this->render_section( $section_key, $section, $section_fields );
-                }
-            }
+			<?php if ( $this->config['show_tabs'] && ! empty( $this->tabs ) ) : ?>
+				<div class="setting-fields-header-tabs">
+					<?php $this->render_tabs( $current_tab ); ?>
+				</div>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
 
-            // Render fields without a section
-            $unsectioned_fields = array_filter( $tab_fields, function ( $field ) {
-                return empty( $field['section'] );
-            } );
+	/**
+	 * Render fields for a specific tab.
+	 *
+	 * @param string $tab Tab key.
+	 *
+	 * @return void
+	 */
+	protected function render_fields_for_tab( string $tab ): void {
+		$tab_fields = $this->get_fields_for_tab( $tab );
 
-            if ( ! empty( $unsectioned_fields ) ) {
-                echo '<table class="form-table" role="presentation">';
-                foreach ( $unsectioned_fields as $field_key => $field ) {
-                    $this->render_field_row( $field_key, $field );
-                }
-                echo '</table>';
-            }
-        } else {
-            echo '<table class="form-table" role="presentation">';
-            foreach ( $tab_fields as $field_key => $field ) {
-                $this->render_field_row( $field_key, $field );
-            }
-            echo '</table>';
-        }
-    }
+		if ( empty( $tab_fields ) ) {
+			return;
+		}
 
-    /**
-     * Render a section with its fields.
-     *
-     * @param string $section_key Section key.
-     * @param array  $section     Section config.
-     * @param array  $fields      Fields in this section.
-     *
-     * @return void
-     */
-    protected function render_section( string $section_key, array $section, array $fields ): void {
-        if ( ! empty( $section['title'] ) ) {
-            echo '<h2 class="setting-fields-section-title">' . esc_html( $section['title'] ) . '</h2>';
-        }
+		// Group fields by section
+		$sections = $this->get_sections_for_tab( $tab );
 
-        if ( ! empty( $section['description'] ) ) {
-            echo '<p class="setting-fields-section-description">' . esc_html( $section['description'] ) . '</p>';
-        }
+		if ( ! empty( $sections ) ) {
+			foreach ( $sections as $section_key => $section ) {
+				$section_fields = array_filter( $tab_fields, function ( $field ) use ( $section_key ) {
+					return isset( $field['section'] ) && $field['section'] === $section_key;
+				} );
 
-        echo '<table class="form-table" role="presentation">';
-        foreach ( $fields as $field_key => $field ) {
-            $this->render_field_row( $field_key, $field );
-        }
-        echo '</table>';
-    }
+				if ( ! empty( $section_fields ) ) {
+					$this->render_section( $section_key, $section, $section_fields );
+				}
+			}
 
-    /**
-     * Render a single field row.
-     *
-     * @param string $field_key Field key.
-     * @param array  $field     Field config.
-     *
-     * @return void
-     */
-    protected function render_field_row( string $field_key, array $field ): void {
-        $field_name = $this->config['option_name'] . '[' . $field_key . ']';
-        $field_id   = $this->config['option_name'] . '_' . $field_key;
-        $value      = $this->values[ $field_key ] ?? ( $field['default'] ?? '' );
+			// Render fields without a section
+			$unsectioned_fields = array_filter( $tab_fields, function ( $field ) {
+				return empty( $field['section'] );
+			} );
 
-        // Add the field key to the field config so renderers can access it
-        $field['_key'] = $field_key;
+			if ( ! empty( $unsectioned_fields ) ) {
+				echo '<table class="form-table" role="presentation">';
+				foreach ( $unsectioned_fields as $field_key => $field ) {
+					$this->render_field_row( $field_key, $field );
+				}
+				echo '</table>';
+			}
+		} else {
+			echo '<table class="form-table" role="presentation">';
+			foreach ( $tab_fields as $field_key => $field ) {
+				$this->render_field_row( $field_key, $field );
+			}
+			echo '</table>';
+		}
+	}
 
-        // Build conditional logic data attributes
-        $row_attrs = $this->get_conditional_attributes( $field );
+	/**
+	 * Render a section with its fields.
+	 *
+	 * @param string $section_key Section key.
+	 * @param array  $section     Section config.
+	 * @param array  $fields      Fields in this section.
+	 *
+	 * @return void
+	 */
+	protected function render_section( string $section_key, array $section, array $fields ): void {
+		if ( ! empty( $section['title'] ) ) {
+			echo '<h2 class="setting-fields-section-title">' . esc_html( $section['title'] ) . '</h2>';
+		}
 
-        // Message, HTML, separator, heading fields get full-width rendering (no label column)
-        $type = $field['type'] ?? 'text';
-        if ( in_array( $type, [ 'message', 'html', 'separator', 'heading' ], true ) ) {
-            ?>
-            <tr<?php echo $row_attrs; ?> class="setting-fields-row-fullwidth">
-                <td colspan="2">
-                    <?php $this->render_field( $field_key, $field, $field_name, $field_id, $value ); ?>
-                </td>
-            </tr>
-            <?php
-            return;
-        }
+		if ( ! empty( $section['description'] ) ) {
+			echo '<p class="setting-fields-section-description">' . esc_html( $section['description'] ) . '</p>';
+		}
 
-        ?>
-        <tr<?php echo $row_attrs; ?>>
-            <th scope="row">
-                <?php if ( ! empty( $field['label'] ) ) : ?>
-                    <label for="<?php echo esc_attr( $field_id ); ?>">
-                        <?php echo esc_html( $field['label'] ); ?>
-                        <?php if ( ! empty( $field['required'] ) ) : ?>
-                            <span class="required">*</span>
-                        <?php endif; ?>
-                        <?php if ( ! empty( $field['tooltip'] ) ) : ?>
-                            <span class="setting-fields-tooltip">
+		echo '<table class="form-table" role="presentation">';
+		foreach ( $fields as $field_key => $field ) {
+			$this->render_field_row( $field_key, $field );
+		}
+		echo '</table>';
+	}
+
+	/**
+	 * Render a single field row.
+	 *
+	 * @param string $field_key Field key.
+	 * @param array  $field     Field config.
+	 *
+	 * @return void
+	 */
+	protected function render_field_row( string $field_key, array $field ): void {
+		$field_name = $this->config['option_name'] . '[' . $field_key . ']';
+		$field_id   = $this->config['option_name'] . '_' . $field_key;
+		$value      = $this->values[ $field_key ] ?? ( $field['default'] ?? '' );
+
+		// Add the field key to the field config so renderers can access it
+		$field['_key'] = $field_key;
+
+		// Build conditional logic data attributes
+		$row_attrs = $this->get_conditional_attributes( $field );
+
+		// Message, HTML, separator, heading fields get full-width rendering (no label column)
+		$type = $field['type'] ?? 'text';
+		if ( in_array( $type, [ 'message', 'html', 'separator', 'heading' ], true ) ) {
+			?>
+			<tr<?php echo $row_attrs; ?> class="setting-fields-row-fullwidth">
+				<td colspan="2">
+					<?php $this->render_field( $field_key, $field, $field_name, $field_id, $value ); ?>
+				</td>
+			</tr>
+			<?php
+			return;
+		}
+
+		?>
+		<tr<?php echo $row_attrs; ?>>
+			<th scope="row">
+				<?php if ( ! empty( $field['label'] ) ) : ?>
+					<label for="<?php echo esc_attr( $field_id ); ?>">
+						<?php echo esc_html( $field['label'] ); ?>
+						<?php if ( ! empty( $field['required'] ) ) : ?>
+							<span class="required">*</span>
+						<?php endif; ?>
+						<?php if ( ! empty( $field['tooltip'] ) ) : ?>
+							<span class="setting-fields-tooltip">
 								<span class="dashicons dashicons-info"></span>
 								<span class="setting-fields-tooltip-content"><?php echo esc_html( $field['tooltip'] ); ?></span>
 							</span>
-                        <?php endif; ?>
-                    </label>
-                <?php endif; ?>
-            </th>
-            <td>
-                <?php
-                $this->render_field( $field_key, $field, $field_name, $field_id, $value );
+						<?php endif; ?>
+					</label>
+				<?php endif; ?>
+			</th>
+			<td>
+				<?php
+				$this->render_field( $field_key, $field, $field_name, $field_id, $value );
 
-                if ( ! empty( $field['description'] ) ) {
-                    echo '<p class="description">' . wp_kses_post( $field['description'] ) . '</p>';
-                }
-                ?>
-            </td>
-        </tr>
-        <?php
-    }
+				if ( ! empty( $field['description'] ) ) {
+					echo '<p class="description">' . wp_kses_post( $field['description'] ) . '</p>';
+				}
+				?>
+			</td>
+		</tr>
+		<?php
+	}
 
-    /**
-     * Get the settings ID.
-     *
-     * @return string
-     */
-    public function get_id(): string {
-        return $this->id;
-    }
+	/**
+	 * Get the settings ID.
+	 *
+	 * @return string
+	 */
+	public function get_id(): string {
+		return $this->id;
+	}
 
-    /**
-     * Get a specific config value.
-     *
-     * @param string $key     Config key.
-     * @param mixed  $default Default value.
-     *
-     * @return mixed
-     */
-    public function get_config( string $key, $default = null ) {
-        return $this->config[ $key ] ?? $default;
-    }
+	/**
+	 * Get a specific config value.
+	 *
+	 * @param string $key     Config key.
+	 * @param mixed  $default Default value.
+	 *
+	 * @return mixed
+	 */
+	public function get_config( string $key, $default = null ) {
+		return $this->config[ $key ] ?? $default;
+	}
 
-    /**
-     * Get the option name.
-     *
-     * @return string
-     */
-    public function get_option_name(): string {
-        return $this->config['option_name'];
-    }
+	/**
+	 * Get the option name.
+	 *
+	 * @return string
+	 */
+	public function get_option_name(): string {
+		return $this->config['option_name'];
+	}
 
-    /**
-     * Get all current values.
-     *
-     * @return array
-     */
-    public function get_values(): array {
-        if ( empty( $this->values ) ) {
-            $this->values = get_option( $this->config['option_name'], [] );
-            if ( ! is_array( $this->values ) ) {
-                $this->values = [];
-            }
-        }
+	/**
+	 * Get all current values.
+	 *
+	 * @return array
+	 */
+	public function get_values(): array {
+		if ( empty( $this->values ) ) {
+			$this->values = get_option( $this->config['option_name'], [] );
+			if ( ! is_array( $this->values ) ) {
+				$this->values = [];
+			}
+		}
 
-        return $this->values;
-    }
+		return $this->values;
+	}
 
-    /**
-     * Get a specific field value.
-     *
-     * @param string $field_key Field key.
-     * @param mixed  $default   Default value.
-     *
-     * @return mixed
-     */
-    public function get_value( string $field_key, $default = null ) {
-        $values = $this->get_values();
+	/**
+	 * Get a specific field value.
+	 *
+	 * @param string $field_key Field key.
+	 * @param mixed  $default   Default value.
+	 *
+	 * @return mixed
+	 */
+	public function get_value( string $field_key, $default = null ) {
+		$values = $this->get_values();
 
-        if ( isset( $values[ $field_key ] ) ) {
-            return $values[ $field_key ];
-        }
+		if ( isset( $values[ $field_key ] ) ) {
+			return $values[ $field_key ];
+		}
 
-        // Check field default
-        if ( isset( $this->fields[ $field_key ]['default'] ) ) {
-            return $this->fields[ $field_key ]['default'];
-        }
+		// Check field default
+		if ( isset( $this->fields[ $field_key ]['default'] ) ) {
+			return $this->fields[ $field_key ]['default'];
+		}
 
-        return $default;
-    }
+		return $default;
+	}
 
-    /**
-     * Get all field configurations.
-     *
-     * @return array
-     */
-    public function get_fields(): array {
-        return $this->fields;
-    }
+	/**
+	 * Get all field configurations.
+	 *
+	 * @return array
+	 */
+	public function get_fields(): array {
+		return $this->fields;
+	}
 
-    /**
-     * Get a specific field configuration.
-     *
-     * @param string $field_key Field key.
-     *
-     * @return array|null
-     */
-    public function get_field( string $field_key ): ?array {
-        return $this->fields[ $field_key ] ?? null;
-    }
+	/**
+	 * Get a specific field configuration.
+	 *
+	 * @param string $field_key Field key.
+	 *
+	 * @return array|null
+	 */
+	public function get_field( string $field_key ): ?array {
+		return $this->fields[ $field_key ] ?? null;
+	}
 
 }
