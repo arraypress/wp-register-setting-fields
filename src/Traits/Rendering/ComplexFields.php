@@ -173,10 +173,10 @@ trait ComplexFields {
         ?>
         <div class="setting-fields-separator">
             <div class="setting-fields-separator-wrap">
-                <hr class="setting-fields-separator-line" />
+                <hr class="setting-fields-separator-line"/>
                 <?php if ( ! empty( $title ) ) : ?>
                     <span class="setting-fields-separator-title"><?php echo esc_html( $title ); ?></span>
-                    <hr class="setting-fields-separator-line" />
+                    <hr class="setting-fields-separator-line"/>
                 <?php endif; ?>
             </div>
             <?php if ( ! empty( $description ) ) : ?>
@@ -209,7 +209,8 @@ trait ComplexFields {
 
         ?>
         <div class="setting-fields-heading">
-        <<?php echo $level; ?> class="setting-fields-heading-title"><?php echo esc_html( $title ); ?></<?php echo $level; ?>>
+        <<?php echo $level; ?>
+        class="setting-fields-heading-title"><?php echo esc_html( $title ); ?></<?php echo $level; ?>>
         <?php if ( ! empty( $description ) ) : ?>
             <p class="setting-fields-heading-description"><?php echo wp_kses_post( $description ); ?></p>
         <?php endif; ?>
@@ -251,7 +252,7 @@ trait ComplexFields {
 
         // Build data attributes for JS callbacks
         $data_attrs = [
-                'field-id' => $id,
+                'field-id'  => $id,
                 'field-key' => $field['_key'] ?? '',
         ];
 
@@ -275,7 +276,7 @@ trait ComplexFields {
                 <!-- Enable/Disable Toggle -->
                 <div class="setting-fields-email-enable">
                     <label class="setting-fields-toggle-wrap">
-                        <input type="hidden" name="<?php echo esc_attr( $name ); ?>[enabled]" value="0" />
+                        <input type="hidden" name="<?php echo esc_attr( $name ); ?>[enabled]" value="0"/>
                         <input type="checkbox"
                                name="<?php echo esc_attr( $name ); ?>[enabled]"
                                id="<?php echo esc_attr( $id ); ?>_enabled"
@@ -300,9 +301,10 @@ trait ComplexFields {
                                name="<?php echo esc_attr( $name ); ?>[subject]"
                                id="<?php echo esc_attr( $id ); ?>_subject"
                                value="<?php echo esc_attr( $value['subject'] ); ?>"
-                               class="large-text setting-fields-email-subject-input" />
+                               class="large-text setting-fields-email-subject-input"/>
                         <?php if ( ! empty( $merge_tags ) ) : ?>
-                            <button type="button" class="button setting-fields-insert-tag-btn" data-target="subject" title="<?php esc_attr_e( 'Insert merge tag', 'setting-fields' ); ?>">
+                            <button type="button" class="button setting-fields-insert-tag-btn" data-target="subject"
+                                    title="<?php esc_attr_e( 'Insert merge tag', 'setting-fields' ); ?>">
                                 <span class="dashicons dashicons-shortcode"></span>
                             </button>
                         <?php endif; ?>
@@ -320,7 +322,7 @@ trait ComplexFields {
                     $field_id  = $id;
 
                     if ( ! empty( $merge_tags ) ) {
-                        add_action( 'media_buttons', function( $eid ) use ( $editor_id, $field_id ) {
+                        add_action( 'media_buttons', function ( $eid ) use ( $editor_id, $field_id ) {
                             if ( $eid === $editor_id ) {
                                 echo '<button type="button" class="button setting-fields-insert-tag-btn" data-target="body" data-editor-id="' . esc_attr( $field_id ) . '" title="' . esc_attr__( 'Insert merge tag', 'setting-fields' ) . '">';
                                 echo '<span class="dashicons dashicons-shortcode"></span> ';
@@ -339,63 +341,63 @@ trait ComplexFields {
                     ] );
                     ?>
                 </div>
+
+                <!-- Action Buttons -->
+                <?php if ( $show_preview || $show_send_test ) : ?>
+                    <div class="setting-fields-email-actions">
+                        <?php if ( $show_preview ) : ?>
+                            <button type="button" class="button setting-fields-email-preview">
+                                <span class="dashicons dashicons-visibility"></span>
+                                <?php esc_html_e( 'Preview', 'setting-fields' ); ?>
+                            </button>
+                        <?php endif; ?>
+                        <?php if ( $show_send_test ) : ?>
+                            <button type="button" class="button setting-fields-email-send-test">
+                                <span class="dashicons dashicons-email"></span>
+                                <?php esc_html_e( 'Send Test Email', 'setting-fields' ); ?>
+                            </button>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+
             </div>
 
-            <!-- Action Buttons -->
-            <?php if ( $show_preview || $show_send_test ) : ?>
-                <div class="setting-fields-email-actions">
-                    <?php if ( $show_preview ) : ?>
-                        <button type="button" class="button setting-fields-email-preview">
-                            <span class="dashicons dashicons-visibility"></span>
-                            <?php esc_html_e( 'Preview', 'setting-fields' ); ?>
-                        </button>
-                    <?php endif; ?>
-                    <?php if ( $show_send_test ) : ?>
-                        <button type="button" class="button setting-fields-email-send-test">
-                            <span class="dashicons dashicons-email"></span>
-                            <?php esc_html_e( 'Send Test Email', 'setting-fields' ); ?>
-                        </button>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
-
-        </div>
-
-        <?php if ( ! empty( $merge_tags ) ) : ?>
-            <!-- Merge Tags Modal -->
-            <div class="setting-fields-merge-tags-modal" style="display: none;">
-                <div class="setting-fields-modal-overlay"></div>
-                <div class="setting-fields-modal-content">
-                    <div class="setting-fields-modal-header">
-                        <h3><?php esc_html_e( 'Insert Merge Tag', 'setting-fields' ); ?></h3>
-                        <button type="button" class="setting-fields-modal-close">&times;</button>
-                    </div>
-                    <div class="setting-fields-modal-search">
-                        <input type="text" class="setting-fields-tag-search" placeholder="<?php esc_attr_e( 'Search tags...', 'setting-fields' ); ?>" />
-                    </div>
-                    <div class="setting-fields-modal-body">
-                        <div class="setting-fields-tags-grid">
-                            <?php foreach ( $merge_tags as $tag => $tag_config ) :
-                                $tag_label = is_array( $tag_config ) ? ( $tag_config['label'] ?? $tag ) : $tag_config;
-                                $tag_description = is_array( $tag_config ) ? ( $tag_config['description'] ?? '' ) : '';
-                                $tag_value = is_array( $tag_config ) ? ( $tag_config['tag'] ?? $tag ) : $tag;
-                                ?>
-                                <button type="button"
-                                        class="setting-fields-tag-item"
-                                        data-tag="<?php echo esc_attr( $tag_value ); ?>"
-                                        data-label="<?php echo esc_attr( $tag_label ); ?>">
-                                    <span class="setting-fields-tag-code"><?php echo esc_html( $tag_value ); ?></span>
-                                    <span class="setting-fields-tag-label"><?php echo esc_html( $tag_label ); ?></span>
-                                    <?php if ( $tag_description ) : ?>
-                                        <span class="setting-fields-tag-desc"><?php echo esc_html( $tag_description ); ?></span>
-                                    <?php endif; ?>
-                                </button>
-                            <?php endforeach; ?>
+            <?php if ( ! empty( $merge_tags ) ) : ?>
+                <!-- Merge Tags Modal -->
+                <div class="setting-fields-merge-tags-modal" style="display: none;">
+                    <div class="setting-fields-modal-overlay"></div>
+                    <div class="setting-fields-modal-content">
+                        <div class="setting-fields-modal-header">
+                            <h3><?php esc_html_e( 'Insert Merge Tag', 'setting-fields' ); ?></h3>
+                            <button type="button" class="setting-fields-modal-close">&times;</button>
+                        </div>
+                        <div class="setting-fields-modal-search">
+                            <input type="text" class="setting-fields-tag-search"
+                                   placeholder="<?php esc_attr_e( 'Search tags...', 'setting-fields' ); ?>"/>
+                        </div>
+                        <div class="setting-fields-modal-body">
+                            <div class="setting-fields-tags-grid">
+                                <?php foreach ( $merge_tags as $tag => $tag_config ) :
+                                    $tag_label = is_array( $tag_config ) ? ( $tag_config['label'] ?? $tag ) : $tag_config;
+                                    $tag_description = is_array( $tag_config ) ? ( $tag_config['description'] ?? '' ) : '';
+                                    $tag_value = is_array( $tag_config ) ? ( $tag_config['tag'] ?? $tag ) : $tag;
+                                    ?>
+                                    <button type="button"
+                                            class="setting-fields-tag-item"
+                                            data-tag="<?php echo esc_attr( $tag_value ); ?>"
+                                            data-label="<?php echo esc_attr( $tag_label ); ?>">
+                                        <span class="setting-fields-tag-code"><?php echo esc_html( $tag_value ); ?></span>
+                                        <span class="setting-fields-tag-label"><?php echo esc_html( $tag_label ); ?></span>
+                                        <?php if ( $tag_description ) : ?>
+                                            <span class="setting-fields-tag-desc"><?php echo esc_html( $tag_description ); ?></span>
+                                        <?php endif; ?>
+                                    </button>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        <?php endif; ?>
+            <?php endif; ?>
         </div>
         <?php
     }
@@ -442,17 +444,19 @@ trait ComplexFields {
         <div class="setting-fields-sortable" data-field-id="<?php echo esc_attr( $id ); ?>">
             <ul class="setting-fields-sortable-list">
                 <?php foreach ( $all_items as $item ) :
-                    $label     = $options[ $item ] ?? $item;
+                    $label = $options[ $item ] ?? $item;
                     $is_active = in_array( $item, $value, true );
                     ?>
-                    <li class="setting-fields-sortable-item<?php echo $is_active ? ' setting-fields-sortable-item--active' : ''; ?>" data-value="<?php echo esc_attr( $item ); ?>">
+                    <li class="setting-fields-sortable-item<?php echo $is_active ? ' setting-fields-sortable-item--active' : ''; ?>"
+                        data-value="<?php echo esc_attr( $item ); ?>">
                         <span class="setting-fields-sortable-handle dashicons dashicons-menu"></span>
                         <span class="setting-fields-sortable-label"><?php echo esc_html( $label ); ?></span>
                         <input type="hidden"
                                name="<?php echo esc_attr( $name ); ?>[]"
                                value="<?php echo esc_attr( $item ); ?>"
                                 <?php echo $is_active ? '' : 'disabled'; ?> />
-                        <button type="button" class="setting-fields-sortable-toggle" title="<?php echo $is_active ? esc_attr__( 'Disable', 'setting-fields' ) : esc_attr__( 'Enable', 'setting-fields' ); ?>">
+                        <button type="button" class="setting-fields-sortable-toggle"
+                                title="<?php echo $is_active ? esc_attr__( 'Disable', 'setting-fields' ) : esc_attr__( 'Enable', 'setting-fields' ); ?>">
                             <span class="dashicons <?php echo $is_active ? 'dashicons-visibility' : 'dashicons-hidden'; ?>"></span>
                         </button>
                     </li>
