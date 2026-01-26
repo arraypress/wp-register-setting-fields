@@ -809,17 +809,17 @@
 .setting-fields-repeater-table thead th {
     background: #f6f7f7;
     font-weight: 600;
-    font-size: 12px;
+    font-size: 11px;
     text-align: left;
     text-transform: uppercase;
     letter-spacing: 0.3px;
     color: #50575e;
-    padding: 10px 12px;
+    padding: 8px 12px;
     border-bottom: 1px solid #c3c4c7;
 }
 
 .setting-fields-repeater-table tbody td {
-    padding: 12px;
+    padding: 10px 12px;
     vertical-align: middle;
     border-bottom: 1px solid #e5e5e5;
 }
@@ -850,7 +850,6 @@
     padding: 8px;
     text-align: center;
     background: #f9f9f9;
-    border-right: 1px solid #e5e5e5;
 }
 
 .setting-fields-repeater-table thead th.setting-fields-repeater-actions-col,
@@ -860,7 +859,6 @@
     max-width: 40px;
     padding: 8px;
     text-align: center;
-    border-left: 1px solid #e5e5e5;
 }
 
 .setting-fields-repeater-sort {
