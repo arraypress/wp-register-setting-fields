@@ -23,6 +23,12 @@
       "src/Utilities/Functions.php"
     ]
   },
+  "scripts": {
+    "get-select2": [
+      "@php -r \"file_put_contents('assets/js/select2.min.js', file_get_contents('https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js')); echo 'Downloaded select2.min.js' . PHP_EOL;\"",
+      "@php -r \"file_put_contents('assets/css/select2.min.css', file_get_contents('https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css')); echo 'Downloaded select2.min.css' . PHP_EOL;\""
+    ]
+  },
   "config": {
     "optimize-autoloader": true,
     "sort-packages": true,

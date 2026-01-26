@@ -110,7 +110,7 @@ trait FieldSanitizer {
 		$step  = $field['step'] ?? 1;
 
 		// Determine if we should return int or float
-		if ( is_float( $step ) || str_contains( (string) $step, '.' ) ) {
+		if ( is_float( $step ) || strpos( (string) $step, '.' ) !== false ) {
 			$value = (float) $value;
 		} else {
 			$value = (int) $value;

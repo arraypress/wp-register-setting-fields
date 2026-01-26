@@ -123,22 +123,24 @@ trait AssetManager {
 	}
 
 	/**
-	 * Enqueue Select2 library from composer assets.
+	 * Enqueue Select2 library from CDN.
 	 *
 	 * @return void
 	 */
 	protected function enqueue_select2(): void {
-		wp_enqueue_composer_style(
+		wp_enqueue_style(
 			'arraypress-select2',
-			__FILE__,
-			'css/select2.min.css'
+			'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css',
+			[],
+			'4.1.0-rc.0'
 		);
 
-		wp_enqueue_composer_script(
+		wp_enqueue_script(
 			'arraypress-select2',
-			__FILE__,
-			'js/select2.min.js',
-			[ 'jquery' ]
+			'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js',
+			[ 'jquery' ],
+			'4.1.0-rc.0',
+			true
 		);
 	}
 

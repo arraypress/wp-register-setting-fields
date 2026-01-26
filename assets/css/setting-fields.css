@@ -64,7 +64,7 @@
 
 .setting-fields-header {
     background: #fff;
-    margin: -1px -1px 30px -1px;
+    margin: -8px -20px 0 -20px;
     border-bottom: 1px solid #c3c4c7;
 }
 
@@ -96,6 +96,15 @@
     padding: 0 20px;
     border-top: 1px solid #f0f0f0;
     background: #f6f7f7;
+}
+
+/* Notices container - below header */
+.setting-fields-notices {
+    margin: 20px 0;
+}
+
+.setting-fields-notices .notice {
+    margin: 10px 0;
 }
 
 /* ==========================================================================
@@ -286,24 +295,99 @@
 }
 
 /* ==========================================================================
-   Range Slider
+   Range Slider (WordPress/Modern Style)
    ========================================================================== */
 
 .setting-fields-range-wrapper {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 15px;
 }
 
 .setting-fields-range {
+    --range-progress: 0%;
+    -webkit-appearance: none;
+    appearance: none;
     width: 200px;
     max-width: 100%;
+    height: 6px;
+    background: linear-gradient(to right, #2271b1 0%, #2271b1 var(--range-progress), #dcdcde var(--range-progress), #dcdcde 100%);
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
 }
 
+/* Track - WebKit */
+.setting-fields-range::-webkit-slider-runnable-track {
+    height: 6px;
+    background: #dcdcde;
+    border-radius: 3px;
+}
+
+/* Track - Firefox */
+.setting-fields-range::-moz-range-track {
+    height: 6px;
+    background: #dcdcde;
+    border-radius: 3px;
+    border: none;
+}
+
+/* Thumb - WebKit */
+.setting-fields-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #2271b1;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: -6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.setting-fields-range::-webkit-slider-thumb:hover {
+    background: #135e96;
+    transform: scale(1.1);
+}
+
+.setting-fields-range:focus::-webkit-slider-thumb {
+    box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.25);
+}
+
+/* Thumb - Firefox */
+.setting-fields-range::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #2271b1;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.setting-fields-range::-moz-range-thumb:hover {
+    background: #135e96;
+    transform: scale(1.1);
+}
+
+.setting-fields-range:focus::-moz-range-thumb {
+    box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.25);
+}
+
+/* Value display */
 .setting-fields-range-value {
-    min-width: 40px;
+    min-width: 45px;
+    padding: 4px 10px;
+    background: #f6f7f7;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
     text-align: center;
+    font-size: 13px;
     font-weight: 600;
+    color: #1d2327;
 }
 
 .setting-fields-suffix {
@@ -1061,7 +1145,11 @@ h4.setting-fields-heading-title {
     color: #646970;
 }
 
-/* Full-width rows for separator/heading/message */
+/* Full-width rows for separator/heading/message/email_editor */
+.setting-fields-row-fullwidth th {
+    display: none;
+}
+
 .setting-fields-row-fullwidth td {
     padding-left: 0;
 }
@@ -1115,25 +1203,36 @@ h4.setting-fields-heading-title {
     margin-bottom: 15px;
 }
 
-.setting-fields-email-body-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.setting-fields-email-body > label {
+    display: block;
+    font-weight: 600;
     margin-bottom: 8px;
 }
 
-.setting-fields-email-body-header label {
-    font-weight: 600;
-    margin: 0;
-}
-
+/* Insert Tag button styling - match Add Media */
 .setting-fields-insert-tag-btn {
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    vertical-align: middle;
 }
 
 .setting-fields-insert-tag-btn .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    line-height: 1;
+    vertical-align: middle;
+    margin-top: -2px;
+}
+
+/* Subject line tag button */
+.setting-fields-email-subject-wrap .setting-fields-insert-tag-btn {
+    padding: 0 10px;
+    height: auto;
+}
+
+.setting-fields-email-subject-wrap .setting-fields-insert-tag-btn .dashicons {
     font-size: 16px;
     width: 16px;
     height: 16px;
@@ -1151,10 +1250,12 @@ h4.setting-fields-heading-title {
     gap: 5px;
 }
 
-.setting-fields-email-actions .dashicons {
+.setting-fields-email-actions .button .dashicons {
     font-size: 16px;
     width: 16px;
     height: 16px;
+    line-height: 1;
+    vertical-align: middle;
 }
 
 /* Merge Tags Modal */

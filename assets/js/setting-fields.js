@@ -338,10 +338,25 @@
          * Range Slider
          */
         initRangeSlider: function() {
+            var updateRangeProgress = function($input) {
+                var min = parseFloat($input.attr('min')) || 0;
+                var max = parseFloat($input.attr('max')) || 100;
+                var val = parseFloat($input.val()) || 0;
+                var progress = ((val - min) / (max - min)) * 100;
+                $input.css('--range-progress', progress + '%');
+            };
+
+            // Initialize all range sliders
+            $('.setting-fields-range').each(function() {
+                updateRangeProgress($(this));
+            });
+
+            // Update on input
             $('.setting-fields-range').on('input', function() {
-                const $input = $(this);
-                const $value = $('.setting-fields-range-value[data-target="' + $input.attr('id') + '"]');
+                var $input = $(this);
+                var $value = $('.setting-fields-range-value[data-target="' + $input.attr('id') + '"]');
                 $value.text($input.val());
+                updateRangeProgress($input);
             });
         },
 

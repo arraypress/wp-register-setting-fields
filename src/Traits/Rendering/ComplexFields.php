@@ -302,26 +302,33 @@ trait ComplexFields {
 
 				<!-- Body Editor -->
 				<div class="setting-fields-email-body">
-					<div class="setting-fields-email-body-header">
-						<label for="<?php echo esc_attr( $id ); ?>_body">
-							<?php esc_html_e( 'Message', 'setting-fields' ); ?>
-						</label>
-						<?php if ( ! empty( $merge_tags ) ) : ?>
-							<button type="button" class="button setting-fields-insert-tag-btn" data-target="body" title="<?php esc_attr_e( 'Insert merge tag', 'setting-fields' ); ?>">
-								<span class="dashicons dashicons-shortcode"></span>
-								<?php esc_html_e( 'Insert Tag', 'setting-fields' ); ?>
-							</button>
-						<?php endif; ?>
-					</div>
+					<label for="<?php echo esc_attr( $id ); ?>_body">
+						<?php esc_html_e( 'Message', 'setting-fields' ); ?>
+					</label>
 					<?php
-					wp_editor( $value['body'], $id . '_body', [
+					// Add merge tags button next to media buttons via filter
+					$editor_id = $id . '_body';
+					
+					if ( ! empty( $merge_tags ) ) {
+						add_action( 'media_buttons', function( $id ) use ( $editor_id ) {
+							if ( $id === $editor_id ) {
+								echo '<button type="button" class="button setting-fields-insert-tag-btn" data-target="body" title="' . esc_attr__( 'Insert merge tag', 'setting-fields' ) . '">';
+								echo '<span class="dashicons dashicons-shortcode"></span> ';
+								echo esc_html__( 'Insert Tag', 'setting-fields' );
+								echo '</button>';
+							}
+						}, 20 );
+					}
+
+					wp_editor( $value['body'], $editor_id, [
 						'textarea_name' => $name . '[body]',
 						'textarea_rows' => $field['rows'] ?? 15,
-						'media_buttons' => $field['media_buttons'] ?? false,
+						'media_buttons' => true, // Always show so our tag button appears
 						'teeny'         => false,
 						'quicktags'     => true,
 					] );
 					?>
+				</div>
 				</div>
 
 				<!-- Action Buttons -->
