@@ -438,21 +438,30 @@
          */
         openMediaFrame: function ($field, type) {
             const self = this;
-            const library = $field.data('library') || (type === 'image' ? 'image' : 'all');
+            const library = $field.data('library') || (type === 'image' ? 'image' : '');
 
             let frameOptions = {
                 title: type === 'image' ? settingFieldsData.i18n.selectImage : settingFieldsData.i18n.selectFile,
                 button: {
                     text: type === 'image' ? settingFieldsData.i18n.useImage : settingFieldsData.i18n.useFile
                 },
-                multiple: false
+                multiple: false,
+                library: {}
             };
 
-            if (library !== 'all') {
-                frameOptions.library = {type: library};
+            // Set library type filter
+            if (library && library !== 'all') {
+                frameOptions.library.type = library;
             }
 
             const frame = wp.media(frameOptions);
+
+            // Force the library to filter when opened
+            frame.on('open', function () {
+                if (library && library !== 'all') {
+                    frame.state().get('library').props.set({type: library});
+                }
+            });
 
             frame.on('select', function () {
                 const attachment = frame.state().get('selection').first().toJSON();
@@ -507,11 +516,18 @@
         },
 
         openGalleryFrame: function ($field) {
+            const library = $field.data('library') || 'image';
+
             const frame = wp.media({
                 title: settingFieldsData.i18n.selectImages,
                 button: {text: settingFieldsData.i18n.useImages},
-                library: {type: 'image'},
+                library: {type: library},
                 multiple: true
+            });
+
+            // Force the library to filter when opened
+            frame.on('open', function () {
+                frame.state().get('library').props.set({type: library});
             });
 
             frame.on('select', function () {
