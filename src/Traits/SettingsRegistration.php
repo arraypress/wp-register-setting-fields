@@ -83,7 +83,57 @@ trait SettingsRegistration {
 		$defaults = [];
 
 		foreach ( $this->fields as $key => $field ) {
-			$defaults[ $key ] = $field['default'] ?? '';
+			$type = $field['type'] ?? 'text';
+
+			// Handle complex field types with structured defaults
+			switch ( $type ) {
+				case 'email_editor':
+					$defaults[ $key ] = $field['default'] ?? [
+						'enabled' => $field['default_enabled'] ?? true,
+						'subject' => $field['default_subject'] ?? '',
+						'body'    => $field['default_body'] ?? '',
+					];
+					break;
+
+				case 'dimensions':
+					$defaults[ $key ] = $field['default'] ?? [
+						'top'    => '',
+						'right'  => '',
+						'bottom' => '',
+						'left'   => '',
+						'unit'   => $field['default_unit'] ?? 'px',
+					];
+					break;
+
+				case 'link':
+					$defaults[ $key ] = $field['default'] ?? [
+						'url'    => '',
+						'text'   => '',
+						'target' => '_self',
+					];
+					break;
+
+				case 'group':
+					$sub_defaults = [];
+					if ( ! empty( $field['sub_fields'] ) ) {
+						foreach ( $field['sub_fields'] as $sub_key => $sub_field ) {
+							$sub_defaults[ $sub_key ] = $sub_field['default'] ?? '';
+						}
+					}
+					$defaults[ $key ] = $field['default'] ?? $sub_defaults;
+					break;
+
+				case 'checkbox_group':
+				case 'gallery':
+				case 'repeater':
+				case 'sortable':
+					$defaults[ $key ] = $field['default'] ?? [];
+					break;
+
+				default:
+					$defaults[ $key ] = $field['default'] ?? '';
+					break;
+			}
 		}
 
 		return $defaults;

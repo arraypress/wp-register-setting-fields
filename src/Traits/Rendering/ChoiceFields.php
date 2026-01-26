@@ -104,7 +104,7 @@ trait ChoiceFields {
 	 */
 	protected function render_select2( array $field, string $name, string $id, $value ): void {
 		$options  = $field['options'] ?? [];
-		$multiple = $field['multiple'] ?? true;
+		$multiple = $field['multiple'] ?? false;
 
 		if ( ! is_array( $value ) ) {
 			$value = $multiple && ! empty( $value ) ? [ $value ] : $value;

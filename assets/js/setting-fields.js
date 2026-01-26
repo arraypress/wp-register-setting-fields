@@ -27,6 +27,7 @@
             this.initDimensions();
             this.initEmailEditor();
             this.initSortable();
+            this.initCollapsibleGroups();
         },
 
         /**
@@ -857,8 +858,15 @@
                 var fieldId = $editor.data('field-id');
                 var settingsId = $editor.closest('.setting-fields-wrap').data('setting-id');
                 
-                var email = prompt('Enter email address to send test:');
-                if (!email) return;
+                // Get email from inline input
+                var $emailInput = $editor.find('.setting-fields-email-test-input');
+                var email = $emailInput.val();
+                
+                if (!email || !email.includes('@')) {
+                    $emailInput.focus();
+                    alert('Please enter a valid email address');
+                    return;
+                }
                 
                 // Get current values
                 var subject = $editor.find('.setting-fields-email-subject-input').val();
@@ -872,7 +880,8 @@
                 }
                 
                 var $btn = $(this);
-                $btn.prop('disabled', true).text('Sending...');
+                var originalHtml = $btn.html();
+                $btn.prop('disabled', true).html('<span class="dashicons dashicons-update spin"></span> Sending...');
                 
                 $.ajax({
                     url: settingFieldsData.restUrl + 'email/send-test',
@@ -897,7 +906,7 @@
                         alert(message);
                     },
                     complete: function() {
-                        $btn.prop('disabled', false).html('<span class="dashicons dashicons-email"></span> Send Test Email');
+                        $btn.prop('disabled', false).html(originalHtml);
                     }
                 });
             });
@@ -981,6 +990,34 @@
                     $input.prop('disabled', false);
                     $icon.removeClass('dashicons-hidden').addClass('dashicons-visibility');
                     $(this).attr('title', settingFieldsData.i18n?.disable || 'Disable');
+                }
+            });
+        },
+
+        /**
+         * Collapsible Groups
+         */
+        initCollapsibleGroups: function() {
+            // Toggle group collapse
+            $(document).on('click', '.setting-fields-group-toggle', function(e) {
+                e.preventDefault();
+                
+                var $group = $(this).closest('.setting-fields-group');
+                var $icon = $(this).find('.dashicons');
+                
+                $group.toggleClass('setting-fields-group--collapsed');
+                
+                if ($group.hasClass('setting-fields-group--collapsed')) {
+                    $icon.removeClass('dashicons-arrow-up-alt2').addClass('dashicons-arrow-down-alt2');
+                } else {
+                    $icon.removeClass('dashicons-arrow-down-alt2').addClass('dashicons-arrow-up-alt2');
+                }
+            });
+            
+            // Also allow clicking on header (but not toggle button which handles itself)
+            $(document).on('click', '.setting-fields-group-header', function(e) {
+                if (!$(e.target).closest('.setting-fields-group-toggle').length) {
+                    $(this).find('.setting-fields-group-toggle').trigger('click');
                 }
             });
         }

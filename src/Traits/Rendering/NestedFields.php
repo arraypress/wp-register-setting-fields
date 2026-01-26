@@ -30,9 +30,13 @@ trait NestedFields {
 	 * @return void
 	 */
 	protected function render_group( array $field, string $name, string $id, $value ): void {
-		$sub_fields = $field['sub_fields'] ?? [];
-		$value      = is_array( $value ) ? $value : [];
-		$layout     = $field['layout'] ?? 'block'; // block, row, table
+		$sub_fields  = $field['sub_fields'] ?? [];
+		$value       = is_array( $value ) ? $value : [];
+		$layout      = $field['layout'] ?? 'block'; // block, row, table
+		$collapsible = $field['collapsible'] ?? false;
+		$collapsed   = $field['collapsed'] ?? false; // Start collapsed
+		$title       = $field['title'] ?? $field['label'] ?? '';
+		$description = $field['group_description'] ?? '';
 
 		$class = 'setting-fields-group';
 		if ( $layout === 'row' ) {
@@ -41,59 +45,84 @@ trait NestedFields {
 			$class .= ' setting-fields-group--table';
 		}
 
+		if ( $collapsible ) {
+			$class .= ' setting-fields-group--collapsible';
+			if ( $collapsed ) {
+				$class .= ' setting-fields-group--collapsed';
+			}
+		}
+
 		?>
-		<div class="<?php echo esc_attr( $class ); ?>">
-			<?php if ( $layout === 'table' ) : ?>
-			<table class="form-table">
-				<?php endif; ?>
+		<div class="<?php echo esc_attr( $class ); ?>" data-collapsible="<?php echo $collapsible ? 'true' : 'false'; ?>">
+			<?php if ( $collapsible ) : ?>
+				<div class="setting-fields-group-header">
+					<div class="setting-fields-group-header-content">
+						<?php if ( $title ) : ?>
+							<h4 class="setting-fields-group-title"><?php echo esc_html( $title ); ?></h4>
+						<?php endif; ?>
+						<?php if ( $description ) : ?>
+							<p class="setting-fields-group-description"><?php echo esc_html( $description ); ?></p>
+						<?php endif; ?>
+					</div>
+					<button type="button" class="setting-fields-group-toggle">
+						<span class="dashicons dashicons-arrow-<?php echo $collapsed ? 'down' : 'up'; ?>-alt2"></span>
+					</button>
+				</div>
+			<?php endif; ?>
 
-				<?php foreach ( $sub_fields as $sub_key => $sub_field ) :
-					$sub_name  = $name . '[' . $sub_key . ']';
-					$sub_id    = $id . '_' . $sub_key;
-					$sub_value = $value[ $sub_key ] ?? ( $sub_field['default'] ?? '' );
-					?>
+			<div class="setting-fields-group-content">
+				<?php if ( $layout === 'table' ) : ?>
+				<table class="form-table">
+					<?php endif; ?>
 
-					<?php if ( $layout === 'table' ) : ?>
-					<tr>
-						<th scope="row">
+					<?php foreach ( $sub_fields as $sub_key => $sub_field ) :
+						$sub_name  = $name . '[' . $sub_key . ']';
+						$sub_id    = $id . '_' . $sub_key;
+						$sub_value = $value[ $sub_key ] ?? ( $sub_field['default'] ?? '' );
+						?>
+
+						<?php if ( $layout === 'table' ) : ?>
+						<tr>
+							<th scope="row">
+								<?php if ( ! empty( $sub_field['label'] ) ) : ?>
+									<label for="<?php echo esc_attr( $sub_id ); ?>">
+										<?php echo esc_html( $sub_field['label'] ); ?>
+									</label>
+								<?php endif; ?>
+							</th>
+							<td>
+								<?php
+								$this->render_field( $sub_key, $sub_field, $sub_name, $sub_id, $sub_value );
+								if ( ! empty( $sub_field['description'] ) ) {
+									echo '<p class="description">' . wp_kses_post( $sub_field['description'] ) . '</p>';
+								}
+								?>
+							</td>
+						</tr>
+					<?php else : ?>
+						<div class="setting-fields-group-field">
 							<?php if ( ! empty( $sub_field['label'] ) ) : ?>
-								<label for="<?php echo esc_attr( $sub_id ); ?>">
+								<label for="<?php echo esc_attr( $sub_id ); ?>" class="setting-fields-group-label">
 									<?php echo esc_html( $sub_field['label'] ); ?>
 								</label>
 							<?php endif; ?>
-						</th>
-						<td>
-							<?php
-							$this->render_field( $sub_key, $sub_field, $sub_name, $sub_id, $sub_value );
-							if ( ! empty( $sub_field['description'] ) ) {
-								echo '<p class="description">' . wp_kses_post( $sub_field['description'] ) . '</p>';
-							}
-							?>
-						</td>
-					</tr>
-				<?php else : ?>
-					<div class="setting-fields-group-field">
-						<?php if ( ! empty( $sub_field['label'] ) ) : ?>
-							<label for="<?php echo esc_attr( $sub_id ); ?>" class="setting-fields-group-label">
-								<?php echo esc_html( $sub_field['label'] ); ?>
-							</label>
-						<?php endif; ?>
 
-						<div class="setting-fields-group-input">
-							<?php $this->render_field( $sub_key, $sub_field, $sub_name, $sub_id, $sub_value ); ?>
+							<div class="setting-fields-group-input">
+								<?php $this->render_field( $sub_key, $sub_field, $sub_name, $sub_id, $sub_value ); ?>
+							</div>
+
+							<?php if ( ! empty( $sub_field['description'] ) ) : ?>
+								<p class="description"><?php echo wp_kses_post( $sub_field['description'] ); ?></p>
+							<?php endif; ?>
 						</div>
+					<?php endif; ?>
 
-						<?php if ( ! empty( $sub_field['description'] ) ) : ?>
-							<p class="description"><?php echo wp_kses_post( $sub_field['description'] ); ?></p>
-						<?php endif; ?>
-					</div>
-				<?php endif; ?>
+					<?php endforeach; ?>
 
-				<?php endforeach; ?>
-
-				<?php if ( $layout === 'table' ) : ?>
-			</table>
-		<?php endif; ?>
+					<?php if ( $layout === 'table' ) : ?>
+				</table>
+			<?php endif; ?>
+			</div>
 		</div>
 		<?php
 	}

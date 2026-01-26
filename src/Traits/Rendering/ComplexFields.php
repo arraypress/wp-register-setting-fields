@@ -350,10 +350,16 @@ trait ComplexFields {
 							</button>
 						<?php endif; ?>
 						<?php if ( $show_send_test ) : ?>
-							<button type="button" class="button setting-fields-email-send-test">
-								<span class="dashicons dashicons-email"></span>
-								<?php esc_html_e( 'Send Test Email', 'setting-fields' ); ?>
-							</button>
+							<div class="setting-fields-email-test-wrap">
+								<input type="email" 
+								       class="setting-fields-email-test-input" 
+								       placeholder="<?php esc_attr_e( 'test@example.com', 'setting-fields' ); ?>"
+								       value="<?php echo esc_attr( wp_get_current_user()->user_email ); ?>" />
+								<button type="button" class="button setting-fields-email-send-test">
+									<span class="dashicons dashicons-email"></span>
+									<?php esc_html_e( 'Send Test', 'setting-fields' ); ?>
+								</button>
+							</div>
 						<?php endif; ?>
 					</div>
 				<?php endif; ?>
@@ -382,7 +388,8 @@ trait ComplexFields {
 									<button type="button" 
 									        class="setting-fields-tag-item" 
 									        data-tag="<?php echo esc_attr( $tag_value ); ?>"
-									        data-label="<?php echo esc_attr( $tag_label ); ?>">
+									        data-label="<?php echo esc_attr( $tag_label ); ?>"
+									        <?php if ( $tag_description ) : ?>title="<?php echo esc_attr( $tag_description ); ?>"<?php endif; ?>>
 										<span class="setting-fields-tag-code"><?php echo esc_html( $tag_value ); ?></span>
 										<span class="setting-fields-tag-label"><?php echo esc_html( $tag_label ); ?></span>
 										<?php if ( $tag_description ) : ?>
