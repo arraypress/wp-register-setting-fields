@@ -1022,6 +1022,12 @@
     padding: 12px 15px;
     background: #f6f7f7;
     border-bottom: 1px solid #e5e5e5;
+    cursor: pointer;
+    user-select: none;
+}
+
+.setting-fields-repeater-row-header:hover {
+    background: #f0f0f1;
 }
 
 .setting-fields-repeater-row--collapsed .setting-fields-repeater-row-header {
@@ -1732,12 +1738,8 @@ h4.setting-fields-heading-title {
 
 /* Spinning animation for loading state */
 @keyframes setting-fields-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .setting-fields-email-actions .dashicons.spin {
