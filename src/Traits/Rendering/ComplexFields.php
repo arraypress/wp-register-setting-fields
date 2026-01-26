@@ -383,4 +383,66 @@ trait ComplexFields {
 		<?php
 	}
 
+	/**
+	 * Render a sortable list field.
+	 *
+	 * @param array  $field Field configuration.
+	 * @param string $name  Input name.
+	 * @param string $id    Input id.
+	 * @param mixed  $value Current value.
+	 *
+	 * @return void
+	 */
+	protected function render_sortable( array $field, string $name, string $id, $value ): void {
+		$value   = is_array( $value ) ? array_values( $value ) : [];
+		$options = $field['options'] ?? [];
+
+		// If options provided, use them; otherwise just render the saved values
+		if ( ! empty( $options ) ) {
+			// Merge saved order with available options
+			$all_items    = [];
+			$saved_lookup = array_flip( $value );
+
+			// First add saved items in their order
+			foreach ( $value as $v ) {
+				if ( isset( $options[ $v ] ) || in_array( $v, $options, true ) ) {
+					$all_items[] = $v;
+				}
+			}
+
+			// Then add remaining options not yet in list
+			foreach ( $options as $key => $label ) {
+				$item_value = is_numeric( $key ) ? $label : $key;
+				if ( ! in_array( $item_value, $all_items, true ) ) {
+					$all_items[] = $item_value;
+				}
+			}
+		} else {
+			$all_items = $value;
+		}
+
+		?>
+		<div class="setting-fields-sortable" data-field-id="<?php echo esc_attr( $id ); ?>">
+			<ul class="setting-fields-sortable-list">
+				<?php foreach ( $all_items as $item ) :
+					$label     = $options[ $item ] ?? $item;
+					$is_active = in_array( $item, $value, true );
+					?>
+					<li class="setting-fields-sortable-item<?php echo $is_active ? ' setting-fields-sortable-item--active' : ''; ?>" data-value="<?php echo esc_attr( $item ); ?>">
+						<span class="setting-fields-sortable-handle dashicons dashicons-menu"></span>
+						<span class="setting-fields-sortable-label"><?php echo esc_html( $label ); ?></span>
+						<input type="hidden"
+						       name="<?php echo esc_attr( $name ); ?>[]"
+						       value="<?php echo esc_attr( $item ); ?>"
+							<?php echo $is_active ? '' : 'disabled'; ?> />
+						<button type="button" class="setting-fields-sortable-toggle" title="<?php echo $is_active ? esc_attr__( 'Disable', 'setting-fields' ) : esc_attr__( 'Enable', 'setting-fields' ); ?>">
+							<span class="dashicons <?php echo $is_active ? 'dashicons-visibility' : 'dashicons-hidden'; ?>"></span>
+						</button>
+					</li>
+				<?php endforeach; ?>
+			</ul>
+		</div>
+		<?php
+	}
+
 }

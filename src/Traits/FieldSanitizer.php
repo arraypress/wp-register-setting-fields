@@ -40,33 +40,40 @@ trait FieldSanitizer {
 		 */
 		$value = apply_filters( 'setting_fields_pre_sanitize_value', $value, $field, $key );
 
-		$sanitized = match ( $type ) {
-			'text', 'password' => sanitize_text_field( (string) $value ),
-			'textarea' => sanitize_textarea_field( (string) $value ),
-			'email' => sanitize_email( (string) $value ),
-			'url' => esc_url_raw( (string) $value ),
-			'tel' => $this->sanitize_tel( $value ),
-			'number', 'range' => $this->sanitize_number( $value, $field ),
-			'checkbox', 'toggle' => $this->sanitize_boolean( $value ),
-			'select', 'radio', 'button_group' => $this->sanitize_choice( $value, $field ),
-			'select2', 'select_multiple', 'checkbox_group' => $this->sanitize_multiple_choice( $value, $field ),
-			'wysiwyg' => wp_kses_post( (string) $value ),
-			'code' => $value, // Allow raw code
-			'color' => sanitize_hex_color( (string) $value ) ?: '',
-			'date' => $this->sanitize_date( $value ),
-			'time' => $this->sanitize_time( $value ),
-			'datetime' => $this->sanitize_datetime( $value ),
-			'image', 'file' => $this->sanitize_attachment( $value ),
-			'gallery' => $this->sanitize_gallery( $value ),
-			'link' => $this->sanitize_link( $value ),
-			'post', 'post_ajax' => $this->sanitize_post_id( $value, $field ),
-			'taxonomy', 'taxonomy_ajax' => $this->sanitize_term_id( $value, $field ),
-			'user', 'user_ajax' => $this->sanitize_user_id( $value, $field ),
-			'dimensions' => $this->sanitize_dimensions( $value ),
-			'repeater' => $this->sanitize_repeater( $value, $field ),
-			'group' => $this->sanitize_group( $value, $field ),
-			default => sanitize_text_field( (string) $value ),
-		};
+		// Check for custom sanitize callback first
+		if ( ! empty( $field['sanitize_callback'] ) && is_callable( $field['sanitize_callback'] ) ) {
+			$sanitized = call_user_func( $field['sanitize_callback'], $value, $field, $key );
+		} else {
+			$sanitized = match ( $type ) {
+				'text', 'password' => sanitize_text_field( (string) $value ),
+				'textarea' => sanitize_textarea_field( (string) $value ),
+				'email' => sanitize_email( (string) $value ),
+				'url' => esc_url_raw( (string) $value ),
+				'tel' => $this->sanitize_tel( $value ),
+				'number', 'range' => $this->sanitize_number( $value, $field ),
+				'checkbox', 'toggle' => $this->sanitize_boolean( $value ),
+				'select', 'radio', 'button_group' => $this->sanitize_choice( $value, $field ),
+				'select2', 'select_multiple', 'checkbox_group' => $this->sanitize_multiple_choice( $value, $field ),
+				'wysiwyg' => wp_kses_post( (string) $value ),
+				'code' => $value, // Allow raw code
+				'color' => sanitize_hex_color( (string) $value ) ?: '',
+				'date' => $this->sanitize_date( $value ),
+				'time' => $this->sanitize_time( $value ),
+				'datetime' => $this->sanitize_datetime( $value ),
+				'image', 'file' => $this->sanitize_attachment( $value ),
+				'gallery' => $this->sanitize_gallery( $value ),
+				'link' => $this->sanitize_link( $value ),
+				'post', 'post_ajax' => $this->sanitize_post_id( $value, $field ),
+				'taxonomy', 'taxonomy_ajax' => $this->sanitize_term_id( $value, $field ),
+				'user', 'user_ajax' => $this->sanitize_user_id( $value, $field ),
+				'dimensions' => $this->sanitize_dimensions( $value ),
+				'repeater' => $this->sanitize_repeater( $value, $field ),
+				'group' => $this->sanitize_group( $value, $field ),
+				'sortable' => $this->sanitize_sortable( $value ),
+				'email_editor' => $this->sanitize_email_editor( $value ),
+				default => sanitize_text_field( (string) $value ),
+			};
+		}
 
 		/**
 		 * Filter the sanitized value.
@@ -103,7 +110,7 @@ trait FieldSanitizer {
 		$step  = $field['step'] ?? 1;
 
 		// Determine if we should return int or float
-		if ( is_float( $step ) || strpos( (string) $step, '.' ) !== false ) {
+		if ( is_float( $step ) || str_contains( (string) $step, '.' ) ) {
 			$value = (float) $value;
 		} else {
 			$value = (int) $value;
@@ -471,6 +478,44 @@ trait FieldSanitizer {
 		}
 
 		return $sanitized;
+	}
+
+	/**
+	 * Sanitize sortable field.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return array
+	 */
+	protected function sanitize_sortable( $value ): array {
+		if ( ! is_array( $value ) ) {
+			return [];
+		}
+
+		return array_values( array_map( 'sanitize_text_field', $value ) );
+	}
+
+	/**
+	 * Sanitize email editor field.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return array
+	 */
+	protected function sanitize_email_editor( $value ): array {
+		if ( ! is_array( $value ) ) {
+			return [
+				'enabled' => true,
+				'subject' => '',
+				'body'    => '',
+			];
+		}
+
+		return [
+			'enabled' => ! empty( $value['enabled'] ),
+			'subject' => sanitize_text_field( $value['subject'] ?? '' ),
+			'body'    => wp_kses_post( $value['body'] ?? '' ),
+		];
 	}
 
 }

@@ -103,6 +103,7 @@ trait FieldRenderer {
 			'dimensions' => $this->render_dimensions( $field, $name, $id, $value ),
 			'oembed' => $this->render_oembed( $field, $name, $id, $value ),
 			'email_editor' => $this->render_email_editor( $field, $name, $id, $value ),
+			'sortable' => $this->render_sortable( $field, $name, $id, $value ),
 
 			// Relational
 			'post' => $this->render_post_select( $field, $name, $id, $value ),

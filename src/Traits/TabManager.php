@@ -66,14 +66,14 @@ trait TabManager {
 			return;
 		}
 
-		echo '<nav class="nav-tab-wrapper setting-fields-tabs">';
+		echo '<nav class="setting-fields-tabs-nav">';
 
 		foreach ( $this->tabs as $tab_key => $tab ) {
-			$active_class = ( $tab_key === $current_tab ) ? ' nav-tab-active' : '';
+			$active_class = ( $tab_key === $current_tab ) ? ' setting-fields-tab-active' : '';
 			$url          = $this->get_tab_url( $tab_key );
 
 			printf(
-				'<a href="%s" class="nav-tab%s">%s%s</a>',
+				'<a href="%s" class="setting-fields-tab%s">%s%s</a>',
 				esc_url( $url ),
 				esc_attr( $active_class ),
 				! empty( $tab['icon'] ) ? '<span class="dashicons ' . esc_attr( $tab['icon'] ) . '"></span> ' : '',

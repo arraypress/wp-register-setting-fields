@@ -25,6 +25,7 @@
             this.initButtonGroup();
             this.initDimensions();
             this.initEmailEditor();
+            this.initSortable();
         },
 
         /**
@@ -879,6 +880,52 @@
             var div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        },
+
+        /**
+         * Sortable Field
+         */
+        initSortable: function() {
+            var $sortables = $('.setting-fields-sortable-list');
+            
+            if (!$sortables.length) return;
+
+            // Initialize jQuery UI sortable
+            $sortables.sortable({
+                handle: '.setting-fields-sortable-handle',
+                placeholder: 'setting-fields-sortable-placeholder',
+                update: function(event, ui) {
+                    // Reorder hidden inputs to match visual order
+                    var $list = $(this);
+                    $list.find('.setting-fields-sortable-item').each(function(index) {
+                        var $input = $(this).find('input[type="hidden"]');
+                        $input.attr('name', $input.attr('name')); // Force refresh
+                    });
+                }
+            });
+
+            // Toggle item active state
+            $(document).on('click', '.setting-fields-sortable-toggle', function(e) {
+                e.preventDefault();
+                
+                var $item = $(this).closest('.setting-fields-sortable-item');
+                var $input = $item.find('input[type="hidden"]');
+                var $icon = $(this).find('.dashicons');
+                
+                if ($item.hasClass('setting-fields-sortable-item--active')) {
+                    // Deactivate
+                    $item.removeClass('setting-fields-sortable-item--active');
+                    $input.prop('disabled', true);
+                    $icon.removeClass('dashicons-visibility').addClass('dashicons-hidden');
+                    $(this).attr('title', settingFieldsData.i18n?.enable || 'Enable');
+                } else {
+                    // Activate
+                    $item.addClass('setting-fields-sortable-item--active');
+                    $input.prop('disabled', false);
+                    $icon.removeClass('dashicons-hidden').addClass('dashicons-visibility');
+                    $(this).attr('title', settingFieldsData.i18n?.disable || 'Disable');
+                }
+            });
         }
     };
 

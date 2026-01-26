@@ -269,23 +269,12 @@ class SettingFields {
 		// Get current tab
 		$current_tab = $this->get_current_tab();
 
-		// Check if we have a branded header
-		$has_branded_header = ! empty( $this->config['logo'] );
-
 		?>
-		<div class="wrap setting-fields-wrap<?php echo $has_branded_header ? ' setting-fields-wrap--branded' : ''; ?>" data-setting-id="<?php echo esc_attr( $this->id ); ?>">
+		<div class="wrap setting-fields-wrap" data-setting-id="<?php echo esc_attr( $this->id ); ?>">
 
-			<?php if ( $has_branded_header ) : ?>
-				<?php $this->render_branded_header(); ?>
-			<?php elseif ( $this->config['show_title'] ) : ?>
-				<h1><?php echo esc_html( $this->config['page_title'] ); ?></h1>
-			<?php endif; ?>
+			<?php $this->render_header( $current_tab ); ?>
 
 			<?php settings_errors( $this->config['option_group'] ); ?>
-
-			<?php if ( $this->config['show_tabs'] && ! empty( $this->tabs ) ) : ?>
-				<?php $this->render_tabs( $current_tab ); ?>
-			<?php endif; ?>
 
 			<form method="post" action="options.php" class="setting-fields-form">
 				<?php
@@ -304,27 +293,35 @@ class SettingFields {
 	}
 
 	/**
-	 * Render the branded header with logo and title.
+	 * Render the modern header with optional logo and integrated tabs.
+	 *
+	 * @param string $current_tab Current active tab.
 	 *
 	 * @return void
 	 */
-	protected function render_branded_header(): void {
-		$logo_url     = $this->config['logo'];
+	protected function render_header( string $current_tab ): void {
+		$logo_url     = $this->config['logo'] ?? '';
 		$header_title = ! empty( $this->config['header_title'] ) ? $this->config['header_title'] : $this->config['page_title'];
-		$header_class = 'setting-fields-header';
-
-		if ( ! empty( $this->config['header_class'] ) ) {
-			$header_class .= ' ' . $this->config['header_class'];
-		}
+		$show_title   = $this->config['show_title'] ?? true;
 
 		?>
-		<div class="<?php echo esc_attr( $header_class ); ?>">
-			<div class="setting-fields-header-branding">
-				<?php if ( $logo_url ) : ?>
-					<img src="<?php echo esc_url( $logo_url ); ?>" alt="" class="setting-fields-header-logo">
-				<?php endif; ?>
-				<h1 class="setting-fields-header-title"><?php echo esc_html( $header_title ); ?></h1>
+		<div class="setting-fields-header">
+			<div class="setting-fields-header-top">
+				<div class="setting-fields-header-branding">
+					<?php if ( $logo_url ) : ?>
+						<img src="<?php echo esc_url( $logo_url ); ?>" alt="" class="setting-fields-header-logo">
+					<?php endif; ?>
+					<?php if ( $show_title ) : ?>
+						<h1 class="setting-fields-header-title"><?php echo esc_html( $header_title ); ?></h1>
+					<?php endif; ?>
+				</div>
 			</div>
+
+			<?php if ( $this->config['show_tabs'] && ! empty( $this->tabs ) ) : ?>
+				<div class="setting-fields-header-tabs">
+					<?php $this->render_tabs( $current_tab ); ?>
+				</div>
+			<?php endif; ?>
 		</div>
 		<?php
 	}
