@@ -90,8 +90,8 @@
 
 .setting-fields-header-tabs {
     padding: 0 20px;
-    border-top: 1px solid #f0f0f0;
-    background: #f6f7f7;
+    border-top: 1px solid #dcdcde;
+    background: #fff;
 }
 
 /* Notices container - below header */
@@ -928,38 +928,55 @@
     max-width: none;
 }
 
-.setting-fields-repeater-table thead th.setting-fields-repeater-sort-col,
-.setting-fields-repeater-table tbody td:first-child {
-    width: 32px;
-    min-width: 32px;
-    max-width: 32px;
+/* Sort column (first) */
+.setting-fields-repeater-table thead th.setting-fields-repeater-sort-col {
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
     padding: 8px;
     text-align: center;
-    vertical-align: middle;
-}
-
-.setting-fields-repeater-table thead th.setting-fields-repeater-sort-col {
     background: #f6f7f7;
 }
 
-.setting-fields-repeater-table thead th.setting-fields-repeater-actions-col,
-.setting-fields-repeater-table tbody td:last-child {
+.setting-fields-repeater-table tbody td.setting-fields-repeater-sort {
     width: 40px;
     min-width: 40px;
     max-width: 40px;
     padding: 8px;
     text-align: center;
     vertical-align: middle;
-}
-
-.setting-fields-repeater-sort {
     cursor: move;
     color: #a7aaad;
-    display: inline-block;
+    background: transparent;
 }
 
-.setting-fields-repeater-sort:hover {
+.setting-fields-repeater-table tbody td.setting-fields-repeater-sort:hover {
     color: #646970;
+}
+
+.setting-fields-repeater-table tbody td.setting-fields-repeater-sort .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    line-height: 1;
+}
+
+/* Actions column (last) */
+.setting-fields-repeater-table thead th.setting-fields-repeater-actions-col {
+    width: 50px;
+    min-width: 50px;
+    max-width: 50px;
+    padding: 8px;
+    text-align: center;
+}
+
+.setting-fields-repeater-table tbody td.setting-fields-repeater-actions {
+    width: 50px;
+    min-width: 50px;
+    max-width: 50px;
+    padding: 8px;
+    text-align: center;
+    vertical-align: middle;
 }
 
 .setting-fields-repeater-remove {
@@ -969,10 +986,19 @@
     padding: 4px;
     cursor: pointer;
     transition: color 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .setting-fields-repeater-remove:hover {
     color: #d63638;
+}
+
+.setting-fields-repeater-remove .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
 }
 
 /* Block layout repeater rows (card style) */
@@ -1706,8 +1732,12 @@ h4.setting-fields-heading-title {
 
 /* Spinning animation for loading state */
 @keyframes setting-fields-spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .setting-fields-email-actions .dashicons.spin {
