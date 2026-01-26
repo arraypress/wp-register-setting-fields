@@ -129,7 +129,12 @@
     margin: 0;
     padding: 0;
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}
+
+.setting-fields-tabs-nav::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
 }
 
 .setting-fields-tab {
@@ -849,7 +854,11 @@
     max-width: 32px;
     padding: 8px;
     text-align: center;
-    background: #f9f9f9;
+    vertical-align: middle;
+}
+
+.setting-fields-repeater-table thead th.setting-fields-repeater-sort-col {
+    background: #f6f7f7;
 }
 
 .setting-fields-repeater-table thead th.setting-fields-repeater-actions-col,
@@ -859,6 +868,7 @@
     max-width: 40px;
     padding: 8px;
     text-align: center;
+    vertical-align: middle;
 }
 
 .setting-fields-repeater-sort {
@@ -1368,9 +1378,6 @@ h4.setting-fields-heading-title {
     margin-bottom: 20px;
     padding-bottom: 15px;
     border-bottom: 1px solid #e5e5e5;
-}
-
-.setting-fields-email-enable .setting-fields-toggle-wrap {
     display: flex;
     align-items: center;
     gap: 10px;

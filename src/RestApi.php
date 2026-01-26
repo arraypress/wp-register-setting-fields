@@ -246,21 +246,45 @@ class RestApi {
 				'<!DOCTYPE html><html><head><meta charset="utf-8"><title>%s</title></head><body style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto;"><h2 style="margin-bottom: 20px;">%s</h2><hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">%s</body></html>',
 				esc_html( $subject ),
 				esc_html( $subject ),
-				$body
+				wpautop( $body )
 			);
 
 			return new WP_REST_Response( [ 'html' => $html ], 200 );
 		}
 
 		try {
-			$result = call_user_func( $callback, $subject, $body );
+			// Pass data as array for callback
+			$data = [
+				'subject'     => $subject,
+				'body'        => $body,
+				'settings_id' => $settings_id,
+				'field_key'   => $field_key,
+				'field'       => $field,
+			];
+
+			$result = call_user_func( $callback, $data );
 
 			// Handle different return types
 			if ( is_string( $result ) ) {
 				return new WP_REST_Response( [ 'html' => $result ], 200 );
 			}
 
-			if ( is_array( $result ) && isset( $result['html'] ) ) {
+			if ( is_array( $result ) ) {
+				// If result has 'html' key, use it
+				if ( isset( $result['html'] ) ) {
+					return new WP_REST_Response( $result, 200 );
+				}
+				// If result has 'subject' and 'body', format as HTML
+				if ( isset( $result['subject'] ) && isset( $result['body'] ) ) {
+					$html = sprintf(
+						'<!DOCTYPE html><html><head><meta charset="utf-8"><title>%s</title></head><body style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto;"><h2 style="margin-bottom: 20px;">%s</h2><hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">%s</body></html>',
+						esc_html( $result['subject'] ),
+						esc_html( $result['subject'] ),
+						$result['body']
+					);
+					return new WP_REST_Response( [ 'html' => $html ], 200 );
+				}
+				// Return as is
 				return new WP_REST_Response( $result, 200 );
 			}
 
@@ -304,16 +328,41 @@ class RestApi {
 		$callback = $field['send_callback'] ?? null;
 
 		if ( ! is_callable( $callback ) ) {
-			return new WP_Error( 'no_callback', __( 'No send callback configured for this email field.', 'setting-fields' ), [ 'status' => 400 ] );
-		}
+			// Fallback: send email using wp_mail
+			$headers = [ 'Content-Type: text/html; charset=UTF-8' ];
+			$sent    = wp_mail( $email, $subject, wpautop( $body ), $headers );
 
-		try {
-			$result = call_user_func( $callback, $email, $subject, $body );
-
-			if ( $result === true || ( is_array( $result ) && ! empty( $result['success'] ) ) ) {
+			if ( $sent ) {
 				return new WP_REST_Response( [
 					'success' => true,
 					'message' => sprintf( __( 'Test email sent to %s', 'setting-fields' ), $email ),
+				], 200 );
+			}
+
+			return new WP_Error( 'send_failed', __( 'Failed to send test email. Check your server mail configuration.', 'setting-fields' ), [ 'status' => 500 ] );
+		}
+
+		try {
+			// Pass data as array for callback
+			$data = [
+				'to'          => $email,
+				'subject'     => $subject,
+				'body'        => $body,
+				'settings_id' => $settings_id,
+				'field_key'   => $field_key,
+				'field'       => $field,
+			];
+
+			$result = call_user_func( $callback, $data );
+
+			if ( $result === true || ( is_array( $result ) && ! empty( $result['success'] ) ) ) {
+				$message = is_array( $result ) && isset( $result['message'] ) 
+					? $result['message'] 
+					: sprintf( __( 'Test email sent to %s', 'setting-fields' ), $email );
+
+				return new WP_REST_Response( [
+					'success' => true,
+					'message' => $message,
 				], 200 );
 			}
 

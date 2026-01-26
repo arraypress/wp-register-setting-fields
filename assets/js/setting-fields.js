@@ -35,14 +35,14 @@
         repositionNotices: function() {
             var $wrap = $('.setting-fields-wrap');
             var $noticesContainer = $wrap.find('.setting-fields-notices');
-
+            
             if (!$noticesContainer.length) return;
-
+            
             // Move any notices that appear before or after the header into our container
             $wrap.find('.notice, .updated, .error').not('.setting-fields-notices .notice, .setting-fields-notices .updated, .setting-fields-notices .error').each(function() {
                 $(this).appendTo($noticesContainer);
             });
-
+            
             // Also catch notices WordPress injects at wrap level
             $wrap.siblings('.notice, .updated, .error').each(function() {
                 $(this).appendTo($noticesContainer);
@@ -211,7 +211,7 @@
                             field_type: $select.data('field-type') || 'ajax',
                             search: params.term || ''
                         };
-
+                        
                         if ($select.data('post-type')) {
                             data.post_type = $select.data('post-type');
                         }
@@ -221,7 +221,7 @@
                         if ($select.data('role')) {
                             data.role = $select.data('role');
                         }
-
+                        
                         return data;
                     },
                     processResults: function(data) {
@@ -231,7 +231,7 @@
                                 text: item.label
                             };
                         });
-
+                        
                         return { results: results };
                     },
                     cache: true
@@ -257,7 +257,7 @@
                 if (currentValues && currentValues.length) {
                     var ids = Array.isArray(currentValues) ? currentValues : [currentValues];
                     ids = ids.filter(function(id) { return id && id !== ''; });
-
+                    
                     if (ids.length > 0) {
                         this.hydrateSelect2($select, ids);
                     }
@@ -294,9 +294,9 @@
                 }
             }).done(function(response) {
                 var results = response.results || response;
-
+                
                 $select.empty();
-
+                
                 results.forEach(function(item) {
                     var option = new Option(item.label, item.value, true, true);
                     $select.append(option);
@@ -455,10 +455,10 @@
                 const attachment = frame.state().get('selection').first().toJSON();
 
                 if (type === 'image') {
-                    const url = attachment.sizes && attachment.sizes.thumbnail
-                        ? attachment.sizes.thumbnail.url
+                    const url = attachment.sizes && attachment.sizes.thumbnail 
+                        ? attachment.sizes.thumbnail.url 
                         : attachment.url;
-
+                    
                     $field.find('.setting-fields-image-value').val(attachment.id).trigger('change');
                     $field.find('.setting-fields-image-preview').removeClass('hidden').find('img').attr('src', url);
                     $field.find('.setting-fields-image-select').addClass('hidden');
@@ -517,8 +517,8 @@
                 const name = $field.data('name');
 
                 attachments.forEach(function(attachment) {
-                    const url = attachment.sizes && attachment.sizes.thumbnail
-                        ? attachment.sizes.thumbnail.url
+                    const url = attachment.sizes && attachment.sizes.thumbnail 
+                        ? attachment.sizes.thumbnail.url 
                         : attachment.url;
 
                     const $item = $('<div class="setting-fields-gallery-item" data-id="' + attachment.id + '">' +
@@ -593,7 +593,7 @@
 
         initRowFields: function($row) {
             var self = this;
-
+            
             // Initialize Select2 in new row
             $row.find('.setting-fields-select2').each(function() {
                 if (!$(this).hasClass('select2-hidden-accessible')) {
@@ -615,7 +615,7 @@
 
             $repeater.find('.setting-fields-repeater-row').each(function(index) {
                 $(this).attr('data-index', index);
-
+                
                 $(this).find('[name]').each(function() {
                     const currentName = $(this).attr('name');
                     const newName = currentName.replace(/\[\d+\]/, '[' + index + ']');
@@ -647,7 +647,7 @@
             $(document).on('click', '.setting-fields-button-group label', function(e) {
                 const $label = $(this);
                 const $input = $label.prev('input[type="radio"]');
-
+                
                 if ($input.length && !$input.prop('checked')) {
                     $input.prop('checked', true).trigger('change');
                 }
@@ -662,7 +662,7 @@
                 e.preventDefault();
                 const $field = $(this).closest('.setting-fields-dimensions-field');
                 const isLinked = $field.attr('data-linked') === 'true';
-
+                
                 $field.attr('data-linked', !isLinked ? 'true' : 'false');
                 $(this).find('.dashicons')
                     .toggleClass('dashicons-admin-links', !isLinked)
@@ -682,87 +682,77 @@
          */
         initEmailEditor: function() {
             var self = this;
-
+            
             // Enable/disable toggle
             $(document).on('change', '.setting-fields-email-enable-checkbox', function() {
                 var $editor = $(this).closest('.setting-fields-email-editor');
                 var $content = $editor.find('.setting-fields-email-content');
-
+                
                 if ($(this).is(':checked')) {
                     $content.removeClass('setting-fields-email-disabled');
                 } else {
                     $content.addClass('setting-fields-email-disabled');
                 }
             });
-
+            
             // Open merge tags modal
             $(document).on('click', '.setting-fields-insert-tag-btn', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-
-                console.log('Insert tag button clicked');
-
+                
                 var $btn = $(this);
                 var target = $btn.data('target'); // 'subject' or 'body'
                 var editorId = $btn.data('editor-id'); // May be set on body button
-
-                console.log('Target:', target, 'Editor ID:', editorId);
-
+                
                 // Find the editor container - try data attribute first, then DOM traversal
                 var $editor;
                 if (editorId) {
                     $editor = $('.setting-fields-email-editor[data-field-id="' + editorId + '"]');
-                    console.log('Found by data-field-id:', $editor.length);
-                }
-
+                } 
+                
                 if (!$editor || !$editor.length) {
                     $editor = $btn.closest('.setting-fields-email-editor');
-                    console.log('Found by closest:', $editor.length);
                 }
-
+                
                 if (!$editor || !$editor.length) {
-                    // Try finding any email editor on the page
-                    $editor = $('.setting-fields-email-editor').first();
-                    console.log('Found first on page:', $editor.length);
-                }
-
-                if (!$editor.length) {
-                    console.warn('Could not find email editor container');
                     return;
                 }
-
+                
                 var $modal = $editor.find('.setting-fields-merge-tags-modal');
-                console.log('Modal found:', $modal.length);
-
+                
+                if (!$modal.length) {
+                    return;
+                }
+                
                 $modal.data('insert-target', target);
                 $modal.show();
                 $modal.find('.setting-fields-tag-search').val('').focus();
                 $modal.find('.setting-fields-tag-item').removeClass('hidden');
             });
-
+            
             // Close modal
             $(document).on('click', '.setting-fields-modal-close, .setting-fields-modal-overlay', function(e) {
                 e.preventDefault();
                 $(this).closest('.setting-fields-merge-tags-modal').hide();
             });
-
+            
             // Close modal on escape
             $(document).on('keydown', function(e) {
                 if (e.key === 'Escape') {
                     $('.setting-fields-merge-tags-modal').hide();
                 }
             });
-
+            
             // Search tags
             $(document).on('input', '.setting-fields-tag-search', function() {
                 var query = $(this).val().toLowerCase();
                 var $modal = $(this).closest('.setting-fields-merge-tags-modal');
-
+                
                 $modal.find('.setting-fields-tag-item').each(function() {
                     var tag = $(this).data('tag').toLowerCase();
                     var label = $(this).data('label').toLowerCase();
                     var desc = $(this).find('.setting-fields-tag-desc').text().toLowerCase();
-
+                    
                     if (tag.indexOf(query) > -1 || label.indexOf(query) > -1 || desc.indexOf(query) > -1) {
                         $(this).removeClass('hidden');
                     } else {
@@ -770,17 +760,17 @@
                     }
                 });
             });
-
+            
             // Insert tag from modal
             $(document).on('click', '.setting-fields-tag-item', function(e) {
                 e.preventDefault();
-
+                
                 var tag = $(this).data('tag');
                 var $modal = $(this).closest('.setting-fields-merge-tags-modal');
                 var $editor = $modal.closest('.setting-fields-email-editor');
                 var target = $modal.data('insert-target');
                 var fieldId = $editor.data('field-id');
-
+                
                 if (target === 'subject') {
                     // Insert into subject input
                     var $input = $editor.find('.setting-fields-email-subject-input');
@@ -788,7 +778,7 @@
                 } else {
                     // Insert into TinyMCE editor
                     var editorId = fieldId + '_body';
-
+                    
                     if (typeof tinyMCE !== 'undefined' && tinyMCE.get(editorId)) {
                         var editor = tinyMCE.get(editorId);
                         if (!editor.isHidden()) {
@@ -800,33 +790,33 @@
                         self.insertAtCursor($('#' + editorId)[0], tag);
                     }
                 }
-
+                
                 $modal.hide();
             });
-
+            
             // Preview button - uses REST endpoint
             $(document).on('click', '.setting-fields-email-preview', function(e) {
                 e.preventDefault();
-
+                
                 var $editor = $(this).closest('.setting-fields-email-editor');
                 var fieldKey = $editor.data('field-key');
                 var fieldId = $editor.data('field-id');
                 var settingsId = $editor.closest('.setting-fields-wrap').data('setting-id');
-
+                
                 // Get current values
                 var subject = $editor.find('.setting-fields-email-subject-input').val();
                 var editorId = fieldId + '_body';
                 var body = '';
-
+                
                 if (typeof tinyMCE !== 'undefined' && tinyMCE.get(editorId)) {
                     body = tinyMCE.get(editorId).getContent();
                 } else {
                     body = $('#' + editorId).val();
                 }
-
+                
                 var $btn = $(this);
                 $btn.prop('disabled', true);
-
+                
                 $.ajax({
                     url: settingFieldsData.restUrl + 'email/preview',
                     method: 'POST',
@@ -847,8 +837,8 @@
                         }
                     },
                     error: function(xhr) {
-                        var message = xhr.responseJSON && xhr.responseJSON.message
-                            ? xhr.responseJSON.message
+                        var message = xhr.responseJSON && xhr.responseJSON.message 
+                            ? xhr.responseJSON.message 
                             : 'Preview request failed';
                         alert(message);
                     },
@@ -857,33 +847,33 @@
                     }
                 });
             });
-
+            
             // Send test email button - uses REST endpoint
             $(document).on('click', '.setting-fields-email-send-test', function(e) {
                 e.preventDefault();
-
+                
                 var $editor = $(this).closest('.setting-fields-email-editor');
                 var fieldKey = $editor.data('field-key');
                 var fieldId = $editor.data('field-id');
                 var settingsId = $editor.closest('.setting-fields-wrap').data('setting-id');
-
+                
                 var email = prompt('Enter email address to send test:');
                 if (!email) return;
-
+                
                 // Get current values
                 var subject = $editor.find('.setting-fields-email-subject-input').val();
                 var editorId = fieldId + '_body';
                 var body = '';
-
+                
                 if (typeof tinyMCE !== 'undefined' && tinyMCE.get(editorId)) {
                     body = tinyMCE.get(editorId).getContent();
                 } else {
                     body = $('#' + editorId).val();
                 }
-
+                
                 var $btn = $(this);
                 $btn.prop('disabled', true).text('Sending...');
-
+                
                 $.ajax({
                     url: settingFieldsData.restUrl + 'email/send-test',
                     method: 'POST',
@@ -901,8 +891,8 @@
                         alert(response.message || 'Test email sent successfully!');
                     },
                     error: function(xhr) {
-                        var message = xhr.responseJSON && xhr.responseJSON.message
-                            ? xhr.responseJSON.message
+                        var message = xhr.responseJSON && xhr.responseJSON.message 
+                            ? xhr.responseJSON.message 
                             : 'Failed to send test email';
                         alert(message);
                     },
@@ -912,25 +902,25 @@
                 });
             });
         },
-
+        
         /**
          * Insert text at cursor position in input/textarea
          */
         insertAtCursor: function(element, text) {
             if (!element) return;
-
+            
             var startPos = element.selectionStart || 0;
             var endPos = element.selectionEnd || 0;
             var value = element.value || '';
-
+            
             element.value = value.substring(0, startPos) + text + value.substring(endPos);
             element.selectionStart = element.selectionEnd = startPos + text.length;
             element.focus();
-
+            
             // Trigger change event
             $(element).trigger('change');
         },
-
+        
         /**
          * Open preview in new window
          */
@@ -939,7 +929,7 @@
             win.document.write(html);
             win.document.close();
         },
-
+        
         /**
          * Escape HTML for safe display
          */
@@ -954,7 +944,7 @@
          */
         initSortable: function() {
             var $sortables = $('.setting-fields-sortable-list');
-
+            
             if (!$sortables.length) return;
 
             // Initialize jQuery UI sortable
@@ -974,11 +964,11 @@
             // Toggle item active state
             $(document).on('click', '.setting-fields-sortable-toggle', function(e) {
                 e.preventDefault();
-
+                
                 var $item = $(this).closest('.setting-fields-sortable-item');
                 var $input = $item.find('input[type="hidden"]');
                 var $icon = $(this).find('.dashicons');
-
+                
                 if ($item.hasClass('setting-fields-sortable-item--active')) {
                     // Deactivate
                     $item.removeClass('setting-fields-sortable-item--active');
