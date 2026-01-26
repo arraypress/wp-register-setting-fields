@@ -1500,6 +1500,89 @@ h4.setting-fields-heading-title {
     max-width: 800px;
 }
 
+/* Collapsible Email Editor */
+.setting-fields-email-editor--collapsible {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.setting-fields-email-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: #fff;
+    border-bottom: 1px solid #e5e5e5;
+    gap: 15px;
+}
+
+.setting-fields-email-editor--collapsed .setting-fields-email-header {
+    border-bottom: none;
+}
+
+.setting-fields-email-header-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.setting-fields-email-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.setting-fields-email-description {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #646970;
+}
+
+.setting-fields-email-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.setting-fields-email-configure {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+}
+
+.setting-fields-email-configure .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s ease;
+}
+
+.setting-fields-email-editor--collapsed .setting-fields-email-configure .dashicons {
+    transform: rotate(0deg);
+}
+
+.setting-fields-email-editor:not(.setting-fields-email-editor--collapsed) .setting-fields-email-configure .dashicons {
+    transform: rotate(180deg);
+}
+
+/* Body wrap for collapsible */
+.setting-fields-email-body-wrap {
+    padding: 20px;
+}
+
+.setting-fields-email-editor--collapsed .setting-fields-email-body-wrap {
+    display: none;
+}
+
+.setting-fields-email-editor:not(.setting-fields-email-editor--collapsible) .setting-fields-email-body-wrap {
+    padding: 0;
+}
+
+/* Non-collapsible enable toggle */
 .setting-fields-email-enable {
     margin-bottom: 20px;
     padding-bottom: 15px;
