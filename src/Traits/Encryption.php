@@ -83,7 +83,7 @@ trait Encryption {
 		$this->validate_encryption_environment();
 
 		// Build the encryption prefix from settings ID (ensure we have a valid prefix)
-		$prefix                  = ! empty( $encryption_config['prefix'] ) ? $encryption_config['prefix'] : $this->id;
+		$prefix = ! empty( $encryption_config['prefix'] ) ? $encryption_config['prefix'] : $this->id;
 		$this->encryption_prefix = $this->build_encryption_prefix( $prefix );
 
 		// Get or derive the encryption key
@@ -239,13 +239,25 @@ trait Encryption {
 	 * @return string|null Decrypted value, or null on failure.
 	 */
 	protected function decrypt_value( string $value ): ?string {
-		if ( empty( $value ) || ! $this->encryption_enabled ) {
+		if ( empty( $value ) ) {
 			return $value;
 		}
 
 		// Check if value is actually encrypted
 		if ( ! $this->is_encrypted_value( $value ) ) {
 			return $value;
+		}
+
+		// Ensure we have an encryption key (lazy initialization)
+		if ( $this->encryption_key === null ) {
+			try {
+				$this->encryption_key = $this->get_wordpress_encryption_key();
+			} catch ( Exception $e ) {
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( 'Setting Fields: Cannot decrypt - no encryption key: ' . $e->getMessage() );
+				}
+				return null;
+			}
 		}
 
 		// Check cache first
@@ -423,11 +435,40 @@ trait Encryption {
 			return $constant_value;
 		}
 
-		// Decrypt if this is an encrypted field
-		if ( $this->is_encrypted_field( $field ) && is_string( $value ) && ! empty( $value ) ) {
-			$decrypted = $this->decrypt_value( $value );
+		// Handle group fields - decrypt sub-fields
+		if ( ( $field['type'] ?? '' ) === 'group' && is_array( $value ) && ! empty( $field['sub_fields'] ) ) {
+			$decrypted_group = [];
+			foreach ( $field['sub_fields'] as $sub_key => $sub_field ) {
+				$sub_value = $value[ $sub_key ] ?? ( $sub_field['default'] ?? '' );
+				$decrypted_group[ $sub_key ] = $this->maybe_decrypt_field_value( $sub_key, $sub_field, $sub_value );
+			}
+			return $decrypted_group;
+		}
 
-			return $decrypted !== null ? $decrypted : $value;
+		// Handle repeater fields - decrypt sub-fields in each row
+		if ( ( $field['type'] ?? '' ) === 'repeater' && is_array( $value ) && ! empty( $field['sub_fields'] ) ) {
+			$decrypted_repeater = [];
+			foreach ( $value as $row_index => $row ) {
+				if ( ! is_array( $row ) ) {
+					continue;
+				}
+				$decrypted_row = [];
+				foreach ( $field['sub_fields'] as $sub_key => $sub_field ) {
+					$sub_value = $row[ $sub_key ] ?? ( $sub_field['default'] ?? '' );
+					$decrypted_row[ $sub_key ] = $this->maybe_decrypt_field_value( $sub_key, $sub_field, $sub_value );
+				}
+				$decrypted_repeater[ $row_index ] = $decrypted_row;
+			}
+			return $decrypted_repeater;
+		}
+
+		// Decrypt if this is an encrypted field with an encrypted value
+		if ( ! empty( $field['encrypted'] ) && is_string( $value ) && ! empty( $value ) ) {
+			// Check if the value looks encrypted (has our prefix pattern)
+			if ( $this->is_encrypted_value( $value ) ) {
+				$decrypted = $this->decrypt_value( $value );
+				return $decrypted !== null ? $decrypted : $value;
+			}
 		}
 
 		return $value;
@@ -487,7 +528,7 @@ trait Encryption {
 		// Get from database
 		$values = $this->get_values();
 		if ( isset( $values[ $field_key ] ) ) {
-			$raw_value           = $values[ $field_key ];
+			$raw_value       = $values[ $field_key ];
 			$is_stored_encrypted = is_string( $raw_value ) && $this->is_encrypted_value( $raw_value );
 
 			return [
@@ -562,8 +603,8 @@ trait Encryption {
 			return false;
 		}
 
-		$values       = get_option( $this->config['option_name'], [] );
-		$old_key      = $this->encryption_key;
+		$values      = get_option( $this->config['option_name'], [] );
+		$old_key     = $this->encryption_key;
 		$new_key_hash = hash( 'sha256', $new_key, true );
 
 		$updated_values = [];
@@ -606,7 +647,7 @@ trait Encryption {
 				$updated_values[ $field_key ] = $encrypted;
 			} else {
 				// Re-encryption failed - restore old key and keep original
-				$this->encryption_key         = $old_key;
+				$this->encryption_key = $old_key;
 				$updated_values[ $field_key ] = $raw_value;
 			}
 		}
