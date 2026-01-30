@@ -1877,3 +1877,83 @@ h4.setting-fields-heading-title {
     font-size: 12px;
     color: #646970;
 }
+
+/**
+ * Encryption Status Styles
+ *
+ * Styles for encrypted field indicators in the admin UI.
+ */
+
+/* Encryption status indicator base */
+.setting-fields-encryption-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 3px;
+    margin-top: 8px;
+}
+
+.setting-fields-encryption-status .dashicons {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    line-height: 14px;
+}
+
+/* Database encrypted status */
+.setting-fields-encryption-database {
+    background: #f0f6fc;
+    color: #0969da;
+    border: 1px solid #b6d4fe;
+}
+
+.setting-fields-encryption-database .dashicons {
+    color: #0969da;
+}
+
+/* Constant-defined status */
+.setting-fields-encryption-constant {
+    background: #f6f8fa;
+    color: #57606a;
+    border: 1px solid #d0d7de;
+}
+
+.setting-fields-encryption-constant .dashicons {
+    color: #57606a;
+}
+
+.setting-fields-encryption-constant code {
+    background: #eaeef2;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    margin-left: 4px;
+}
+
+/* Disabled field styling when value comes from constant */
+.setting-fields-wrap input[readonly],
+.setting-fields-wrap input[disabled],
+.setting-fields-wrap textarea[readonly],
+.setting-fields-wrap textarea[disabled],
+.setting-fields-wrap select[disabled] {
+    background-color: #f6f7f7;
+    border-color: #dcdcde;
+    color: #646970;
+    cursor: not-allowed;
+}
+
+/* Lock icon in field labels for encrypted fields */
+.setting-fields-field-encrypted-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.setting-fields-field-encrypted-label .dashicons-lock {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: #0969da;
+}

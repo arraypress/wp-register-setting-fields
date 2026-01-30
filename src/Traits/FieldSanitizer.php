@@ -75,6 +75,11 @@ trait FieldSanitizer {
 			};
 		}
 
+		// Apply encryption if field is marked as encrypted
+		if ( method_exists( $this, 'maybe_encrypt_field_value' ) ) {
+			$sanitized = $this->maybe_encrypt_field_value( $key, $field, $sanitized );
+		}
+
 		/**
 		 * Filter the sanitized value.
 		 *
@@ -109,14 +114,12 @@ trait FieldSanitizer {
 		$value = is_numeric( $value ) ? $value : 0;
 		$step  = $field['step'] ?? 1;
 
-		// Determine if we should return int or float
 		if ( is_float( $step ) || strpos( (string) $step, '.' ) !== false ) {
 			$value = (float) $value;
 		} else {
 			$value = (int) $value;
 		}
 
-		// Apply min/max constraints
 		if ( isset( $field['min'] ) && $value < $field['min'] ) {
 			$value = $field['min'];
 		}
@@ -150,7 +153,6 @@ trait FieldSanitizer {
 		$value   = sanitize_text_field( (string) $value );
 		$options = $field['options'] ?? [];
 
-		// Validate against available options
 		if ( ! empty( $options ) && ! array_key_exists( $value, $options ) ) {
 			return $field['default'] ?? '';
 		}
@@ -176,7 +178,6 @@ trait FieldSanitizer {
 
 		foreach ( $value as $v ) {
 			$v = sanitize_text_field( (string) $v );
-			// Validate against options if they exist
 			if ( empty( $options ) || array_key_exists( $v, $options ) ) {
 				$sanitized[] = $v;
 			}
@@ -195,7 +196,6 @@ trait FieldSanitizer {
 	protected function sanitize_date( $value ): string {
 		$value = sanitize_text_field( (string) $value );
 
-		// Validate date format
 		$date = \DateTime::createFromFormat( 'Y-m-d', $value );
 		if ( $date && $date->format( 'Y-m-d' ) === $value ) {
 			return $value;
@@ -214,7 +214,6 @@ trait FieldSanitizer {
 	protected function sanitize_time( $value ): string {
 		$value = sanitize_text_field( (string) $value );
 
-		// Validate time format (H:i or H:i:s)
 		if ( preg_match( '/^([01]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/', $value ) ) {
 			return $value;
 		}
@@ -232,7 +231,6 @@ trait FieldSanitizer {
 	protected function sanitize_datetime( $value ): string {
 		$value = sanitize_text_field( (string) $value );
 
-		// Validate datetime format
 		$date = \DateTime::createFromFormat( 'Y-m-d\TH:i', $value );
 		if ( $date ) {
 			return $value;

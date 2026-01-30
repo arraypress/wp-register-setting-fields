@@ -14,6 +14,7 @@ namespace ArrayPress\RegisterSettingFields;
 
 use ArrayPress\RegisterSettingFields\Traits\AssetManager;
 use ArrayPress\RegisterSettingFields\Traits\ConfigParser;
+use ArrayPress\RegisterSettingFields\Traits\Encryption;
 use ArrayPress\RegisterSettingFields\Traits\FieldRenderer;
 use ArrayPress\RegisterSettingFields\Traits\FieldSanitizer;
 use ArrayPress\RegisterSettingFields\Traits\SettingsRegistration;
@@ -29,6 +30,7 @@ class SettingFields {
 
     use AssetManager;
     use ConfigParser;
+    use Encryption;
     use FieldRenderer;
     use FieldSanitizer;
     use SettingsRegistration;
@@ -107,12 +109,18 @@ class SettingFields {
             'show_tabs'     => true,
             'submit_button' => true,
         // Branded header options
-            'logo'          => '',        // URL to logo image
-            'header_title'  => '',        // Title next to logo (defaults to page_title)
-            'header_class'  => '',        // Additional CSS class for header
+            'logo'          => '',
+            'header_title'  => '',
+            'header_class'  => '',
         // Help screen options
-            'help_tabs'     => [],        // Array of help tabs
-            'help_sidebar'  => '',        // Help sidebar content
+            'help_tabs'     => [],
+            'help_sidebar'  => '',
+        // Encryption options
+            'encryption'    => [
+                    'enabled' => null, // null = auto-detect from fields
+                    'key'     => null, // null = use WordPress salts
+                    'prefix'  => '',   // empty = use settings ID
+            ],
     ];
 
     /**
@@ -137,6 +145,9 @@ class SettingFields {
         }
 
         $this->parse_config();
+
+        // Initialize encryption after fields are parsed
+        $this->init_encryption( $this->config );
 
         // Register with the central registry
         Registry::register( $this->id, $this );
@@ -209,13 +220,9 @@ class SettingFields {
             return $classes;
         }
 
-        // Add generic reports class
         $classes .= ' settings';
-
-        // Add report-specific class
         $classes .= ' settings-' . $this->id;
 
-        // Add custom class from config if provided
         if ( ! empty( $this->config['body_class'] ) ) {
             $classes .= ' ' . sanitize_html_class( $this->config['body_class'] );
         }
@@ -284,7 +291,6 @@ class SettingFields {
             );
         }
 
-        // Register help tabs after we have the hook suffix
         if ( ! empty( $this->config['help_tabs'] ) || ! empty( $this->config['help_sidebar'] ) ) {
             add_action( 'load-' . $this->hook_suffix, [ $this, 'register_help_tabs' ] );
         }
@@ -302,7 +308,6 @@ class SettingFields {
             return;
         }
 
-        // Add help tabs
         if ( ! empty( $this->config['help_tabs'] ) ) {
             foreach ( $this->config['help_tabs'] as $tab_id => $tab ) {
                 $screen->add_help_tab( [
@@ -315,7 +320,6 @@ class SettingFields {
             }
         }
 
-        // Set help sidebar
         if ( ! empty( $this->config['help_sidebar'] ) ) {
             $screen->set_help_sidebar( $this->config['help_sidebar'] );
         }
@@ -331,11 +335,8 @@ class SettingFields {
             return;
         }
 
-        // Load current values
-        $this->values = get_option( $this->config['option_name'], [] );
-        if ( ! is_array( $this->values ) ) {
-            $this->values = [];
-        }
+        // Load current values (with decryption)
+        $this->values = $this->get_values();
 
         // Get current tab
         $current_tab = $this->get_current_tab();
@@ -353,7 +354,6 @@ class SettingFields {
                 <?php
                 settings_fields( $this->config['option_group'] );
 
-                // Render fields for current tab
                 $this->render_fields_for_tab( $current_tab );
 
                 if ( $this->config['submit_button'] ) {
@@ -413,7 +413,6 @@ class SettingFields {
             return;
         }
 
-        // Group fields by section
         $sections = $this->get_sections_for_tab( $tab );
 
         if ( ! empty( $sections ) ) {
@@ -427,7 +426,6 @@ class SettingFields {
                 }
             }
 
-            // Render fields without a section
             $unsectioned_fields = array_filter( $tab_fields, function ( $field ) {
                 return empty( $field['section'] );
             } );
@@ -486,13 +484,16 @@ class SettingFields {
         $field_id   = $this->config['option_name'] . '_' . $field_key;
         $value      = $this->values[ $field_key ] ?? ( $field['default'] ?? '' );
 
-        // Add the field key to the field config so renderers can access it
+        // Add the field key to the field config
         $field['_key'] = $field_key;
 
         // Build conditional logic data attributes
         $row_attrs = $this->get_conditional_attributes( $field );
 
-        // Message, HTML, separator, heading fields get full-width rendering (no label column)
+        // Check if field is disabled due to constant
+        $is_from_constant = $this->is_encrypted_field( $field ) && $this->has_field_constant( $field_key, $field );
+
+        // Message, HTML, separator, heading fields get full-width rendering
         $type = $field['type'] ?? 'text';
         if ( in_array( $type, [ 'message', 'html', 'separator', 'heading' ], true ) ) {
             ?>
@@ -525,7 +526,18 @@ class SettingFields {
             </th>
             <td>
                 <?php
+                // Render the field (potentially disabled if from constant)
+                if ( $is_from_constant ) {
+                    $field['readonly'] = true;
+                    $field['disabled'] = true;
+                }
+
                 $this->render_field( $field_key, $field, $field_name, $field_id, $value );
+
+                // Show encryption status for encrypted fields
+                if ( $this->is_encrypted_field( $field ) ) {
+                    echo $this->get_encryption_status( $field_key );
+                }
 
                 if ( ! empty( $field['description'] ) ) {
                     echo '<p class="description">' . wp_kses_post( $field['description'] ) . '</p>';
@@ -567,23 +579,31 @@ class SettingFields {
     }
 
     /**
-     * Get all current values.
+     * Get all current values (with decryption applied).
      *
      * @return array
      */
     public function get_values(): array {
-        if ( empty( $this->values ) ) {
-            $this->values = get_option( $this->config['option_name'], [] );
-            if ( ! is_array( $this->values ) ) {
-                $this->values = [];
-            }
+        $raw_values = get_option( $this->config['option_name'], [] );
+
+        if ( ! is_array( $raw_values ) ) {
+            $raw_values = [];
         }
+
+        // Apply decryption to encrypted fields
+        $decrypted_values = [];
+        foreach ( $this->fields as $field_key => $field ) {
+            $raw_value = $raw_values[ $field_key ] ?? ( $field['default'] ?? '' );
+            $decrypted_values[ $field_key ] = $this->maybe_decrypt_field_value( $field_key, $field, $raw_value );
+        }
+
+        $this->values = $decrypted_values;
 
         return $this->values;
     }
 
     /**
-     * Get a specific field value.
+     * Get a specific field value (with decryption applied).
      *
      * @param string $field_key Field key.
      * @param mixed  $default   Default value.
@@ -591,18 +611,28 @@ class SettingFields {
      * @return mixed
      */
     public function get_value( string $field_key, $default = null ) {
-        $values = $this->get_values();
+        $field = $this->fields[ $field_key ] ?? null;
 
-        if ( isset( $values[ $field_key ] ) ) {
-            return $values[ $field_key ];
+        if ( ! $field ) {
+            return $default;
         }
 
-        // Check field default
-        if ( isset( $this->fields[ $field_key ]['default'] ) ) {
-            return $this->fields[ $field_key ]['default'];
+        // Check constant first for encrypted fields
+        if ( $this->is_encrypted_field( $field ) ) {
+            $constant_value = $this->get_field_constant_value( $field_key, $field );
+            if ( $constant_value !== null ) {
+                return $constant_value;
+            }
         }
 
-        return $default;
+        // Get from database
+        $raw_values = get_option( $this->config['option_name'], [] );
+
+        if ( isset( $raw_values[ $field_key ] ) ) {
+            return $this->maybe_decrypt_field_value( $field_key, $field, $raw_values[ $field_key ] );
+        }
+
+        return $field['default'] ?? $default;
     }
 
     /**
