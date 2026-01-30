@@ -12,6 +12,10 @@
     margin-right: 20px;
 }
 
+.settings .metabox-prefs {
+    margin: 0 0 0 -20px !important;
+}
+
 .setting-fields-wrap .form-table {
     margin-top: 0;
 }
