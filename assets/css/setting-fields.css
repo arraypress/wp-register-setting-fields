@@ -1878,12 +1878,6 @@ h4.setting-fields-heading-title {
     color: #646970;
 }
 
-/**
- * Encryption Status Styles
- *
- * Styles for encrypted field indicators in the admin UI.
- */
-
 /* Encryption status indicator base */
 .setting-fields-encryption-status {
     display: inline-flex;
@@ -1892,7 +1886,7 @@ h4.setting-fields-heading-title {
     font-size: 12px;
     padding: 4px 8px;
     border-radius: 3px;
-    margin-top: 8px;
+    margin-left: 6px;
 }
 
 .setting-fields-encryption-status .dashicons {
