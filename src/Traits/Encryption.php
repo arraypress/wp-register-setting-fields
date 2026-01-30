@@ -82,8 +82,8 @@ trait Encryption {
 		// Validate environment
 		$this->validate_encryption_environment();
 
-		// Build the encryption prefix from settings ID
-		$prefix                  = $encryption_config['prefix'] ?? $this->id;
+		// Build the encryption prefix from settings ID (ensure we have a valid prefix)
+		$prefix                  = ! empty( $encryption_config['prefix'] ) ? $encryption_config['prefix'] : $this->id;
 		$this->encryption_prefix = $this->build_encryption_prefix( $prefix );
 
 		// Get or derive the encryption key
@@ -255,8 +255,8 @@ trait Encryption {
 		}
 
 		try {
-			// Remove prefix and decode
-			$encrypted_data = substr( $value, strlen( $this->encryption_prefix ) );
+			// Extract the base64 data (removes any $ENC$PREFIX$ pattern)
+			$encrypted_data = $this->extract_encrypted_data( $value );
 			$data           = base64_decode( $encrypted_data );
 
 			if ( $data === false ) {
@@ -295,12 +295,28 @@ trait Encryption {
 	/**
 	 * Check if a value is encrypted.
 	 *
+	 * Detects any value with the $ENC$..$ pattern, not just the current prefix.
+	 * This ensures decryption works even if the settings ID changes.
+	 *
 	 * @param string $value Value to check.
 	 *
 	 * @return bool
 	 */
 	protected function is_encrypted_value( string $value ): bool {
-		return strpos( $value, $this->encryption_prefix ) === 0;
+		// Check for the generic encryption pattern: $ENC$...$ followed by base64
+		return preg_match( '/^\$ENC\$[A-Z0-9_]*\$/', $value ) === 1;
+	}
+
+	/**
+	 * Extract the encrypted data from a value (strips any $ENC$...$ prefix).
+	 *
+	 * @param string $value Encrypted value with prefix.
+	 *
+	 * @return string The base64-encoded encrypted data.
+	 */
+	protected function extract_encrypted_data( string $value ): string {
+		// Remove the $ENC$PREFIX$ pattern and return just the base64 data
+		return preg_replace( '/^\$ENC\$[A-Z0-9_]*\$/', '', $value );
 	}
 
 	/**
