@@ -46,6 +46,15 @@
     width: auto;
 }
 
+.setting-fields-email-header-actions button {
+    display: flex !important;
+    align-items: center;
+}
+
+.setting-fields-tag-item {
+    align-items: baseline !important;
+}
+
 /* Ensure small-text stays small */
 .setting-fields-wrap .form-table .small-text {
     width: 50px !important;
@@ -67,6 +76,7 @@
     border-bottom: 1px solid #c3c4c7;
     margin: 0 0 0 -20px;
     padding: 0;
+    position: relative;
 }
 
 .setting-fields-header__inner {
@@ -200,7 +210,7 @@
     }
 
     .setting-fields-header__branding {
-        min-height: 50px;
+        min-height: 80px;
         padding: 0 15px;
     }
 

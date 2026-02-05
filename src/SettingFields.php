@@ -394,26 +394,26 @@ class SettingFields {
                         <h1 class="setting-fields-header__title"><?php echo esc_html( $header_title ); ?></h1>
                     <?php endif; ?>
                 </div>
-
-                <?php if ( $this->config['show_tabs'] && ! empty( $this->tabs ) ) : ?>
-                    <div class="setting-fields-header__tabs">
-                        <button type="button" class="setting-fields-tabs-toggle">
-            <span class="setting-fields-tabs-current">
-                <?php
-                $current_label = $this->tabs[ $current_tab ]['label'] ?? '';
-                $current_icon = $this->tabs[ $current_tab ]['icon'] ?? '';
-                if ( $current_icon ) {
-                    echo '<span class="dashicons ' . esc_attr( $current_icon ) . '"></span> ';
-                }
-                echo esc_html( $current_label );
-                ?>
-            </span>
-                            <span class="dashicons dashicons-arrow-down-alt2"></span>
-                        </button>
-                        <?php $this->render_tabs( $current_tab ); ?>
-                    </div>
-                <?php endif; ?>
             </div>
+
+            <?php if ( $this->config['show_tabs'] && ! empty( $this->tabs ) ) : ?>
+                <div class="setting-fields-header__tabs">
+                    <button type="button" class="setting-fields-tabs-toggle">
+                    <span class="setting-fields-tabs-current">
+                        <?php
+                        $current_label = $this->tabs[ $current_tab ]['label'] ?? '';
+                        $current_icon  = $this->tabs[ $current_tab ]['icon'] ?? '';
+                        if ( $current_icon ) {
+                            echo '<span class="dashicons ' . esc_attr( $current_icon ) . '"></span> ';
+                        }
+                        echo esc_html( $current_label );
+                        ?>
+                    </span>
+                        <span class="dashicons dashicons-arrow-down-alt2"></span>
+                    </button>
+                    <?php $this->render_tabs( $current_tab ); ?>
+                </div>
+            <?php endif; ?>
         </div>
         <hr class="wp-header-end">
         <?php
@@ -613,7 +613,7 @@ class SettingFields {
         // Apply decryption to encrypted fields
         $decrypted_values = [];
         foreach ( $this->fields as $field_key => $field ) {
-            $raw_value = $raw_values[ $field_key ] ?? ( $field['default'] ?? '' );
+            $raw_value                      = $raw_values[ $field_key ] ?? ( $field['default'] ?? '' );
             $decrypted_values[ $field_key ] = $this->maybe_decrypt_field_value( $field_key, $field, $raw_value );
         }
 

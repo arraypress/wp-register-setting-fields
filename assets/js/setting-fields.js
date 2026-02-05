@@ -13,6 +13,7 @@
          * Initialize all functionality
          */
         init: function () {
+            this.repositionScreenMetaLinks();
             this.repositionNotices();
             this.initMobileTabs();
             this.initConditionalLogic();
@@ -49,6 +50,29 @@
             $wrap.siblings('.notice, .updated, .error').each(function () {
                 $(this).appendTo($noticesContainer);
             });
+        },
+
+        /**
+         * Move screen-meta-links inside our header for proper layout
+         */
+        repositionScreenMetaLinks: function() {
+            var $header = $('.setting-fields-header');
+            var $screenMetaLinks = $('#screen-meta-links');
+
+            if ($header.length && $screenMetaLinks.length) {
+                $screenMetaLinks.css({
+                    'float': 'none',
+                    'position': 'absolute',
+                    'right': '20px',
+                    'top': '-26px',
+                    'margin': '0',
+                    'height': '80px',
+                    'display': 'flex',
+                    'align-items': 'center'
+                });
+                $header.css('position', 'relative');
+                $header.prepend($screenMetaLinks);
+            }
         },
 
         /**
