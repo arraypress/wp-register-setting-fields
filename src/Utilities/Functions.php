@@ -3,7 +3,6 @@
  * Helper Functions
  *
  * Global helper functions for accessing setting field values.
- * These are intentionally NOT namespaced for ease of use throughout any codebase.
  *
  * @package     ArrayPress\RegisterSettingFields
  * @copyright   Copyright (c) 2025, ArrayPress Limited
@@ -13,6 +12,8 @@
 
 use ArrayPress\RegisterSettingFields\Registry;
 use ArrayPress\RegisterSettingFields\SettingFields;
+
+/** Registration **************************************************************/
 
 if ( ! function_exists( 'register_setting_fields' ) ) {
 	/**
@@ -41,18 +42,19 @@ if ( ! function_exists( 'get_setting_fields' ) ) {
 	}
 }
 
+/** Value Access - Replacements for get_option/update_option ******************/
+
 if ( ! function_exists( 'get_setting_field_value' ) ) {
 	/**
-	 * Get a setting value (with automatic decryption for encrypted fields).
+	 * Get a setting value with automatic decryption and constant fallback.
 	 *
-	 * This is the primary helper function for retrieving field values.
-	 * It automatically handles decryption and constant fallback.
+	 * Use this instead of get_option() for registered settings.
 	 *
-	 * @param string $settings_id Settings ID (the ID used when registering).
+	 * @param string $settings_id Settings ID.
 	 * @param string $field_key   Field key.
-	 * @param mixed  $default     Default value.
+	 * @param mixed  $default     Default value if not set.
 	 *
-	 * @return mixed The decrypted/resolved value.
+	 * @return mixed The resolved value.
 	 */
 	function get_setting_field_value( string $settings_id, string $field_key, $default = null ) {
 		$settings = Registry::instance()->get( $settings_id );
@@ -61,66 +63,11 @@ if ( ! function_exists( 'get_setting_field_value' ) ) {
 			return $settings->get_value( $field_key, $default );
 		}
 
-		// Fallback to raw option if settings not registered yet
 		$options = get_option( $settings_id, [] );
 
-		if ( ! is_array( $options ) ) {
-			return $default;
-		}
-
-		return $options[ $field_key ] ?? $default;
-	}
-}
-
-if ( ! function_exists( 'get_setting_field_value_info' ) ) {
-	/**
-	 * Get detailed information about a setting value.
-	 *
-	 * Returns an array with:
-	 * - value: The actual value (decrypted if applicable)
-	 * - source: 'constant', 'database', or 'default'
-	 * - is_encrypted: Whether the value is stored encrypted
-	 * - constant_name: The constant name (if applicable)
-	 *
-	 * @param string $settings_id Settings ID.
-	 * @param string $field_key   Field key.
-	 * @param mixed  $default     Default value.
-	 *
-	 * @return array{value: mixed, source: string, is_encrypted: bool, constant_name: string|null}
-	 */
-	function get_setting_field_value_info( string $settings_id, string $field_key, $default = null ): array {
-		$settings = Registry::instance()->get( $settings_id );
-
-		if ( $settings && method_exists( $settings, 'get_value_info' ) ) {
-			return $settings->get_value_info( $field_key, $default );
-		}
-
-		return [
-			'value'         => $default,
-			'source'        => 'default',
-			'is_encrypted'  => false,
-			'constant_name' => null,
-		];
-	}
-}
-
-if ( ! function_exists( 'is_setting_from_constant' ) ) {
-	/**
-	 * Check if a setting value comes from a constant.
-	 *
-	 * @param string $settings_id Settings ID.
-	 * @param string $field_key   Field key.
-	 *
-	 * @return bool
-	 */
-	function is_setting_from_constant( string $settings_id, string $field_key ): bool {
-		$settings = Registry::instance()->get( $settings_id );
-
-		if ( $settings && method_exists( $settings, 'is_from_constant' ) ) {
-			return $settings->is_from_constant( $field_key );
-		}
-
-		return false;
+		return is_array( $options ) && isset( $options[ $field_key ] )
+			? $options[ $field_key ]
+			: $default;
 	}
 }
 
@@ -128,14 +75,14 @@ if ( ! function_exists( 'update_setting_field_value' ) ) {
 	/**
 	 * Update a single setting value.
 	 *
-	 * Note: This bypasses encryption. For encrypted fields, use the settings
-	 * form or call the settings instance directly.
+	 * Use this instead of update_option() for registered settings.
+	 * Note: Bypasses encryption - use settings form for encrypted fields.
 	 *
 	 * @param string $settings_id Settings ID.
 	 * @param string $field_key   Field key.
 	 * @param mixed  $value       Value to set.
 	 *
-	 * @return bool
+	 * @return bool True on success, false on failure.
 	 */
 	function update_setting_field_value( string $settings_id, string $field_key, $value ): bool {
 		$options = get_option( $settings_id, [] );
@@ -150,13 +97,35 @@ if ( ! function_exists( 'update_setting_field_value' ) ) {
 	}
 }
 
+if ( ! function_exists( 'delete_setting_field_value' ) ) {
+	/**
+	 * Delete a single setting value (resets to default on next get).
+	 *
+	 * @param string $settings_id Settings ID.
+	 * @param string $field_key   Field key.
+	 *
+	 * @return bool True on success, false on failure.
+	 */
+	function delete_setting_field_value( string $settings_id, string $field_key ): bool {
+		$options = get_option( $settings_id, [] );
+
+		if ( ! is_array( $options ) || ! isset( $options[ $field_key ] ) ) {
+			return false;
+		}
+
+		unset( $options[ $field_key ] );
+
+		return update_option( $settings_id, $options );
+	}
+}
+
 if ( ! function_exists( 'get_all_setting_values' ) ) {
 	/**
-	 * Get all values for a settings page (with decryption applied).
+	 * Get all values for a settings page with decryption applied.
 	 *
 	 * @param string $settings_id Settings ID.
 	 *
-	 * @return array
+	 * @return array All settings as key-value pairs.
 	 */
 	function get_all_setting_values( string $settings_id ): array {
 		$settings = Registry::instance()->get( $settings_id );
@@ -165,28 +134,105 @@ if ( ! function_exists( 'get_all_setting_values' ) ) {
 			return $settings->get_values();
 		}
 
-		return get_option( $settings_id, [] );
+		$options = get_option( $settings_id, [] );
+
+		return is_array( $options ) ? $options : [];
 	}
 }
 
-if ( ! function_exists( 'rotate_setting_encryption_key' ) ) {
+/** Type Helpers **************************************************************/
+
+if ( ! function_exists( 'is_setting_on' ) ) {
 	/**
-	 * Rotate the encryption key for a settings page.
-	 *
-	 * Re-encrypts all encrypted field values with a new key.
+	 * Check if a toggle/checkbox field is enabled.
 	 *
 	 * @param string $settings_id Settings ID.
-	 * @param string $new_key     New encryption key.
+	 * @param string $field_key   Field key.
 	 *
-	 * @return bool Whether rotation was successful.
+	 * @return bool
 	 */
-	function rotate_setting_encryption_key( string $settings_id, string $new_key ): bool {
-		$settings = Registry::instance()->get( $settings_id );
+	function is_setting_on( string $settings_id, string $field_key ): bool {
+		return filter_var(
+			get_setting_field_value( $settings_id, $field_key, false ),
+			FILTER_VALIDATE_BOOLEAN
+		);
+	}
+}
 
-		if ( $settings && method_exists( $settings, 'rotate_encryption_key' ) ) {
-			return $settings->rotate_encryption_key( $new_key );
+if ( ! function_exists( 'is_setting_enabled' ) ) {
+	/**
+	 * Check if a value exists in a checkbox_group or multi-select field.
+	 *
+	 * @param string $settings_id Settings ID.
+	 * @param string $field_key   Field key.
+	 * @param string $option      Option value to check for.
+	 *
+	 * @return bool
+	 */
+	function is_setting_enabled( string $settings_id, string $field_key, string $option ): bool {
+		$value = get_setting_field_value( $settings_id, $field_key, [] );
+
+		return is_array( $value ) && in_array( $option, $value, true );
+	}
+}
+
+/** Page Field Helpers ********************************************************/
+
+if ( ! function_exists( 'get_setting_field_page_id' ) ) {
+	/**
+	 * Get a page/post ID from a setting field.
+	 *
+	 * @param string $settings_id Settings ID.
+	 * @param string $field_key   Field key.
+	 *
+	 * @return int Page/post ID or 0 if not set.
+	 */
+	function get_setting_field_page_id( string $settings_id, string $field_key ): int {
+		return absint( get_setting_field_value( $settings_id, $field_key, 0 ) );
+	}
+}
+
+if ( ! function_exists( 'get_setting_field_page_url' ) ) {
+	/**
+	 * Get the URL for a page/post stored in a setting field.
+	 *
+	 * @param string $settings_id Settings ID.
+	 * @param string $field_key   Field key.
+	 * @param string $fallback    Fallback URL if page not set.
+	 *
+	 * @return string Page URL or fallback.
+	 */
+	function get_setting_field_page_url( string $settings_id, string $field_key, string $fallback = '' ): string {
+		$page_id = get_setting_field_page_id( $settings_id, $field_key );
+
+		if ( $page_id > 0 ) {
+			$url = get_permalink( $page_id );
+
+			if ( $url ) {
+				return $url;
+			}
 		}
 
-		return false;
+		return $fallback ?: home_url( '/' );
+	}
+}
+
+if ( ! function_exists( 'is_setting_field_page' ) ) {
+	/**
+	 * Check if currently viewing the page stored in a setting field.
+	 *
+	 * @param string $settings_id Settings ID.
+	 * @param string $field_key   Field key.
+	 *
+	 * @return bool
+	 */
+	function is_setting_field_page( string $settings_id, string $field_key ): bool {
+		if ( ! is_singular() ) {
+			return false;
+		}
+
+		$page_id = get_setting_field_page_id( $settings_id, $field_key );
+
+		return $page_id > 0 && is_page( $page_id );
 	}
 }

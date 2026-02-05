@@ -90,7 +90,7 @@ trait TabManager {
 	 * @return bool
 	 */
 	protected function has_tabs(): bool {
-		return count( $this->tabs ) > 1;
+		return ! empty( $this->tabs );
 	}
 
 	/**

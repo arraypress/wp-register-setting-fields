@@ -92,35 +92,36 @@ class SettingFields {
      * @var array
      */
     protected array $defaults = [
-            'page_title'    => 'Settings',
-            'menu_title'    => 'Settings',
-            'menu_slug'     => '',
-            'capability'    => 'manage_options',
-            'parent_slug'   => '',
-            'icon'          => 'dashicons-admin-generic',
-            'body_class'    => '',
-            'position'      => null,
-            'option_name'   => '',
-            'option_group'  => '',
-            'tabs'          => [],
-            'sections'      => [],
-            'fields'        => [],
-            'show_title'    => true,
-            'show_tabs'     => true,
-            'submit_button' => true,
+        'page_title'    => 'Settings',
+        'menu_title'    => 'Settings',
+        'menu_slug'     => '',
+        'capability'    => 'manage_options',
+        'parent_slug'   => '',
+        'icon'          => 'dashicons-admin-generic',
+        'body_class'    => '',
+        'position'      => null,
+        'option_name'   => '',
+        'option_group'  => '',
+        'tabs'          => [],
+        'sections'      => [],
+        'fields'        => [],
+        'submit_button' => true,
+
         // Branded header options
-            'logo'          => '',
-            'header_title'  => '',
-            'header_class'  => '',
+        'logo'          => '',
+        'header_title'  => '',
+        'header_class'  => '',
+
         // Help screen options
-            'help_tabs'     => [],
-            'help_sidebar'  => '',
+        'help_tabs'     => [],
+        'help_sidebar'  => '',
+
         // Encryption options
-            'encryption'    => [
-                    'enabled' => null, // null = auto-detect from fields
-                    'key'     => null, // null = use WordPress salts
-                    'prefix'  => '',   // empty = use settings ID
-            ],
+        'encryption'    => [
+            'enabled' => null,
+            'key'     => null,
+            'prefix'  => '',
+        ],
     ];
 
     /**
@@ -380,8 +381,19 @@ class SettingFields {
      */
     protected function render_header( string $current_tab ): void {
         $logo_url     = $this->config['logo'] ?? '';
-        $header_title = ! empty( $this->config['header_title'] ) ? $this->config['header_title'] : $this->config['page_title'];
-        $show_title   = $this->config['show_title'] ?? true;
+        $header_title = ! empty( $this->config['header_title'] )
+                ? $this->config['header_title']
+                : $this->config['page_title'];
+
+        $has_title = ! empty( $header_title );
+        $has_tabs  = ! empty( $this->tabs );
+
+        // Don't render header if nothing to show
+        if ( ! $logo_url && ! $has_title && ! $has_tabs ) {
+            echo '<hr class="wp-header-end">';
+
+            return;
+        }
 
         ?>
         <div class="setting-fields-header">
@@ -389,29 +401,29 @@ class SettingFields {
                 <div class="setting-fields-header__branding">
                     <?php if ( $logo_url ) : ?>
                         <img src="<?php echo esc_url( $logo_url ); ?>" alt="" class="setting-fields-header__logo">
-                        <?php if ( $show_title && ! empty( $header_title ) ) : ?>
+                        <?php if ( $has_title ) : ?>
                             <span class="setting-fields-header__separator">/</span>
                         <?php endif; ?>
                     <?php endif; ?>
-                    <?php if ( $show_title && ! empty( $header_title ) ) : ?>
+                    <?php if ( $has_title ) : ?>
                         <h1 class="setting-fields-header__title"><?php echo esc_html( $header_title ); ?></h1>
                     <?php endif; ?>
                 </div>
             </div>
 
-            <?php if ( $this->config['show_tabs'] && ! empty( $this->tabs ) ) : ?>
+            <?php if ( $has_tabs ) : ?>
                 <div class="setting-fields-header__tabs">
                     <button type="button" class="setting-fields-tabs-toggle">
-                    <span class="setting-fields-tabs-current">
-                        <?php
-                        $current_label = $this->tabs[ $current_tab ]['label'] ?? '';
-                        $current_icon  = $this->tabs[ $current_tab ]['icon'] ?? '';
-                        if ( $current_icon ) {
-                            echo '<span class="dashicons ' . esc_attr( $current_icon ) . '"></span> ';
-                        }
-                        echo esc_html( $current_label );
-                        ?>
-                    </span>
+                        <span class="setting-fields-tabs-current">
+                            <?php
+                            $current_label = $this->tabs[ $current_tab ]['label'] ?? '';
+                            $current_icon  = $this->tabs[ $current_tab ]['icon'] ?? '';
+                            if ( $current_icon ) {
+                                echo '<span class="dashicons ' . esc_attr( $current_icon ) . '"></span> ';
+                            }
+                            echo esc_html( $current_label );
+                            ?>
+                        </span>
                         <span class="dashicons dashicons-arrow-down-alt2"></span>
                     </button>
                     <?php $this->render_tabs( $current_tab ); ?>
@@ -540,9 +552,9 @@ class SettingFields {
                         <?php endif; ?>
                         <?php if ( ! empty( $field['tooltip'] ) ) : ?>
                             <span class="setting-fields-tooltip">
-								<span class="dashicons dashicons-info"></span>
-								<span class="setting-fields-tooltip-content"><?php echo esc_html( $field['tooltip'] ); ?></span>
-							</span>
+                                <span class="dashicons dashicons-info"></span>
+                                <span class="setting-fields-tooltip-content"><?php echo esc_html( $field['tooltip'] ); ?></span>
+                            </span>
                         <?php endif; ?>
                     </label>
                 <?php endif; ?>
