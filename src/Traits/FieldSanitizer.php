@@ -63,9 +63,10 @@ trait FieldSanitizer {
 				'image', 'file' => $this->sanitize_attachment( $value ),
 				'gallery' => $this->sanitize_gallery( $value ),
 				'link' => $this->sanitize_link( $value ),
-				'post', 'post_ajax', 'page', 'page_ajax' => $this->sanitize_post_id( $value, $field ),
-				'taxonomy', 'taxonomy_ajax' => $this->sanitize_term_id( $value, $field ),
-				'user', 'user_ajax' => $this->sanitize_user_id( $value, $field ),
+				'post', 'page' => $this->sanitize_post_id( $value, $field ),
+				'taxonomy' => $this->sanitize_term_id( $value, $field ),
+				'user' => $this->sanitize_user_id( $value, $field ),
+				'ajax' => $this->sanitize_ajax_value( $value, $field ),
 				'dimensions' => $this->sanitize_dimensions( $value ),
 				'repeater' => $this->sanitize_repeater( $value, $field ),
 				'group' => $this->sanitize_group( $value, $field ),
@@ -306,14 +307,17 @@ trait FieldSanitizer {
 		$post_type = $field['post_type'] ?? 'post';
 		$multiple  = $field['multiple'] ?? false;
 
+		// Handle array of post types
+		$post_types = is_array( $post_type ) ? $post_type : [ $post_type ];
+
 		if ( $multiple ) {
 			if ( ! is_array( $value ) ) {
 				return [];
 			}
 
-			return array_filter( array_map( function ( $id ) use ( $post_type ) {
+			return array_filter( array_map( function ( $id ) use ( $post_types ) {
 				$id = absint( $id );
-				if ( $id > 0 && get_post_type( $id ) === $post_type ) {
+				if ( $id > 0 && in_array( get_post_type( $id ), $post_types, true ) ) {
 					return $id;
 				}
 				return 0;
@@ -321,7 +325,7 @@ trait FieldSanitizer {
 		}
 
 		$id = absint( $value );
-		if ( $id > 0 && get_post_type( $id ) === $post_type ) {
+		if ( $id > 0 && in_array( get_post_type( $id ), $post_types, true ) ) {
 			return $id;
 		}
 
@@ -393,6 +397,33 @@ trait FieldSanitizer {
 		}
 
 		return 0;
+	}
+
+	/**
+	 * Sanitize custom AJAX field value.
+	 *
+	 * @param mixed $value The value.
+	 * @param array $field Field configuration.
+	 *
+	 * @return mixed
+	 */
+	protected function sanitize_ajax_value( $value, array $field ) {
+		$multiple = $field['multiple'] ?? false;
+
+		// If there's a custom sanitize callback, use it
+		if ( ! empty( $field['sanitize_callback'] ) && is_callable( $field['sanitize_callback'] ) ) {
+			return call_user_func( $field['sanitize_callback'], $value, $field );
+		}
+
+		// Default sanitization - treat as string/array of strings
+		if ( $multiple ) {
+			if ( ! is_array( $value ) ) {
+				return [];
+			}
+			return array_map( 'sanitize_text_field', $value );
+		}
+
+		return sanitize_text_field( (string) $value );
 	}
 
 	/**

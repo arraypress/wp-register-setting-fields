@@ -163,10 +163,13 @@ class SettingFields {
     /**
      * Check if any fields require AJAX.
      *
+     * All relational fields (post, page, taxonomy, user) now use AJAX by default,
+     * plus the custom 'ajax' type for custom callbacks.
+     *
      * @return bool
      */
     protected function has_ajax_fields(): bool {
-        $ajax_types = [ 'ajax', 'post_ajax', 'taxonomy_ajax', 'user_ajax' ];
+        $ajax_types = [ 'ajax', 'post', 'page', 'taxonomy', 'user' ];
 
         foreach ( $this->fields as $field ) {
             if ( in_array( $field['type'] ?? '', $ajax_types, true ) ) {

@@ -38,6 +38,7 @@ trait ConfigParser {
 	protected function parse_tabs(): void {
 		if ( empty( $this->config['tabs'] ) ) {
 			$this->tabs = [];
+
 			return;
 		}
 
@@ -66,6 +67,7 @@ trait ConfigParser {
 	protected function parse_sections(): void {
 		if ( empty( $this->config['sections'] ) ) {
 			$this->sections = [];
+
 			return;
 		}
 
@@ -86,6 +88,7 @@ trait ConfigParser {
 	protected function parse_fields(): void {
 		if ( empty( $this->config['fields'] ) ) {
 			$this->fields = [];
+
 			return;
 		}
 
@@ -221,7 +224,6 @@ trait ConfigParser {
 				break;
 
 			case 'post':
-			case 'post_ajax':
 				$field = wp_parse_args( $field, [
 					'post_type' => 'post',
 					'multiple'  => false,
@@ -229,7 +231,6 @@ trait ConfigParser {
 				break;
 
 			case 'page':
-			case 'page_ajax':
 				$field = wp_parse_args( $field, [
 					'post_type' => 'page',
 					'multiple'  => false,
@@ -237,7 +238,6 @@ trait ConfigParser {
 				break;
 
 			case 'taxonomy':
-			case 'taxonomy_ajax':
 				$field = wp_parse_args( $field, [
 					'taxonomy' => 'category',
 					'multiple' => false,
@@ -245,7 +245,6 @@ trait ConfigParser {
 				break;
 
 			case 'user':
-			case 'user_ajax':
 				$field = wp_parse_args( $field, [
 					'role'     => '',
 					'multiple' => false,

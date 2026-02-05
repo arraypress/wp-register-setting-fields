@@ -206,9 +206,9 @@ class RestApi {
 		$field_type = $request->get_param( 'field_type' );
 
 		return match ( $field_type ) {
-			'post_ajax', 'page_ajax' => $this->handle_post_search( $request ),
-			'taxonomy_ajax' => $this->handle_taxonomy_search( $request ),
-			'user_ajax' => $this->handle_user_search( $request ),
+			'post', 'page' => $this->handle_post_search( $request ),
+			'taxonomy' => $this->handle_taxonomy_search( $request ),
+			'user' => $this->handle_user_search( $request ),
 			default => $this->handle_custom_ajax( $request ),
 		};
 	}

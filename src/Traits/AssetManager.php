@@ -62,8 +62,9 @@ trait AssetManager {
 
 		$types_used = $this->get_field_types_used();
 
-		// Add Select2 dependency if ajax fields exist
-		if ( array_intersect( [ 'select2', 'select_multiple', 'post_ajax', 'taxonomy_ajax', 'user_ajax', 'ajax' ], $types_used ) ) {
+		// Add Select2 dependency if any Select2-based fields exist
+		// This includes: select2, select_multiple, post, page, taxonomy, user, ajax
+		if ( array_intersect( [ 'select2', 'select_multiple', 'post', 'page', 'taxonomy', 'user', 'ajax' ], $types_used ) ) {
 			$script_deps[] = 'arraypress-select2';
 		}
 
@@ -110,8 +111,8 @@ trait AssetManager {
 			}
 		}
 
-		// Select2
-		if ( array_intersect( [ 'select2', 'select_multiple', 'post_ajax', 'taxonomy_ajax', 'user_ajax', 'ajax' ], $types_used ) ) {
+		// Select2 - needed for select2, select_multiple, and all relational fields
+		if ( array_intersect( [ 'select2', 'select_multiple', 'post', 'page', 'taxonomy', 'user', 'ajax' ], $types_used ) ) {
 			$this->enqueue_select2();
 		}
 

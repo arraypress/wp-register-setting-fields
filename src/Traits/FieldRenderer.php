@@ -69,6 +69,7 @@ trait FieldRenderer {
 		// Check for custom render callback first
 		if ( ! empty( $field['render_callback'] ) && is_callable( $field['render_callback'] ) ) {
 			call_user_func( $field['render_callback'], $field, $name, $id, $value );
+
 			return;
 		}
 
@@ -111,16 +112,14 @@ trait FieldRenderer {
 			'email_editor' => $this->render_email_editor( $field, $name, $id, $value ),
 			'sortable' => $this->render_sortable( $field, $name, $id, $value ),
 
-			// Relational
+			// Relational (all use Select2 with AJAX)
 			'post' => $this->render_post_select( $field, $name, $id, $value ),
-			'post_ajax' => $this->render_post_ajax( $field, $name, $id, $value ),
-			'page' => $this->render_post_select( $field, $name, $id, $value ),
-			'page_ajax' => $this->render_page_ajax( $field, $name, $id, $value ),
-
+			'page' => $this->render_page_select( $field, $name, $id, $value ),
 			'taxonomy' => $this->render_taxonomy_select( $field, $name, $id, $value ),
-			'taxonomy_ajax' => $this->render_taxonomy_ajax( $field, $name, $id, $value ),
 			'user' => $this->render_user_select( $field, $name, $id, $value ),
-			'user_ajax' => $this->render_user_ajax( $field, $name, $id, $value ),
+
+			// Custom AJAX callback
+			'ajax' => $this->render_ajax_select( $field, $name, $id, $value ),
 
 			// Nested
 			'group' => $this->render_group( $field, $name, $id, $value ),
