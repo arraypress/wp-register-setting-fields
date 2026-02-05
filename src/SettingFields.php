@@ -341,10 +341,11 @@ class SettingFields {
         // Get current tab
         $current_tab = $this->get_current_tab();
 
+        // Render header outside .wrap (matches RegisterTables pattern)
+        $this->render_header( $current_tab );
+
         ?>
         <div class="wrap setting-fields-wrap" data-setting-id="<?php echo esc_attr( $this->id ); ?>">
-
-            <?php $this->render_header( $current_tab ); ?>
 
             <div class="setting-fields-notices">
                 <?php settings_errors( $this->config['option_group'] ); ?>
@@ -368,6 +369,8 @@ class SettingFields {
     /**
      * Render the modern header with optional logo and integrated tabs.
      *
+     * Rendered outside .wrap to match RegisterTables/EDD pattern.
+     *
      * @param string $current_tab Current active tab.
      *
      * @return void
@@ -379,23 +382,27 @@ class SettingFields {
 
         ?>
         <div class="setting-fields-header">
-            <div class="setting-fields-header-top">
-                <div class="setting-fields-header-branding">
+            <div class="setting-fields-header__inner">
+                <div class="setting-fields-header__branding">
                     <?php if ( $logo_url ) : ?>
-                        <img src="<?php echo esc_url( $logo_url ); ?>" alt="" class="setting-fields-header-logo">
+                        <img src="<?php echo esc_url( $logo_url ); ?>" alt="" class="setting-fields-header__logo">
+                        <?php if ( $show_title && ! empty( $header_title ) ) : ?>
+                            <span class="setting-fields-header__separator">/</span>
+                        <?php endif; ?>
                     <?php endif; ?>
-                    <?php if ( $show_title ) : ?>
-                        <h1 class="setting-fields-header-title"><?php echo esc_html( $header_title ); ?></h1>
+                    <?php if ( $show_title && ! empty( $header_title ) ) : ?>
+                        <h1 class="setting-fields-header__title"><?php echo esc_html( $header_title ); ?></h1>
                     <?php endif; ?>
                 </div>
-            </div>
 
-            <?php if ( $this->config['show_tabs'] && ! empty( $this->tabs ) ) : ?>
-                <div class="setting-fields-header-tabs">
-                    <?php $this->render_tabs( $current_tab ); ?>
-                </div>
-            <?php endif; ?>
+                <?php if ( $this->config['show_tabs'] && ! empty( $this->tabs ) ) : ?>
+                    <div class="setting-fields-header__tabs">
+                        <?php $this->render_tabs( $current_tab ); ?>
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
+        <hr class="wp-header-end">
         <?php
     }
 

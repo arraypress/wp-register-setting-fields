@@ -132,6 +132,30 @@ trait RelationalFields {
 	}
 
 	/**
+	 * Render a page AJAX select field.
+	 *
+	 * Convenience wrapper for post_ajax with post_type defaulted to 'page'.
+	 *
+	 * @param array  $field Field configuration.
+	 * @param string $name  Input name.
+	 * @param string $id    Input id.
+	 * @param mixed  $value Current value.
+	 *
+	 * @return void
+	 */
+	protected function render_page_ajax( array $field, string $name, string $id, $value ): void {
+		// Ensure post_type is 'page' (can be overridden if needed)
+		$field['post_type'] = $field['post_type'] ?? 'page';
+
+		// Set a sensible default placeholder
+		if ( empty( $field['placeholder'] ) ) {
+			$field['placeholder'] = __( 'Search pages...', 'setting-fields' );
+		}
+
+		$this->render_post_ajax( $field, $name, $id, $value );
+	}
+
+	/**
 	 * Render a taxonomy select field (static options).
 	 *
 	 * @param array  $field Field configuration.

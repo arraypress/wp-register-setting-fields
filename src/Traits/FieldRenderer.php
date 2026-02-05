@@ -114,6 +114,9 @@ trait FieldRenderer {
 			// Relational
 			'post' => $this->render_post_select( $field, $name, $id, $value ),
 			'post_ajax' => $this->render_post_ajax( $field, $name, $id, $value ),
+			'page' => $this->render_post_select( $field, $name, $id, $value ),
+			'page_ajax' => $this->render_page_ajax( $field, $name, $id, $value ),
+
 			'taxonomy' => $this->render_taxonomy_select( $field, $name, $id, $value ),
 			'taxonomy_ajax' => $this->render_taxonomy_ajax( $field, $name, $id, $value ),
 			'user' => $this->render_user_select( $field, $name, $id, $value ),

@@ -59,31 +59,43 @@
 }
 
 /* ==========================================================================
-   Modern Header (EDD-style)
+   Modern Header (outside .wrap, matches RegisterTables/EDD pattern)
    ========================================================================== */
 
 .setting-fields-header {
     background: #fff;
-    margin: -8px -20px 0 -20px;
     border-bottom: 1px solid #c3c4c7;
+    margin: 0 0 0 -20px;
+    padding: 0 20px;
 }
 
-.setting-fields-header-top {
-    padding: 16px 20px;
+.setting-fields-header__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 65px;
+    padding: 12px 0;
 }
 
-.setting-fields-header-branding {
+.setting-fields-header__branding {
     display: flex;
     align-items: center;
     gap: 12px;
 }
 
-.setting-fields-header-logo {
+.setting-fields-header__logo {
     max-height: 36px;
     width: auto;
 }
 
-.setting-fields-header-title {
+.setting-fields-header__separator {
+    color: #c3c4c7;
+    font-size: 24px;
+    font-weight: 300;
+}
+
+.setting-fields-header__title {
     margin: 0;
     padding: 0;
     font-size: 21px;
@@ -92,13 +104,44 @@
     color: #1d2327;
 }
 
-.setting-fields-header-tabs {
-    padding: 0 20px;
-    border-top: 1px solid #dcdcde;
-    background: #fff;
+.setting-fields-header__tabs {
+    display: flex;
+    align-items: center;
 }
 
-/* Notices container - below header */
+/* Tab Navigation in Header */
+.setting-fields-header__tabs .setting-fields-tabs-nav {
+    display: flex;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.setting-fields-header__tabs .setting-fields-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    color: #50575e;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 4px;
+    transition: color 0.2s ease, background-color 0.2s ease;
+    white-space: nowrap;
+}
+
+.setting-fields-header__tabs .setting-fields-tab:hover {
+    color: #1d2327;
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.setting-fields-header__tabs .setting-fields-tab-active {
+    color: #1d2327;
+    background: rgba(0, 0, 0, 0.04);
+}
+
+/* Notices container */
 .setting-fields-notices {
     margin: 20px 0;
     clear: both;
@@ -109,18 +152,29 @@
     margin: 0;
 }
 
-/* Force notices out of the header area */
-.setting-fields-wrap .notice,
-.setting-fields-wrap .updated,
-.setting-fields-wrap .error {
-    margin: 15px 0 !important;
-}
+/* Responsive */
+@media screen and (max-width: 782px) {
+    .setting-fields-header {
+        margin-left: -10px;
+        padding: 0 10px;
+    }
 
-/* Hide any notices that WordPress injects before our container */
-.setting-fields-header + .notice,
-.setting-fields-header + .updated,
-.setting-fields-header + .error {
-    display: none;
+    .setting-fields-header__inner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px 0;
+    }
+
+    .setting-fields-header__tabs {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .setting-fields-header__tabs .setting-fields-tab {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
 }
 
 /* ==========================================================================

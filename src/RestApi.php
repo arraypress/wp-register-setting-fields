@@ -206,10 +206,10 @@ class RestApi {
 		$field_type = $request->get_param( 'field_type' );
 
 		return match ( $field_type ) {
-			'post_ajax'     => $this->handle_post_search( $request ),
+			'post_ajax', 'page_ajax' => $this->handle_post_search( $request ),
 			'taxonomy_ajax' => $this->handle_taxonomy_search( $request ),
-			'user_ajax'     => $this->handle_user_search( $request ),
-			default         => $this->handle_custom_ajax( $request ),
+			'user_ajax' => $this->handle_user_search( $request ),
+			default => $this->handle_custom_ajax( $request ),
 		};
 	}
 
@@ -282,8 +282,10 @@ class RestApi {
 						esc_html( $result['subject'] ),
 						$result['body']
 					);
+
 					return new WP_REST_Response( [ 'html' => $html ], 200 );
 				}
+
 				// Return as is
 				return new WP_REST_Response( $result, 200 );
 			}
@@ -356,8 +358,8 @@ class RestApi {
 			$result = call_user_func( $callback, $data );
 
 			if ( $result === true || ( is_array( $result ) && ! empty( $result['success'] ) ) ) {
-				$message = is_array( $result ) && isset( $result['message'] ) 
-					? $result['message'] 
+				$message = is_array( $result ) && isset( $result['message'] )
+					? $result['message']
 					: sprintf( __( 'Test email sent to %s', 'setting-fields' ), $email );
 
 				return new WP_REST_Response( [

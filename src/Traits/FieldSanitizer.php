@@ -63,7 +63,7 @@ trait FieldSanitizer {
 				'image', 'file' => $this->sanitize_attachment( $value ),
 				'gallery' => $this->sanitize_gallery( $value ),
 				'link' => $this->sanitize_link( $value ),
-				'post', 'post_ajax' => $this->sanitize_post_id( $value, $field ),
+				'post', 'post_ajax', 'page', 'page_ajax' => $this->sanitize_post_id( $value, $field ),
 				'taxonomy', 'taxonomy_ajax' => $this->sanitize_term_id( $value, $field ),
 				'user', 'user_ajax' => $this->sanitize_user_id( $value, $field ),
 				'dimensions' => $this->sanitize_dimensions( $value ),

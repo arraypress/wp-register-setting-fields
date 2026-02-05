@@ -228,6 +228,14 @@ trait ConfigParser {
 				] );
 				break;
 
+			case 'page':
+			case 'page_ajax':
+				$field = wp_parse_args( $field, [
+					'post_type' => 'page',
+					'multiple'  => false,
+				] );
+				break;
+
 			case 'taxonomy':
 			case 'taxonomy_ajax':
 				$field = wp_parse_args( $field, [
