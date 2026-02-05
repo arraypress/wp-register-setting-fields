@@ -397,6 +397,19 @@ class SettingFields {
 
                 <?php if ( $this->config['show_tabs'] && ! empty( $this->tabs ) ) : ?>
                     <div class="setting-fields-header__tabs">
+                        <button type="button" class="setting-fields-tabs-toggle">
+            <span class="setting-fields-tabs-current">
+                <?php
+                $current_label = $this->tabs[ $current_tab ]['label'] ?? '';
+                $current_icon = $this->tabs[ $current_tab ]['icon'] ?? '';
+                if ( $current_icon ) {
+                    echo '<span class="dashicons ' . esc_attr( $current_icon ) . '"></span> ';
+                }
+                echo esc_html( $current_label );
+                ?>
+            </span>
+                            <span class="dashicons dashicons-arrow-down-alt2"></span>
+                        </button>
                         <?php $this->render_tabs( $current_tab ); ?>
                     </div>
                 <?php endif; ?>

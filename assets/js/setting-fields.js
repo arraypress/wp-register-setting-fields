@@ -14,6 +14,7 @@
          */
         init: function () {
             this.repositionNotices();
+            this.initMobileTabs();
             this.initConditionalLogic();
             this.initSelect2();
             this.initColorPicker();
@@ -47,6 +48,36 @@
             // Also catch notices WordPress injects at wrap level
             $wrap.siblings('.notice, .updated, .error').each(function () {
                 $(this).appendTo($noticesContainer);
+            });
+        },
+
+        /**
+         * Mobile Tabs Toggle
+         */
+        initMobileTabs: function () {
+            // Toggle dropdown
+            $(document).on('click', '.setting-fields-tabs-toggle', function (e) {
+                e.preventDefault();
+                $(this).closest('.setting-fields-header__tabs').toggleClass('is-open');
+            });
+
+            // Close when clicking outside
+            $(document).on('click', function (e) {
+                if (!$(e.target).closest('.setting-fields-header__tabs').length) {
+                    $('.setting-fields-header__tabs').removeClass('is-open');
+                }
+            });
+
+            // Close when a tab is clicked
+            $(document).on('click', '.setting-fields-header__tabs .setting-fields-tab', function () {
+                $('.setting-fields-header__tabs').removeClass('is-open');
+            });
+
+            // Close on escape key
+            $(document).on('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    $('.setting-fields-header__tabs').removeClass('is-open');
+                }
             });
         },
 

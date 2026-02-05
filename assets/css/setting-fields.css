@@ -103,8 +103,12 @@
     color: #1d2327;
 }
 
-/* Tabs row - full width below branding */
+/* ==========================================================================
+   Tabs Row
+   ========================================================================== */
+
 .setting-fields-header__tabs {
+    position: relative;
     border-top: 1px solid #dcdcde;
     padding: 0 20px;
 }
@@ -115,6 +119,7 @@
     margin: 0;
     padding: 0;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
@@ -163,7 +168,18 @@
     height: 16px;
 }
 
-/* Notices container */
+/* ==========================================================================
+   Mobile Tabs Toggle
+   ========================================================================== */
+
+.setting-fields-tabs-toggle {
+    display: none;
+}
+
+/* ==========================================================================
+   Notices Container
+   ========================================================================== */
+
 .setting-fields-notices {
     margin: 20px 0;
     clear: both;
@@ -174,7 +190,10 @@
     margin: 0;
 }
 
-/* Responsive */
+/* ==========================================================================
+   Responsive - Tablet
+   ========================================================================== */
+
 @media screen and (max-width: 782px) {
     .setting-fields-header {
         margin-left: -10px;
@@ -182,16 +201,112 @@
 
     .setting-fields-header__branding {
         min-height: 50px;
-        padding: 0 10px;
+        padding: 0 15px;
     }
 
     .setting-fields-header__tabs {
-        padding: 0 10px;
+        padding: 0 15px;
     }
 
     .setting-fields-header__tabs .setting-fields-tab {
         padding: 10px 12px;
         font-size: 12px;
+    }
+}
+
+/* ==========================================================================
+   Responsive - Mobile (Dropdown Menu)
+   ========================================================================== */
+
+@media screen and (max-width: 600px) {
+    .setting-fields-header__branding {
+        padding: 0 10px;
+    }
+
+    .setting-fields-header__tabs {
+        padding: 0;
+        border-top: none;
+    }
+
+    /* Toggle button - visible on mobile */
+    .setting-fields-tabs-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 12px 15px;
+        background: #f6f7f7;
+        border: none;
+        border-top: 1px solid #dcdcde;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        color: #1d2327;
+        text-align: left;
+    }
+
+    .setting-fields-tabs-toggle:hover {
+        background: #f0f0f1;
+    }
+
+    .setting-fields-tabs-toggle:focus {
+        outline: none;
+        box-shadow: inset 0 0 0 1px #2271b1;
+    }
+
+    .setting-fields-tabs-toggle .dashicons {
+        color: #50575e;
+        transition: transform 0.2s ease;
+    }
+
+    .setting-fields-header__tabs.is-open .setting-fields-tabs-toggle .dashicons {
+        transform: rotate(180deg);
+    }
+
+    /* Dropdown navigation */
+    .setting-fields-header__tabs .setting-fields-tabs-nav {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        background: #fff;
+        border: 1px solid #c3c4c7;
+        border-top: none;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        z-index: 100;
+        overflow: visible;
+    }
+
+    .setting-fields-header__tabs.is-open .setting-fields-tabs-nav {
+        display: flex;
+    }
+
+    .setting-fields-header__tabs .setting-fields-tab {
+        padding: 12px 15px;
+        border-bottom: 1px solid #e5e5e5;
+        border-left: 3px solid transparent;
+        margin-bottom: 0;
+    }
+
+    .setting-fields-header__tabs .setting-fields-tab:last-child {
+        border-bottom: none;
+    }
+
+    .setting-fields-header__tabs .setting-fields-tab:hover {
+        background: #f6f7f7;
+        border-bottom-color: #e5e5e5;
+    }
+
+    .setting-fields-header__tabs .setting-fields-tab-active {
+        background: #f0f6fc;
+        border-left-color: #2271b1;
+        border-bottom-color: #e5e5e5;
+    }
+
+    .setting-fields-header__tabs .setting-fields-tab-active:last-child {
+        border-bottom-color: transparent;
     }
 }
 
