@@ -609,9 +609,9 @@
                 const $input = $(this);
                 const options = {
                     defaultColor: $input.data('default-color') || false,
-                    change: function () {
-                        $input.trigger('change');
-                    }
+                    change: function (event, ui) {
+                        $input.val(ui.color.toString()).trigger('change');
+                    },
                 };
 
                 if ($input.data('alpha-enabled') === 'true') {

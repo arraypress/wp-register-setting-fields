@@ -1585,6 +1585,10 @@
     margin-bottom: 5px;
 }
 
+.setting-fields-email-recipient-input {
+    max-width: none !important;
+}
+
 .setting-fields-email-recipient-wrap {
     display: flex;
     gap: 8px;
