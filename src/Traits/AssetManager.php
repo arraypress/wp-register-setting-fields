@@ -73,6 +73,11 @@ trait AssetManager {
 			$script_deps[] = 'wp-color-picker';
 		}
 
+		// Add jQuery UI Sortable for gallery, repeater, and sortable fields
+		if ( array_intersect( [ 'gallery', 'repeater', 'sortable' ], $types_used ) ) {
+			$script_deps[] = 'jquery-ui-sortable';
+		}
+
 		wp_enqueue_composer_script(
 			'arraypress-setting-fields',
 			__FILE__,

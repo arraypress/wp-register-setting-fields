@@ -106,6 +106,8 @@ trait FieldRenderer {
 			'gallery' => $this->render_gallery( $field, $name, $id, $value ),
 
 			// Complex
+			'clipboard' => $this->render_clipboard( $field, $name, $id, $value ),
+			'action_button' => $this->render_action_button( $field, $name, $id, $value ),
 			'link' => $this->render_link( $field, $name, $id, $value ),
 			'dimensions' => $this->render_dimensions( $field, $name, $id, $value ),
 			'oembed' => $this->render_oembed( $field, $name, $id, $value ),

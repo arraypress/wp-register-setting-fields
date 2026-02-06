@@ -30,6 +30,8 @@
             this.initEmailEditor();
             this.initSortable();
             this.initCollapsibleGroups();
+            this.initClipboard();
+            this.initActionButton();
         },
 
         /**
@@ -119,11 +121,17 @@
                 self.evaluateConditions($(this));
             });
 
+            // Update section visibility after initial evaluation
+            self.updateSectionVisibility();
+
             // Listen for changes
             $('.setting-fields-form').on('change', 'input, select, textarea', function () {
                 $rows.each(function () {
                     self.evaluateConditions($(this));
                 });
+
+                // Update section visibility after conditions change
+                self.updateSectionVisibility();
             });
         },
 
@@ -151,6 +159,41 @@
             } else {
                 $row.addClass('setting-field-hidden').hide();
             }
+        },
+
+        /**
+         * Update section visibility based on whether all child fields are hidden.
+         *
+         * Checks each .setting-fields-section container and hides the entire
+         * section (title, description, table) if all field rows within it are
+         * conditionally hidden.
+         */
+        updateSectionVisibility: function () {
+            $('.setting-fields-section').each(function () {
+                var $section = $(this);
+                var $table = $section.find('table.form-table');
+
+                if (!$table.length) return;
+
+                // Get all field rows (exclude full-width layout rows like separators/headings
+                // unless they also have conditions)
+                var $allRows = $table.find('tr').not('.setting-fields-row-fullwidth');
+                var $visibleRows = $allRows.filter(':not(.setting-field-hidden)');
+
+                // Also check full-width rows that have conditions
+                var $conditionalFullWidth = $table.find('tr.setting-fields-row-fullwidth[data-conditions]');
+                var $visibleFullWidth = $conditionalFullWidth.filter(':not(.setting-field-hidden)');
+
+                // Total countable rows = regular rows + conditional full-width rows
+                var totalRows = $allRows.length + $conditionalFullWidth.length;
+                var visibleCount = $visibleRows.length + $visibleFullWidth.length;
+
+                if (totalRows > 0 && visibleCount === 0) {
+                    $section.addClass('setting-fields-section-hidden').hide();
+                } else {
+                    $section.removeClass('setting-fields-section-hidden').show();
+                }
+            });
         },
 
         getFieldValue: function ($field) {
@@ -219,6 +262,150 @@
                 default:
                     return current == expected;
             }
+        },
+
+        /**
+         * Clipboard Field
+         */
+        initClipboard: function () {
+            $(document).on('click', '.setting-fields-clipboard-btn', function (e) {
+                e.preventDefault();
+
+                var $btn = $(this);
+                var text = $btn.data('clipboard-text');
+                var originalLabel = $btn.data('label');
+                var copiedLabel = $btn.data('copied-label');
+                var $btnText = $btn.find('.setting-fields-clipboard-btn-text');
+                var $icon = $btn.find('.dashicons');
+
+                // Copy to clipboard
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(function () {
+                        showCopied();
+                    }).catch(function () {
+                        fallbackCopy(text);
+                    });
+                } else {
+                    fallbackCopy(text);
+                }
+
+                function fallbackCopy(str) {
+                    var $temp = $('<textarea>');
+                    $temp.css({
+                        position: 'fixed',
+                        left: '-9999px',
+                        top: '-9999px',
+                        opacity: 0
+                    });
+                    $('body').append($temp);
+                    $temp.val(str);
+                    $temp[0].focus();
+                    $temp[0].select();
+                    try {
+                        var success = document.execCommand('copy');
+                        if (success) {
+                            showCopied();
+                        }
+                    } catch (err) {
+                        // Silent fail
+                    }
+                    $temp.remove();
+                }
+
+                function showCopied() {
+                    $btnText.text(copiedLabel);
+                    $icon.removeClass('dashicons-clipboard').addClass('dashicons-yes');
+                    $btn.addClass('setting-fields-clipboard-btn--copied');
+
+                    setTimeout(function () {
+                        $btnText.text(originalLabel);
+                        $icon.removeClass('dashicons-yes').addClass('dashicons-clipboard');
+                        $btn.removeClass('setting-fields-clipboard-btn--copied');
+                    }, 2000);
+                }
+            });
+        },
+
+        /**
+         * Action Button Field
+         */
+        initActionButton: function () {
+            $(document).on('click', '.setting-fields-action-btn', function (e) {
+                e.preventDefault();
+
+                var $btn = $(this);
+                var $wrapper = $btn.closest('.setting-fields-action-button');
+                var fieldKey = $wrapper.data('field-key');
+                var confirmMsg = $wrapper.data('confirm');
+                var successIcon = $wrapper.data('success-icon') || 'dashicons-yes-alt';
+                var errorIcon = $wrapper.data('error-icon') || 'dashicons-warning';
+
+                // Confirmation dialog
+                if (confirmMsg && !confirm(confirmMsg)) {
+                    return;
+                }
+
+                // Get settings ID from closest form wrapper
+                var settingsId = $wrapper.closest('.setting-fields-wrap').data('setting-id');
+
+                // Get optional input value
+                var inputValue = '';
+                var $input = $wrapper.find('.setting-fields-action-input');
+                if ($input.length) {
+                    inputValue = $input.val();
+                }
+
+                var $btnText = $btn.find('.setting-fields-action-btn-text');
+                var $icon = $btn.find('.setting-fields-action-icon');
+                var $result = $wrapper.find('.setting-fields-action-result');
+                var $resultIcon = $result.find('.setting-fields-action-result-icon');
+                var $resultMsg = $result.find('.setting-fields-action-result-message');
+
+                var originalLabel = $btn.data('label');
+                var loadingLabel = $btn.data('loading-label');
+                var originalIconClass = $icon.attr('class').replace('setting-fields-action-icon', '').replace('spin', '').trim();
+
+                // Loading state
+                $btn.prop('disabled', true);
+                $btnText.text(loadingLabel);
+                $icon.attr('class', 'dashicons dashicons-update setting-fields-action-icon spin');
+                $result.hide();
+
+                $.ajax({
+                    url: settingFieldsData.restUrl + 'action',
+                    method: 'POST',
+                    headers: {
+                        'X-WP-Nonce': settingFieldsData.restNonce
+                    },
+                    data: {
+                        settings_id: settingsId,
+                        field_key: fieldKey,
+                        input_value: inputValue
+                    },
+                    success: function (response) {
+                        $resultIcon.attr('class', 'dashicons ' + successIcon + ' setting-fields-action-result-icon setting-fields-action-result--success');
+                        $resultMsg.text(response.message || 'Success')
+                            .removeClass('setting-fields-action-result--error')
+                            .addClass('setting-fields-action-result--success');
+                        $result.show();
+                    },
+                    error: function (xhr) {
+                        var message = xhr.responseJSON && xhr.responseJSON.message
+                            ? xhr.responseJSON.message
+                            : 'Action failed';
+                        $resultIcon.attr('class', 'dashicons ' + errorIcon + ' setting-fields-action-result-icon setting-fields-action-result--error');
+                        $resultMsg.text(message)
+                            .removeClass('setting-fields-action-result--success')
+                            .addClass('setting-fields-action-result--error');
+                        $result.show();
+                    },
+                    complete: function () {
+                        $btn.prop('disabled', false);
+                        $btnText.text(originalLabel);
+                        $icon.attr('class', originalIconClass + ' setting-fields-action-icon');
+                    }
+                });
+            });
         },
 
         /**
@@ -562,12 +749,14 @@
             });
 
             // Sortable
-            $('.setting-fields-gallery-items').sortable({
-                items: '.setting-fields-gallery-item',
-                cursor: 'move',
-                opacity: 0.65,
-                placeholder: 'setting-fields-gallery-placeholder'
-            });
+            if ($.fn.sortable) {
+                $('.setting-fields-gallery-items').sortable({
+                    items: '.setting-fields-gallery-item',
+                    cursor: 'move',
+                    opacity: 0.65,
+                    placeholder: 'setting-fields-gallery-placeholder'
+                });
+            }
         },
 
         openGalleryFrame: function ($field) {
@@ -661,16 +850,18 @@
             });
 
             // Sortable
-            $('.setting-fields-repeater[data-sortable="true"] .setting-fields-repeater-rows').sortable({
-                handle: '.setting-fields-repeater-sort',
-                items: '.setting-fields-repeater-row',
-                cursor: 'move',
-                opacity: 0.65,
-                placeholder: 'setting-fields-repeater-placeholder',
-                update: function () {
-                    self.reindexRepeater($(this).closest('.setting-fields-repeater'));
-                }
-            });
+            if ($.fn.sortable) {
+                $('.setting-fields-repeater[data-sortable="true"] .setting-fields-repeater-rows').sortable({
+                    handle: '.setting-fields-repeater-sort',
+                    items: '.setting-fields-repeater-row',
+                    cursor: 'move',
+                    opacity: 0.65,
+                    placeholder: 'setting-fields-repeater-placeholder',
+                    update: function () {
+                        self.reindexRepeater($(this).closest('.setting-fields-repeater'));
+                    }
+                });
+            }
         },
 
         addRepeaterRow: function ($repeater) {
@@ -1070,18 +1261,20 @@
             if (!$sortables.length) return;
 
             // Initialize jQuery UI sortable
-            $sortables.sortable({
-                handle: '.setting-fields-sortable-handle',
-                placeholder: 'setting-fields-sortable-placeholder',
-                update: function (event, ui) {
-                    // Reorder hidden inputs to match visual order
-                    var $list = $(this);
-                    $list.find('.setting-fields-sortable-item').each(function (index) {
-                        var $input = $(this).find('input[type="hidden"]');
-                        $input.attr('name', $input.attr('name')); // Force refresh
-                    });
-                }
-            });
+            if ($.fn.sortable) {
+                $sortables.sortable({
+                    handle: '.setting-fields-sortable-handle',
+                    placeholder: 'setting-fields-sortable-placeholder',
+                    update: function (event, ui) {
+                        // Reorder hidden inputs to match visual order
+                        var $list = $(this);
+                        $list.find('.setting-fields-sortable-item').each(function (index) {
+                            var $input = $(this).find('input[type="hidden"]');
+                            $input.attr('name', $input.attr('name')); // Force refresh
+                        });
+                    }
+                });
+            }
 
             // Toggle item active state
             $(document).on('click', '.setting-fields-sortable-toggle', function (e) {

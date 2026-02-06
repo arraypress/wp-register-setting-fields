@@ -2087,3 +2087,146 @@ h4.setting-fields-heading-title {
     height: 16px;
     color: #0969da;
 }
+
+/**
+ * Additional CSS for clipboard, action_button, and section visibility
+ *
+ * Add these rules to your existing setting-fields.css file.
+ */
+
+/* ==========================================================================
+   Clipboard Field
+   ========================================================================== */
+
+.setting-fields-clipboard {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+}
+
+.setting-fields-clipboard-code {
+    display: inline-block;
+    padding: 6px 12px;
+    background: #f0f0f1;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #2c3338;
+    word-break: break-all;
+    max-width: 500px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.setting-fields-clipboard .regular-text {
+    background: #f0f0f1;
+    cursor: default;
+}
+
+.setting-fields-clipboard-btn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.setting-fields-clipboard-btn .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+}
+
+.setting-fields-clipboard-btn--copied {
+    color: #00a32a !important;
+    border-color: #00a32a !important;
+}
+
+/* ==========================================================================
+   Action Button Field
+   ========================================================================== */
+
+.setting-fields-action-button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.setting-fields-action-button .setting-fields-action-input {
+    flex: 0 1 auto;
+}
+
+.setting-fields-action-btn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.setting-fields-action-btn .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+}
+
+.setting-fields-action-btn .dashicons.spin {
+    animation: setting-fields-spin 1s linear infinite;
+}
+
+@keyframes setting-fields-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.setting-fields-action-result {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    line-height: 1.4;
+    padding: 4px 0;
+}
+
+.setting-fields-action-result-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+}
+
+.setting-fields-action-result--success {
+    color: #00a32a;
+}
+
+.setting-fields-action-result--error {
+    color: #d63638;
+}
+
+/*!* ==========================================================================*/
+/*   Section Visibility (for conditional logic)*/
+/*   ========================================================================== *!*/
+
+/*.setting-fields-section-hidden {*/
+/*    display: none !important;*/
+/*}*/
+
+/*!* Section wrapper styling *!*/
+/*.setting-fields-section {*/
+/*    !* Ensures smooth transitions when toggling visibility *!*/
+/*}*/
+
+/*.setting-fields-section-title {*/
+/*    !* Matches WP default h2 in settings *!*/
+/*}*/
+
+/*.setting-fields-section-description {*/
+/*    color: #646970;*/
+/*    font-size: 13px;*/
+/*    margin: 0 0 10px;*/
+/*}*/

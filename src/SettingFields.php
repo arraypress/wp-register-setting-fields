@@ -92,36 +92,36 @@ class SettingFields {
      * @var array
      */
     protected array $defaults = [
-        'page_title'    => 'Settings',
-        'menu_title'    => 'Settings',
-        'menu_slug'     => '',
-        'capability'    => 'manage_options',
-        'parent_slug'   => '',
-        'icon'          => 'dashicons-admin-generic',
-        'body_class'    => '',
-        'position'      => null,
-        'option_name'   => '',
-        'option_group'  => '',
-        'tabs'          => [],
-        'sections'      => [],
-        'fields'        => [],
-        'submit_button' => true,
+            'page_title'    => 'Settings',
+            'menu_title'    => 'Settings',
+            'menu_slug'     => '',
+            'capability'    => 'manage_options',
+            'parent_slug'   => '',
+            'icon'          => 'dashicons-admin-generic',
+            'body_class'    => '',
+            'position'      => null,
+            'option_name'   => '',
+            'option_group'  => '',
+            'tabs'          => [],
+            'sections'      => [],
+            'fields'        => [],
+            'submit_button' => true,
 
         // Branded header options
-        'logo'          => '',
-        'header_title'  => '',
-        'header_class'  => '',
+            'logo'          => '',
+            'header_title'  => '',
+            'header_class'  => '',
 
         // Help screen options
-        'help_tabs'     => [],
-        'help_sidebar'  => '',
+            'help_tabs'     => [],
+            'help_sidebar'  => '',
 
         // Encryption options
-        'encryption'    => [
-            'enabled' => null,
-            'key'     => null,
-            'prefix'  => '',
-        ],
+            'encryption'    => [
+                    'enabled' => null,
+                    'key'     => null,
+                    'prefix'  => '',
+            ],
     ];
 
     /**
@@ -153,8 +153,8 @@ class SettingFields {
         // Register with the central registry
         Registry::register( $this->id, $this );
 
-        // Register REST API if we have AJAX fields
-        if ( $this->has_ajax_fields() ) {
+        // Register REST API if we have fields that need it
+        if ( $this->has_rest_fields() ) {
             RestApi::register();
         }
 
@@ -162,25 +162,26 @@ class SettingFields {
     }
 
     /**
-     * Check if any fields require AJAX.
+     * Check if any fields require REST API endpoints.
      *
-     * All relational fields (post, page, taxonomy, user) now use AJAX by default,
-     * plus the custom 'ajax' type for custom callbacks.
+     * Includes relational fields (post, page, taxonomy, user) which use AJAX,
+     * email_editor fields which use preview/send-test endpoints,
+     * and action_button fields which use the action endpoint.
      *
      * @return bool
      */
-    protected function has_ajax_fields(): bool {
-        $ajax_types = [ 'ajax', 'post', 'page', 'taxonomy', 'user' ];
+    protected function has_rest_fields(): bool {
+        $rest_types = [ 'ajax', 'post', 'page', 'taxonomy', 'user', 'email_editor', 'action_button' ];
 
         foreach ( $this->fields as $field ) {
-            if ( in_array( $field['type'] ?? '', $ajax_types, true ) ) {
+            if ( in_array( $field['type'] ?? '', $rest_types, true ) ) {
                 return true;
             }
 
             // Check nested fields
             if ( ! empty( $field['sub_fields'] ) ) {
                 foreach ( $field['sub_fields'] as $sub_field ) {
-                    if ( in_array( $sub_field['type'] ?? '', $ajax_types, true ) ) {
+                    if ( in_array( $sub_field['type'] ?? '', $rest_types, true ) ) {
                         return true;
                     }
                 }
@@ -352,7 +353,20 @@ class SettingFields {
         <div class="wrap setting-fields-wrap" data-setting-id="<?php echo esc_attr( $this->id ); ?>">
 
             <div class="setting-fields-notices">
-                <?php settings_errors( $this->config['option_group'] ); ?>
+                <?php
+                // For pages not under Settings, WordPress doesn't auto-display
+                // the "Settings saved" notice after options.php redirect.
+                // Manually add it when settings-updated is present.
+                if ( isset( $_GET['settings-updated'] ) && $_GET['settings-updated'] === 'true' ) {
+                    add_settings_error(
+                            $this->config['option_group'],
+                            'settings_updated',
+                            __( 'Settings saved.', 'setting-fields' ),
+                            'updated'
+                    );
+                }
+                settings_errors( $this->config['option_group'] );
+                ?>
             </div>
 
             <form method="post" action="options.php" class="setting-fields-form">
@@ -484,6 +498,10 @@ class SettingFields {
     /**
      * Render a section with its fields.
      *
+     * Wraps the entire section (title, description, table) in a container
+     * div with a data-section attribute. This allows the conditional logic
+     * JS to hide entire sections when all their fields are hidden.
+     *
      * @param string $section_key Section key.
      * @param array  $section     Section config.
      * @param array  $fields      Fields in this section.
@@ -491,6 +509,8 @@ class SettingFields {
      * @return void
      */
     protected function render_section( string $section_key, array $section, array $fields ): void {
+        echo '<div class="setting-fields-section" data-section="' . esc_attr( $section_key ) . '">';
+
         if ( ! empty( $section['title'] ) ) {
             echo '<h2 class="setting-fields-section-title">' . esc_html( $section['title'] ) . '</h2>';
         }
@@ -504,6 +524,8 @@ class SettingFields {
             $this->render_field_row( $field_key, $field );
         }
         echo '</table>';
+
+        echo '</div>';
     }
 
     /**

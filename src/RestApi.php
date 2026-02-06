@@ -168,6 +168,30 @@ class RestApi {
 				],
 			],
 		] );
+
+		// Action button endpoint
+		register_rest_route( $instance->namespace, '/action', [
+			'methods'             => 'POST',
+			'callback'            => [ $instance, 'handle_action_button' ],
+			'permission_callback' => [ $instance, 'permission_check' ],
+			'args'                => [
+				'settings_id' => [
+					'required'          => true,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_key',
+				],
+				'field_key'   => [
+					'required'          => true,
+					'type'              => 'string',
+					'sanitize_callback' => [ __CLASS__, 'sanitize_field_key' ],
+				],
+				'input_value' => [
+					'type'              => 'string',
+					'default'           => '',
+					'sanitize_callback' => 'sanitize_text_field',
+				],
+			],
+		] );
 	}
 
 	/**
@@ -214,6 +238,102 @@ class RestApi {
 	}
 
 	/**
+	 * Handle action button request.
+	 *
+	 * Executes the action_callback defined in the action_button field config.
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_action_button( WP_REST_Request $request ) {
+		$settings_id = $request->get_param( 'settings_id' );
+		$field_key   = $request->get_param( 'field_key' );
+		$input_value = $request->get_param( 'input_value' );
+
+		$field = $this->get_field_config( $settings_id, $field_key );
+
+		if ( ! $field ) {
+			return new WP_Error(
+				'invalid_field',
+				__( 'Invalid field configuration.', 'setting-fields' ),
+				[ 'status' => 400 ]
+			);
+		}
+
+		if ( ( $field['type'] ?? '' ) !== 'action_button' ) {
+			return new WP_Error(
+				'invalid_field_type',
+				__( 'Field is not an action_button type.', 'setting-fields' ),
+				[ 'status' => 400 ]
+			);
+		}
+
+		$callback = $field['action_callback'] ?? null;
+
+		if ( ! is_callable( $callback ) ) {
+			return new WP_Error(
+				'invalid_callback',
+				__( 'No action callback defined for this field.', 'setting-fields' ),
+				[ 'status' => 500 ]
+			);
+		}
+
+		try {
+			$data = [
+				'settings_id' => $settings_id,
+				'field_key'   => $field_key,
+				'input_value' => $input_value,
+			];
+
+			$result = call_user_func( $callback, $data );
+
+			// Normalize result
+			if ( is_bool( $result ) ) {
+				return new WP_REST_Response( [
+					'success' => $result,
+					'message' => $result
+						? __( 'Action completed successfully.', 'setting-fields' )
+						: __( 'Action failed.', 'setting-fields' ),
+				], $result ? 200 : 500 );
+			}
+
+			if ( is_string( $result ) ) {
+				return new WP_REST_Response( [
+					'success' => true,
+					'message' => $result,
+				], 200 );
+			}
+
+			if ( is_array( $result ) ) {
+				// Ensure success and message keys exist
+				$result = wp_parse_args( $result, [
+					'success' => true,
+					'message' => __( 'Action completed.', 'setting-fields' ),
+				] );
+
+				return new WP_REST_Response( $result, $result['success'] ? 200 : 500 );
+			}
+
+			if ( $result instanceof WP_Error ) {
+				return $result;
+			}
+
+			return new WP_REST_Response( [
+				'success' => true,
+				'message' => __( 'Action completed.', 'setting-fields' ),
+			], 200 );
+
+		} catch ( Exception $e ) {
+			return new WP_Error(
+				'action_error',
+				$e->getMessage(),
+				[ 'status' => 500 ]
+			);
+		}
+	}
+
+	/**
 	 * Handle email preview request.
 	 *
 	 * Calls the preview_callback defined in the email_editor field config.
@@ -238,6 +358,25 @@ class RestApi {
 			return new WP_Error( 'invalid_field_type', __( 'Field is not an email_editor type.', 'setting-fields' ), [ 'status' => 400 ] );
 		}
 
+		// Route through wp-register-emails if configured
+		$email_group    = $field['email_group'] ?? '';
+		$email_template = $field['email_template'] ?? '';
+
+		if ( $email_group && $email_template && function_exists( 'get_email_preview_html' ) ) {
+			try {
+				$html = get_email_preview_html( $email_group, $email_template );
+
+				if ( $html ) {
+					return new WP_REST_Response( [ 'html' => $html ], 200 );
+				}
+
+				return new WP_Error( 'preview_error', __( 'Email template preview returned empty.', 'setting-fields' ), [ 'status' => 500 ] );
+			} catch ( Exception $e ) {
+				return new WP_Error( 'preview_error', $e->getMessage(), [ 'status' => 500 ] );
+			}
+		}
+
+		// Legacy: use preview_callback if provided
 		$callback = $field['preview_callback'] ?? null;
 
 		if ( ! is_callable( $callback ) ) {
@@ -253,7 +392,6 @@ class RestApi {
 		}
 
 		try {
-			// Pass data as array for callback
 			$data = [
 				'subject'     => $subject,
 				'body'        => $body,
@@ -264,17 +402,14 @@ class RestApi {
 
 			$result = call_user_func( $callback, $data );
 
-			// Handle different return types
 			if ( is_string( $result ) ) {
 				return new WP_REST_Response( [ 'html' => $result ], 200 );
 			}
 
 			if ( is_array( $result ) ) {
-				// If result has 'html' key, use it
 				if ( isset( $result['html'] ) ) {
 					return new WP_REST_Response( $result, 200 );
 				}
-				// If result has 'subject' and 'body', format as HTML
 				if ( isset( $result['subject'] ) && isset( $result['body'] ) ) {
 					$html = sprintf(
 						'<!DOCTYPE html><html><head><meta charset="utf-8"><title>%s</title></head><body style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto;"><h2 style="margin-bottom: 20px;">%s</h2><hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">%s</body></html>',
@@ -286,7 +421,6 @@ class RestApi {
 					return new WP_REST_Response( [ 'html' => $html ], 200 );
 				}
 
-				// Return as is
 				return new WP_REST_Response( $result, 200 );
 			}
 
@@ -327,6 +461,32 @@ class RestApi {
 			return new WP_Error( 'invalid_field_type', __( 'Field is not an email_editor type.', 'setting-fields' ), [ 'status' => 400 ] );
 		}
 
+		// Route through wp-register-emails if configured
+		$email_group    = $field['email_group'] ?? '';
+		$email_template = $field['email_template'] ?? '';
+
+		if ( $email_group && $email_template && function_exists( 'send_email_template' ) ) {
+			try {
+				$sent = send_email_template( $email_group, $email_template, [
+					'to'      => $email,
+					'context' => 'test',
+					'preview' => true,
+				] );
+
+				if ( $sent ) {
+					return new WP_REST_Response( [
+						'success' => true,
+						'message' => sprintf( __( 'Test email sent to %s', 'setting-fields' ), $email ),
+					], 200 );
+				}
+
+				return new WP_Error( 'send_failed', __( 'Failed to send test email.', 'setting-fields' ), [ 'status' => 500 ] );
+			} catch ( Exception $e ) {
+				return new WP_Error( 'send_error', $e->getMessage(), [ 'status' => 500 ] );
+			}
+		}
+
+		// Legacy: use send_callback if provided
 		$callback = $field['send_callback'] ?? null;
 
 		if ( ! is_callable( $callback ) ) {
@@ -345,7 +505,6 @@ class RestApi {
 		}
 
 		try {
-			// Pass data as array for callback
 			$data = [
 				'to'          => $email,
 				'subject'     => $subject,

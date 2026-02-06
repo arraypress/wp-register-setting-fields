@@ -20,6 +20,135 @@ namespace ArrayPress\RegisterSettingFields\Traits\Rendering;
 trait ComplexFields {
 
     /**
+     * Render a clipboard field (read-only value with copy button).
+     *
+     * Useful for webhook URLs, shortcodes, API endpoints, or any
+     * read-only string that users need to copy.
+     *
+     * Field config options:
+     * - value          (string) The value to display and copy (required).
+     * - button_label   (string) Copy button text. Default: 'Copy'.
+     * - copied_label   (string) Text shown after copying. Default: 'Copied!'.
+     * - display        (string) Display style: 'code' (default) or 'input'.
+     * - url            (bool)   Whether to format value as a URL. Default: false.
+     *
+     * @param array  $field Field configuration.
+     * @param string $name  Input name.
+     * @param string $id    Input id.
+     * @param mixed  $value Current value (unused — value comes from field config).
+     *
+     * @return void
+     */
+    protected function render_clipboard( array $field, string $name, string $id, $value ): void {
+        $clipboard_value = $field['value'] ?? $value ?? '';
+        $button_label    = $field['button_label'] ?? __( 'Copy', 'setting-fields' );
+        $copied_label    = $field['copied_label'] ?? __( 'Copied!', 'setting-fields' );
+        $display         = $field['display'] ?? 'code';
+        $is_url          = $field['url'] ?? false;
+
+        $display_value = $is_url ? esc_url( $clipboard_value ) : esc_html( $clipboard_value );
+        ?>
+        <div class="setting-fields-clipboard" data-field-id="<?php echo esc_attr( $id ); ?>">
+            <?php if ( $display === 'input' ) : ?>
+                <input type="text"
+                       id="<?php echo esc_attr( $id ); ?>"
+                       value="<?php echo esc_attr( $clipboard_value ); ?>"
+                       class="regular-text setting-fields-clipboard-value"
+                       readonly />
+            <?php else : ?>
+                <code class="setting-fields-clipboard-value setting-fields-clipboard-code"
+                      id="<?php echo esc_attr( $id ); ?>"><?php echo $display_value; ?></code>
+            <?php endif; ?>
+
+            <button type="button"
+                    class="button setting-fields-clipboard-btn"
+                    data-clipboard-target="#<?php echo esc_attr( $id ); ?>"
+                    data-clipboard-text="<?php echo esc_attr( $clipboard_value ); ?>"
+                    data-label="<?php echo esc_attr( $button_label ); ?>"
+                    data-copied-label="<?php echo esc_attr( $copied_label ); ?>">
+                <span class="dashicons dashicons-clipboard"></span>
+                <span class="setting-fields-clipboard-btn-text"><?php echo esc_html( $button_label ); ?></span>
+            </button>
+        </div>
+        <?php
+    }
+
+    /**
+     * Render an action button field.
+     *
+     * Fires a REST API request to execute a server-side callback and
+     * displays the result. Useful for connection tests, license activation,
+     * cache clearing, or any on-demand server action.
+     *
+     * Field config options:
+     * - button_label     (string)   Button text. Default: 'Run'.
+     * - loading_label    (string)   Text during request. Default: 'Processing...'.
+     * - action_callback  (callable) Server-side callback. Receives array with settings_id, field_key, input_value.
+     *                               Must return ['success' => bool, 'message' => string].
+     * - confirm          (string)   If set, shows a confirmation dialog with this message before executing.
+     * - icon             (string)   Dashicon class for the button. Default: 'dashicons-update'.
+     * - success_icon     (string)   Dashicon for success state. Default: 'dashicons-yes-alt'.
+     * - error_icon       (string)   Dashicon for error state. Default: 'dashicons-warning'.
+     * - button_class     (string)   Additional CSS class for the button. Default: '' (uses 'button button-secondary').
+     * - show_input       (bool)     Show an inline text input before the button. Default: false.
+     * - input_placeholder (string)  Placeholder for the optional input.
+     * - input_type       (string)   Input type for the optional input. Default: 'text'.
+     *
+     * @param array  $field Field configuration.
+     * @param string $name  Input name.
+     * @param string $id    Input id.
+     * @param mixed  $value Current value.
+     *
+     * @return void
+     */
+    protected function render_action_button( array $field, string $name, string $id, $value ): void {
+        $button_label   = $field['button_label'] ?? __( 'Run', 'setting-fields' );
+        $loading_label  = $field['loading_label'] ?? __( 'Processing...', 'setting-fields' );
+        $icon           = $field['icon'] ?? 'dashicons-update';
+        $success_icon   = $field['success_icon'] ?? 'dashicons-yes-alt';
+        $error_icon     = $field['error_icon'] ?? 'dashicons-warning';
+        $button_class   = $field['button_class'] ?? '';
+        $confirm        = $field['confirm'] ?? '';
+        $show_input     = $field['show_input'] ?? false;
+        $input_placeholder = $field['input_placeholder'] ?? '';
+        $input_type     = $field['input_type'] ?? 'text';
+        $field_key      = $field['_key'] ?? '';
+
+        $btn_class = 'button ' . ( $button_class ?: 'button-secondary' ) . ' setting-fields-action-btn';
+        ?>
+        <div class="setting-fields-action-button"
+             data-field-id="<?php echo esc_attr( $id ); ?>"
+             data-field-key="<?php echo esc_attr( $field_key ); ?>"
+             data-success-icon="<?php echo esc_attr( $success_icon ); ?>"
+             data-error-icon="<?php echo esc_attr( $error_icon ); ?>"
+             <?php if ( $confirm ) : ?>data-confirm="<?php echo esc_attr( $confirm ); ?>"<?php endif; ?>>
+
+            <?php if ( $show_input ) : ?>
+                <input type="<?php echo esc_attr( $input_type ); ?>"
+                       class="regular-text setting-fields-action-input"
+                       id="<?php echo esc_attr( $id ); ?>_input"
+                       name="<?php echo esc_attr( $name ); ?>"
+                       value="<?php echo esc_attr( $value ); ?>"
+                       placeholder="<?php echo esc_attr( $input_placeholder ); ?>" />
+            <?php endif; ?>
+
+            <button type="button"
+                    class="<?php echo esc_attr( $btn_class ); ?>"
+                    data-label="<?php echo esc_attr( $button_label ); ?>"
+                    data-loading-label="<?php echo esc_attr( $loading_label ); ?>">
+                <span class="dashicons <?php echo esc_attr( $icon ); ?> setting-fields-action-icon"></span>
+                <span class="setting-fields-action-btn-text"><?php echo esc_html( $button_label ); ?></span>
+            </button>
+
+            <span class="setting-fields-action-result" style="display: none;">
+				<span class="dashicons setting-fields-action-result-icon"></span>
+				<span class="setting-fields-action-result-message"></span>
+			</span>
+        </div>
+        <?php
+    }
+
+    /**
      * Render a link field.
      *
      * @param array  $field Field configuration.
@@ -221,13 +350,26 @@ trait ComplexFields {
     /**
      * Render an email editor field with merge tags.
      *
-     * Supports:
-     * - Optional enable/disable toggle
-     * - Subject line
-     * - TinyMCE body editor
-     * - Merge tags with modal picker (searchable)
-     * - Preview callback
-     * - Send test callback
+     * Supports two modes:
+     *
+     * 1. Integrated mode (recommended): Set 'email_group' and 'email_template' to
+     *    connect with wp-register-emails. Merge tags, defaults, preview, and sending
+     *    are handled automatically by the email library.
+     *
+     * 2. Standalone mode: Provide 'merge_tags', 'default_subject', 'default_body',
+     *    and optionally 'preview_callback' / 'send_callback' directly on the field.
+     *
+     * Additional options:
+     * - show_enable       (bool)   Show enable/disable toggle. Default: false.
+     * - show_recipient    (bool)   Show recipient email field. Default: false.
+     * - default_recipient (string) Default recipient email. Default: admin email.
+     * - show_preview      (bool)   Show preview button. Default: true.
+     * - show_send_test    (bool)   Show send test button. Default: true.
+     * - collapsible       (bool)   Wrap in collapsible card. Default: false.
+     * - collapsed         (bool)   Start collapsed. Default: true.
+     * - title             (string) Card title.
+     * - card_description  (string) Card description.
+     * - rows              (int)    Editor rows. Default: 15.
      *
      * @param array  $field Field configuration.
      * @param string $name  Input name.
@@ -237,18 +379,40 @@ trait ComplexFields {
      * @return void
      */
     protected function render_email_editor( array $field, string $name, string $id, $value ): void {
+
+        // Detect integration mode
+        $email_group    = $field['email_group'] ?? '';
+        $email_template = $field['email_template'] ?? '';
+        $has_email_lib  = $email_group && $email_template && function_exists( 'get_email_template_tags' );
+
+        // Resolve defaults and merge tags from email library or field config
+        if ( $has_email_lib ) {
+            $template_tags = get_email_template_tags( $email_group, $email_template );
+            $merge_tags    = $this->convert_email_tags_to_merge_tags( $template_tags );
+
+            // Get template defaults via the registry
+            $template_defaults = $this->get_email_template_defaults( $email_group, $email_template );
+            $default_enabled   = $template_defaults['enabled'] ?? true;
+            $default_subject   = $template_defaults['subject'] ?? '';
+            $default_body      = $template_defaults['message'] ?? '';
+        } else {
+            $merge_tags      = $field['merge_tags'] ?? [];
+            $default_enabled = $field['default_enabled'] ?? true;
+            $default_subject = $field['default_subject'] ?? '';
+            $default_body    = $field['default_body'] ?? '';
+        }
+
         $value = wp_parse_args( (array) $value, [
-                'enabled' => $field['default_enabled'] ?? true,
-                'subject' => $field['default_subject'] ?? '',
-                'body'    => $field['default_body'] ?? '',
+                'enabled'   => $default_enabled,
+                'subject'   => $default_subject,
+                'body'      => $default_body,
+                'recipient' => $field['default_recipient'] ?? get_option( 'admin_email' ),
         ] );
 
-        $merge_tags       = $field['merge_tags'] ?? [];
-        $show_enable      = $field['show_enable'] ?? false;
-        $show_preview     = $field['show_preview'] ?? true;
-        $show_send_test   = $field['show_send_test'] ?? true;
-        $preview_callback = $field['preview_callback'] ?? null;
-        $send_callback    = $field['send_callback'] ?? null;
+        $show_enable    = $field['show_enable'] ?? false;
+        $show_recipient = $field['show_recipient'] ?? false;
+        $show_preview   = $field['show_preview'] ?? true;
+        $show_send_test = $field['show_send_test'] ?? true;
 
         // Collapsible options
         $collapsible      = $field['collapsible'] ?? false;
@@ -256,11 +420,20 @@ trait ComplexFields {
         $card_title       = $field['title'] ?? $field['label'] ?? '';
         $card_description = $field['card_description'] ?? '';
 
-        // Build data attributes for JS callbacks
+        // Build data attributes for JS
         $data_attrs = [
                 'field-id'  => $id,
                 'field-key' => $field['_key'] ?? '',
         ];
+
+        if ( $has_email_lib ) {
+            $data_attrs['email-group']    = $email_group;
+            $data_attrs['email-template'] = $email_template;
+        }
+
+        // Legacy callback support (standalone mode)
+        $preview_callback = $field['preview_callback'] ?? null;
+        $send_callback    = $field['send_callback'] ?? null;
 
         if ( $preview_callback && is_string( $preview_callback ) ) {
             $data_attrs['preview-action'] = $preview_callback;
@@ -339,6 +512,22 @@ trait ComplexFields {
 
                 <div class="setting-fields-email-content<?php echo $show_enable && ! $value['enabled'] ? ' setting-fields-email-disabled' : ''; ?>">
 
+                    <?php if ( $show_recipient ) : ?>
+                        <!-- Recipient Email -->
+                        <div class="setting-fields-email-recipient">
+                            <label for="<?php echo esc_attr( $id ); ?>_recipient">
+                                <?php esc_html_e( 'Recipient', 'setting-fields' ); ?>
+                            </label>
+                            <input type="email"
+                                   name="<?php echo esc_attr( $name ); ?>[recipient]"
+                                   id="<?php echo esc_attr( $id ); ?>_recipient"
+                                   value="<?php echo esc_attr( $value['recipient'] ); ?>"
+                                   class="regular-text setting-fields-email-recipient-input"
+                                   placeholder="<?php echo esc_attr( get_option( 'admin_email' ) ); ?>"/>
+                            <p class="description"><?php esc_html_e( 'Email address where this notification is sent.', 'setting-fields' ); ?></p>
+                        </div>
+                    <?php endif; ?>
+
                     <!-- Subject Line -->
                     <div class="setting-fields-email-subject">
                         <label for="<?php echo esc_attr( $id ); ?>_subject">
@@ -383,7 +572,7 @@ trait ComplexFields {
                         wp_editor( $value['body'], $editor_id, [
                                 'textarea_name' => $name . '[body]',
                                 'textarea_rows' => $field['rows'] ?? 15,
-                                'media_buttons' => true, // Always show so our tag button appears
+                                'media_buttons' => true,
                                 'teeny'         => false,
                                 'quicktags'     => true,
                         ] );
@@ -456,6 +645,54 @@ trait ComplexFields {
             </div><!-- .setting-fields-email-body-wrap -->
         </div><!-- .setting-fields-email-editor -->
         <?php
+    }
+
+    /**
+     * Convert email library tags to merge tags format for the editor UI.
+     *
+     * @param array $template_tags Tags from get_email_template_tags().
+     *
+     * @return array Merge tags in '{tag}' => ['label' => '', 'description' => ''] format.
+     */
+    protected function convert_email_tags_to_merge_tags( array $template_tags ): array {
+        $merge_tags = [];
+
+        foreach ( $template_tags as $tag ) {
+            $tag_key = '{' . ( $tag['name'] ?? '' ) . '}';
+
+            $merge_tags[ $tag_key ] = [
+                    'label'       => $tag['label'] ?? $tag['name'] ?? '',
+                    'description' => $tag['description'] ?? '',
+            ];
+        }
+
+        return $merge_tags;
+    }
+
+    /**
+     * Get default settings from an email template registration.
+     *
+     * Uses Registry::get_template() then Template::get_settings() which
+     * returns defaults when no stored settings exist yet.
+     *
+     * @param string $group    Email group/prefix.
+     * @param string $template Template name.
+     *
+     * @return array Array with 'enabled', 'subject', 'message' keys.
+     */
+    protected function get_email_template_defaults( string $group, string $template ): array {
+        if ( ! class_exists( '\\ArrayPress\\RegisterEmails\\Registry\\Registry' ) ) {
+            return [];
+        }
+
+        $registry     = \ArrayPress\RegisterEmails\Registry\Registry::get_instance();
+        $template_obj = $registry->get_template( $group, $template );
+
+        if ( ! $template_obj ) {
+            return [];
+        }
+
+        return $template_obj->get_settings();
     }
 
     /**
