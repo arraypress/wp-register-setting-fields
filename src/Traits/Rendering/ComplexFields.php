@@ -708,35 +708,6 @@ trait ComplexFields {
     }
 
     /**
-     * Sanitize email editor field.
-     *
-     * @param mixed $value The value.
-     *
-     * @return array
-     */
-    protected function sanitize_email_editor( $value ): array {
-        if ( ! is_array( $value ) ) {
-            return [
-                    'enabled'   => true,
-                    'recipient' => '',
-                    'subject'   => '',
-                    'title'     => '',
-                    'subtitle'  => '',
-                    'message'   => '',
-            ];
-        }
-
-        return [
-                'enabled'   => ! empty( $value['enabled'] ),
-                'recipient' => sanitize_email( $value['recipient'] ?? '' ),
-                'subject'   => sanitize_text_field( $value['subject'] ?? '' ),
-                'title'     => sanitize_text_field( $value['title'] ?? '' ),
-                'subtitle'  => sanitize_text_field( $value['subtitle'] ?? '' ),
-                'message'   => wp_kses_post( $value['message'] ?? '' ),
-        ];
-    }
-
-    /**
      * Convert email library tags to merge tags format for the editor UI.
      *
      * @param array $template_tags Tags from get_email_template_tags().
