@@ -20,7 +20,10 @@
       "ArrayPress\\RegisterSettingFields\\": "src/"
     },
     "files": [
-      "src/Utilities/Functions.php"
+      "src/Utilities/Core.php",
+      "src/Utilities/Email.php",
+      "src/Utilities/Page.php",
+      "src/Utilities/TypeCheck.php"
     ]
   },
   "scripts": {

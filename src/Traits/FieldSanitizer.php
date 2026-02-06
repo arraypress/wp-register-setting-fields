@@ -534,16 +534,18 @@ trait FieldSanitizer {
 	protected function sanitize_email_editor( $value ): array {
 		if ( ! is_array( $value ) ) {
 			return [
-				'enabled' => true,
-				'subject' => '',
-				'body'    => '',
+				'enabled'   => true,
+				'recipient' => '',
+				'subject'   => '',
+				'message'   => '',
 			];
 		}
 
 		return [
-			'enabled' => ! empty( $value['enabled'] ),
-			'subject' => sanitize_text_field( $value['subject'] ?? '' ),
-			'body'    => wp_kses_post( $value['body'] ?? '' ),
+			'enabled'   => ! empty( $value['enabled'] ),
+			'recipient' => sanitize_email( $value['recipient'] ?? '' ),
+			'subject'   => sanitize_text_field( $value['subject'] ?? '' ),
+			'message'   => wp_kses_post( $value['message'] ?? '' ),
 		];
 	}
 

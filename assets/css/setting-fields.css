@@ -1,11 +1,59 @@
 /**
  * Setting Fields Styles
  *
+ * Organized into logical sections:
+ *  1. Animations
+ *  2. General Wrapper & Form Table
+ *  3. Header & Branding
+ *  4. Tabs Navigation
+ *  5. Mobile Tabs Toggle
+ *  6. Notices
+ *  7. Sections & Headings
+ *  8. Field Descriptions & Labels
+ *  9. Toggle Switch
+ * 10. Checkbox & Radio Groups
+ * 11. Button Group
+ * 12. Range Slider
+ * 13. Color Picker
+ * 14. Code Editor
+ * 15. Select2 Overrides
+ * 16. Image Field
+ * 17. File Field
+ * 18. Gallery Field
+ * 19. Link Field
+ * 20. Dimensions Field
+ * 21. Sortable Field
+ * 22. oEmbed Field
+ * 23. Group Field
+ * 24. Repeater Field
+ * 25. WYSIWYG Field
+ * 26. Clipboard Field
+ * 27. Action Button Field
+ * 28. Email Editor Field
+ * 29. Merge Tags Modal
+ * 30. Encryption Indicators
+ * 31. Tooltips
+ * 32. Conditional Logic
+ * 33. Full-Width Rows
+ * 34. Separator & Heading Layout Fields
+ * 35. Responsive — Tablet
+ * 36. Responsive — Mobile
+ * 37. Responsive — Small Mobile
+ *
  * @package ArrayPress\RegisterSettingFields
  */
 
 /* ==========================================================================
-   General Wrapper
+   1. Animations
+   ========================================================================== */
+
+@keyframes setting-fields-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ==========================================================================
+   2. General Wrapper & Form Table
    ========================================================================== */
 
 .setting-fields-wrap {
@@ -29,7 +77,7 @@
     padding: 15px 10px;
 }
 
-/* Default input sizing - but respect WordPress size classes */
+/* Default input sizing — respect WordPress size classes */
 .setting-fields-wrap .form-table input[type="text"]:not(.small-text):not(.large-text),
 .setting-fields-wrap .form-table input[type="email"]:not(.small-text):not(.large-text),
 .setting-fields-wrap .form-table input[type="url"]:not(.small-text):not(.large-text),
@@ -41,34 +89,40 @@
     max-width: 400px;
 }
 
-/* Number inputs default to small */
 .setting-fields-wrap .form-table input[type="number"] {
     width: auto;
 }
 
-.setting-fields-email-header-actions button {
-    display: flex !important;
-    align-items: center;
-}
-
-.setting-fields-tag-item {
-    align-items: baseline !important;
-}
-
-/* Ensure small-text stays small */
 .setting-fields-wrap .form-table .small-text {
     width: 50px !important;
     max-width: none;
 }
 
-/* Ensure large-text expands */
 .setting-fields-wrap .form-table .large-text {
     width: 100% !important;
     max-width: 100%;
 }
 
+/* Disabled / readonly fields */
+.setting-fields-wrap input[readonly],
+.setting-fields-wrap input[disabled],
+.setting-fields-wrap textarea[readonly],
+.setting-fields-wrap textarea[disabled],
+.setting-fields-wrap select[disabled] {
+    background-color: #f6f7f7;
+    border-color: #dcdcde;
+    color: #646970;
+    cursor: not-allowed;
+}
+
+/* Required indicator */
+.required {
+    color: #d63638;
+    margin-left: 2px;
+}
+
 /* ==========================================================================
-   Modern Header (outside .wrap, matches RegisterTables/EDD pattern)
+   3. Header & Branding
    ========================================================================== */
 
 .setting-fields-header {
@@ -114,7 +168,7 @@
 }
 
 /* ==========================================================================
-   Tabs Row
+   4. Tabs Navigation
    ========================================================================== */
 
 .setting-fields-header__tabs {
@@ -179,7 +233,7 @@
 }
 
 /* ==========================================================================
-   Mobile Tabs Toggle
+   5. Mobile Tabs Toggle
    ========================================================================== */
 
 .setting-fields-tabs-toggle {
@@ -187,7 +241,7 @@
 }
 
 /* ==========================================================================
-   Notices Container
+   6. Notices
    ========================================================================== */
 
 .setting-fields-notices {
@@ -201,134 +255,15 @@
 }
 
 /* ==========================================================================
-   Responsive - Tablet
-   ========================================================================== */
-
-@media screen and (max-width: 782px) {
-    .setting-fields-header {
-        margin-left: -10px;
-    }
-
-    .setting-fields-header__branding {
-        min-height: 80px;
-        padding: 0 15px;
-    }
-
-    .setting-fields-header__tabs {
-        padding: 0 15px;
-    }
-
-    .setting-fields-header__tabs .setting-fields-tab {
-        padding: 10px 12px;
-        font-size: 12px;
-    }
-}
-
-/* ==========================================================================
-   Responsive - Mobile (Dropdown Menu)
-   ========================================================================== */
-
-@media screen and (max-width: 600px) {
-    .setting-fields-header__branding {
-        padding: 0 10px;
-    }
-
-    .setting-fields-header__tabs {
-        padding: 0;
-        border-top: none;
-    }
-
-    /* Toggle button - visible on mobile */
-    .setting-fields-tabs-toggle {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
-        padding: 12px 15px;
-        background: #f6f7f7;
-        border: none;
-        border-top: 1px solid #dcdcde;
-        cursor: pointer;
-        font-size: 13px;
-        font-weight: 500;
-        color: #1d2327;
-        text-align: left;
-    }
-
-    .setting-fields-tabs-toggle:hover {
-        background: #f0f0f1;
-    }
-
-    .setting-fields-tabs-toggle:focus {
-        outline: none;
-        box-shadow: inset 0 0 0 1px #2271b1;
-    }
-
-    .setting-fields-tabs-toggle .dashicons {
-        color: #50575e;
-        transition: transform 0.2s ease;
-    }
-
-    .setting-fields-header__tabs.is-open .setting-fields-tabs-toggle .dashicons {
-        transform: rotate(180deg);
-    }
-
-    /* Dropdown navigation */
-    .setting-fields-header__tabs .setting-fields-tabs-nav {
-        display: none;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        flex-direction: column;
-        background: #fff;
-        border: 1px solid #c3c4c7;
-        border-top: none;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        z-index: 100;
-        overflow: visible;
-    }
-
-    .setting-fields-header__tabs.is-open .setting-fields-tabs-nav {
-        display: flex;
-    }
-
-    .setting-fields-header__tabs .setting-fields-tab {
-        padding: 12px 15px;
-        border-bottom: 1px solid #e5e5e5;
-        border-left: 3px solid transparent;
-        margin-bottom: 0;
-    }
-
-    .setting-fields-header__tabs .setting-fields-tab:last-child {
-        border-bottom: none;
-    }
-
-    .setting-fields-header__tabs .setting-fields-tab:hover {
-        background: #f6f7f7;
-        border-bottom-color: #e5e5e5;
-    }
-
-    .setting-fields-header__tabs .setting-fields-tab-active {
-        background: #f0f6fc;
-        border-left-color: #2271b1;
-        border-bottom-color: #e5e5e5;
-    }
-
-    .setting-fields-header__tabs .setting-fields-tab-active:last-child {
-        border-bottom-color: transparent;
-    }
-}
-
-/* ==========================================================================
-   Section Titles
+   7. Sections & Headings
    ========================================================================== */
 
 .setting-fields-section-title {
     margin-top: 30px;
     margin-bottom: 10px;
     padding-bottom: 10px;
-    border-bottom: 1px solid #c3c4c7;
+    border-bottom: 1px solid #dcdcde;
+    box-shadow: 0 1px 0 #f6f7f7;
 }
 
 .setting-fields-section-description {
@@ -337,7 +272,15 @@
 }
 
 /* ==========================================================================
-   Toggle Switch
+   8. Field Descriptions & Labels
+   ========================================================================== */
+
+.setting-fields-suffix {
+    color: #646970;
+}
+
+/* ==========================================================================
+   9. Toggle Switch
    ========================================================================== */
 
 .setting-fields-toggle {
@@ -397,7 +340,7 @@
 }
 
 /* ==========================================================================
-   Checkbox & Radio Groups
+   10. Checkbox & Radio Groups
    ========================================================================== */
 
 .setting-fields-checkbox-group,
@@ -419,7 +362,7 @@
     margin-right: 0;
 }
 
-/* Vertical layout */
+/* Vertical layout (default) */
 .setting-fields-checkbox-group:not(.setting-fields-checkbox-group--horizontal) .setting-fields-checkbox-group-item,
 .setting-fields-radio-group:not(.setting-fields-radio-group--horizontal) .setting-fields-radio-item {
     display: block;
@@ -441,7 +384,7 @@
 }
 
 /* ==========================================================================
-   Button Group
+   11. Button Group
    ========================================================================== */
 
 .setting-fields-button-group {
@@ -466,7 +409,7 @@
 }
 
 /* ==========================================================================
-   Range Slider (WordPress/Modern Style)
+   12. Range Slider
    ========================================================================== */
 
 .setting-fields-range-wrapper {
@@ -482,20 +425,26 @@
     width: 200px;
     max-width: 100%;
     height: 6px;
-    background: linear-gradient(to right, #2271b1 0%, #2271b1 var(--range-progress), #dcdcde var(--range-progress), #dcdcde 100%);
+    background: linear-gradient(
+            to right,
+            #2271b1 0%,
+            #2271b1 var(--range-progress),
+            #dcdcde var(--range-progress),
+            #dcdcde 100%
+    );
     border-radius: 3px;
     outline: none;
     cursor: pointer;
 }
 
-/* Track - WebKit */
+/* Track — WebKit */
 .setting-fields-range::-webkit-slider-runnable-track {
     height: 6px;
     background: #dcdcde;
     border-radius: 3px;
 }
 
-/* Track - Firefox */
+/* Track — Firefox */
 .setting-fields-range::-moz-range-track {
     height: 6px;
     background: #dcdcde;
@@ -503,7 +452,7 @@
     border: none;
 }
 
-/* Thumb - WebKit */
+/* Thumb — WebKit */
 .setting-fields-range::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -527,7 +476,7 @@
     box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.25);
 }
 
-/* Thumb - Firefox */
+/* Thumb — Firefox */
 .setting-fields-range::-moz-range-thumb {
     width: 18px;
     height: 18px;
@@ -561,12 +510,47 @@
     color: #1d2327;
 }
 
-.setting-fields-suffix {
-    color: #646970;
+/* ==========================================================================
+   13. Color Picker
+   ========================================================================== */
+
+.setting-fields-color-picker {
+    max-width: 100px;
 }
 
 /* ==========================================================================
-   Image Field
+   14. Code Editor
+   ========================================================================== */
+
+.setting-fields-code-editor {
+    font-family: Consolas, Monaco, monospace;
+    font-size: 13px;
+}
+
+/* ==========================================================================
+   15. Select2 Overrides
+   ========================================================================== */
+
+.setting-fields-select2 + .select2-container {
+    max-width: 400px;
+}
+
+.select2-container--default .select2-selection--single,
+.select2-container--default .select2-selection--multiple {
+    border-color: #8c8f94;
+    min-height: 30px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 28px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 28px;
+}
+
+/* ==========================================================================
+   16. Image Field
    ========================================================================== */
 
 .setting-fields-image-field {
@@ -599,7 +583,7 @@
 }
 
 /* ==========================================================================
-   File Field
+   17. File Field
    ========================================================================== */
 
 .setting-fields-file-field {
@@ -635,7 +619,7 @@
 }
 
 /* ==========================================================================
-   Gallery Field
+   18. Gallery Field
    ========================================================================== */
 
 .setting-fields-gallery-items {
@@ -683,7 +667,7 @@
 }
 
 /* ==========================================================================
-   Link Field
+   19. Link Field
    ========================================================================== */
 
 .setting-fields-link-field {
@@ -710,7 +694,7 @@
 }
 
 /* ==========================================================================
-   Dimensions Field
+   20. Dimensions Field
    ========================================================================== */
 
 .setting-fields-dimensions-field {
@@ -793,7 +777,7 @@
 }
 
 /* ==========================================================================
-   Sortable Field
+   21. Sortable Field
    ========================================================================== */
 
 .setting-fields-sortable {
@@ -882,7 +866,7 @@
 }
 
 /* ==========================================================================
-   oEmbed Field
+   22. oEmbed Field
    ========================================================================== */
 
 .setting-fields-oembed-preview {
@@ -895,13 +879,21 @@
 }
 
 /* ==========================================================================
-   Group Field
+   23. Group Field
    ========================================================================== */
 
 .setting-fields-group {
     background: #f6f7f7;
     border: 1px solid #c3c4c7;
     border-radius: 4px;
+}
+
+.setting-fields-group:not(.setting-fields-group--collapsible) {
+    padding: 15px;
+}
+
+.setting-fields-group:not(.setting-fields-group--collapsible) .setting-fields-group-content {
+    padding: 0;
 }
 
 .setting-fields-group-content {
@@ -914,7 +906,7 @@
     gap: 20px;
 }
 
-/* Collapsible Group Header */
+/* Collapsible group header */
 .setting-fields-group--collapsible {
     padding: 0;
 }
@@ -978,20 +970,11 @@
     height: 20px;
 }
 
-/* Collapsed state */
 .setting-fields-group--collapsed .setting-fields-group-content {
     display: none;
 }
 
-/* Non-collapsible groups keep old padding */
-.setting-fields-group:not(.setting-fields-group--collapsible) {
-    padding: 15px;
-}
-
-.setting-fields-group:not(.setting-fields-group--collapsible) .setting-fields-group-content {
-    padding: 0;
-}
-
+/* Group field items */
 .setting-fields-group-field {
     margin-bottom: 15px;
 }
@@ -1015,13 +998,14 @@
 }
 
 /* ==========================================================================
-   Repeater Field
+   24. Repeater Field
    ========================================================================== */
 
 .setting-fields-repeater {
     max-width: 100%;
 }
 
+/* Table layout */
 .setting-fields-repeater-table {
     margin-bottom: 10px;
     border-spacing: 0;
@@ -1068,7 +1052,7 @@
     max-width: none;
 }
 
-/* Sort column (first) */
+/* Sort column */
 .setting-fields-repeater-table thead th.setting-fields-repeater-sort-col {
     width: 40px;
     min-width: 40px;
@@ -1101,7 +1085,7 @@
     line-height: 1;
 }
 
-/* Actions column (last) */
+/* Actions column */
 .setting-fields-repeater-table thead th.setting-fields-repeater-actions-col {
     width: 50px;
     min-width: 50px;
@@ -1119,6 +1103,7 @@
     vertical-align: middle;
 }
 
+/* Remove button */
 .setting-fields-repeater-remove {
     color: #a7aaad;
     background: none;
@@ -1141,7 +1126,7 @@
     height: 18px;
 }
 
-/* Block layout repeater rows (card style) */
+/* Block layout (card style) */
 .setting-fields-repeater--block .setting-fields-repeater-rows {
     display: flex;
     flex-direction: column;
@@ -1155,6 +1140,7 @@
     overflow: hidden;
 }
 
+/* Row header */
 .setting-fields-repeater-row-header {
     display: flex;
     align-items: center;
@@ -1205,6 +1191,7 @@
     padding: 4px;
 }
 
+/* Row content */
 .setting-fields-repeater-row-content {
     padding: 15px;
 }
@@ -1242,293 +1229,18 @@
     margin-bottom: 0;
 }
 
-/* Sortable placeholder */
+/* Sortable states */
 .setting-fields-repeater-row.ui-sortable-placeholder {
     visibility: visible !important;
     background: #e5f5fa;
     border: 2px dashed #2271b1;
 }
 
-/* Sortable helper (dragging state) */
 .setting-fields-repeater-row.ui-sortable-helper {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* ==========================================================================
-   WYSIWYG Field
-   ========================================================================== */
-
-.setting-fields-wysiwyg {
-    max-width: 800px;
-}
-
-/* ==========================================================================
-   Code Editor Field
-   ========================================================================== */
-
-.setting-fields-code-editor {
-    font-family: Consolas, Monaco, monospace;
-    font-size: 13px;
-}
-
-/* ==========================================================================
-   Select2 Overrides
-   ========================================================================== */
-
-.setting-fields-select2 + .select2-container {
-    max-width: 400px;
-}
-
-.select2-container--default .select2-selection--single,
-.select2-container--default .select2-selection--multiple {
-    border-color: #8c8f94;
-    min-height: 30px;
-}
-
-.select2-container--default .select2-selection--single .select2-selection__rendered {
-    line-height: 28px;
-}
-
-.select2-container--default .select2-selection--single .select2-selection__arrow {
-    height: 28px;
-}
-
-/* ==========================================================================
-   Conditional Logic (Hidden Rows)
-   ========================================================================== */
-
-tr[data-conditions] {
-    transition: opacity 0.2s ease;
-}
-
-tr[data-conditions].setting-field-hidden {
-    display: none;
-}
-
-/* ==========================================================================
-   Required Field Indicator
-   ========================================================================== */
-
-.required {
-    color: #d63638;
-    margin-left: 2px;
-}
-
-/* ==========================================================================
-   Color Picker
-   ========================================================================== */
-
-.setting-fields-color-picker {
-    max-width: 100px;
-}
-
-/* ==========================================================================
-   Responsive Adjustments
-   ========================================================================== */
-
-/* Tablet and below */
-@media screen and (max-width: 782px) {
-    /* Header adjustments */
-    .setting-fields-header {
-        margin: -8px -10px 0 -10px;
-    }
-
-    .setting-fields-header-top {
-        padding: 12px 15px;
-    }
-
-    .setting-fields-header-title {
-        font-size: 18px;
-    }
-
-    .setting-fields-header-logo {
-        max-height: 28px;
-    }
-
-    .setting-fields-header-tabs {
-        padding: 0 10px;
-    }
-
-    /* Tabs scroll horizontally on mobile */
-    .setting-fields-tabs-nav {
-        gap: 0;
-        padding-bottom: 2px;
-    }
-
-    .setting-fields-tab {
-        padding: 10px 12px;
-        font-size: 12px;
-    }
-
-    /* Form table adjustments */
-    .setting-fields-wrap .form-table th {
-        width: 100%;
-        display: block;
-        padding: 15px 10px 5px 0;
-    }
-
-    .setting-fields-wrap .form-table td {
-        display: block;
-        padding: 5px 10px 15px;
-    }
-
-    .setting-fields-wrap .form-table input[type="text"],
-    .setting-fields-wrap .form-table input[type="email"],
-    .setting-fields-wrap .form-table input[type="url"],
-    .setting-fields-wrap .form-table input[type="tel"],
-    .setting-fields-wrap .form-table input[type="password"],
-    .setting-fields-wrap .form-table select,
-    .setting-fields-wrap .form-table textarea {
-        max-width: 100%;
-    }
-
-    /* Dimensions field */
-    .setting-fields-dimensions-inputs {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .setting-fields-dimension-input {
-        width: 100%;
-    }
-
-    .setting-fields-dimension-input input {
-        width: 100%;
-    }
-
-    /* Button group */
-    .setting-fields-button-group {
-        flex-direction: column;
-        width: 100%;
-    }
-
-    .setting-fields-button-group .setting-fields-button-group-item {
-        margin-left: 0;
-        margin-top: -1px;
-        border-radius: 0;
-        width: 100%;
-        justify-content: center;
-    }
-
-    .setting-fields-button-group .setting-fields-button-group-item:first-of-type {
-        margin-top: 0;
-        border-radius: 3px 3px 0 0;
-    }
-
-    .setting-fields-button-group .setting-fields-button-group-item:last-of-type {
-        border-radius: 0 0 3px 3px;
-    }
-
-    /* Repeater */
-    .setting-fields-repeater-row--row .setting-fields-repeater-row-content {
-        flex-direction: column;
-    }
-
-    .setting-fields-repeater-table {
-        display: block;
-        overflow-x: auto;
-    }
-
-    /* Range slider */
-    .setting-fields-range-wrapper {
-        flex-wrap: wrap;
-    }
-
-    .setting-fields-range {
-        width: 100%;
-        order: 2;
-    }
-
-    .setting-fields-range-value {
-        order: 1;
-    }
-
-    /* Email editor */
-    .setting-fields-email-editor {
-        max-width: 100%;
-    }
-
-    .setting-fields-email-subject-wrap {
-        flex-direction: column;
-    }
-
-    .setting-fields-email-actions {
-        flex-direction: column;
-    }
-
-    .setting-fields-email-actions .button {
-        width: 100%;
-        justify-content: center;
-    }
-
-    /* Sortable */
-    .setting-fields-sortable {
-        max-width: 100%;
-    }
-
-    /* Link field */
-    .setting-fields-link-field {
-        max-width: 100%;
-    }
-
-    /* Gallery */
-    .setting-fields-gallery-item {
-        width: 80px;
-        height: 80px;
-    }
-
-    /* Modal */
-    .setting-fields-modal-content {
-        width: 95%;
-        max-height: 90vh;
-        margin: 10px;
-    }
-
-    /* Tooltips - show below on mobile */
-    .setting-fields-tooltip .setting-fields-tooltip-content {
-        min-width: 150px;
-        max-width: 250px;
-        font-size: 11px;
-    }
-}
-
-/* Small mobile */
-@media screen and (max-width: 480px) {
-    .setting-fields-wrap {
-        margin-right: 10px;
-    }
-
-    .setting-fields-header {
-        margin: -8px -10px 0 -10px;
-    }
-
-    .setting-fields-header-branding {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-    }
-
-    .setting-fields-tab {
-        padding: 8px 10px;
-    }
-
-    .setting-fields-tab .dashicons {
-        display: none;
-    }
-
-    /* Hide tab text, show only icons if available */
-    .setting-fields-gallery-item {
-        width: 60px;
-        height: 60px;
-    }
-
-    .setting-fields-image-preview {
-        max-width: 100%;
-    }
-}
-
-
-/* Repeater empty state */
+/* Empty state */
 .setting-fields-repeater-empty td {
     text-align: center;
     padding: 20px;
@@ -1536,143 +1248,132 @@ tr[data-conditions].setting-field-hidden {
     font-style: italic;
 }
 
-/* Tooltips - EDD style */
-.setting-fields-tooltip {
-    display: inline-block;
-    margin-left: 4px;
-    cursor: help;
-    vertical-align: middle;
-    position: relative;
+/* ==========================================================================
+   25. WYSIWYG Field
+   ========================================================================== */
+
+.setting-fields-wysiwyg {
+    max-width: 800px;
 }
 
-.setting-fields-tooltip .dashicons {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-    color: #787c82;
-    transition: color 0.15s ease;
-}
+/* ==========================================================================
+   26. Clipboard Field
+   ========================================================================== */
 
-.setting-fields-tooltip:hover .dashicons {
-    color: #2271b1;
-}
-
-.setting-fields-tooltip .setting-fields-tooltip-content {
-    display: none;
-    position: absolute;
-    z-index: 100000;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    margin-bottom: 8px;
-    padding: 8px 12px;
-    min-width: 200px;
-    max-width: 300px;
-    background: #1d2327;
-    color: #fff;
-    font-size: 12px;
-    line-height: 1.5;
-    font-weight: 400;
-    text-align: left;
-    border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-    white-space: normal;
-}
-
-.setting-fields-tooltip .setting-fields-tooltip-content::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 6px solid transparent;
-    border-top-color: #1d2327;
-}
-
-.setting-fields-tooltip:hover .setting-fields-tooltip-content {
-    display: block;
-}
-
-/* Separator field - clean HR style */
-.setting-fields-separator {
-    padding: 25px 0 15px;
-}
-
-.setting-fields-separator-wrap {
+.setting-fields-clipboard {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 8px;
+    max-width: 100%;
 }
 
-.setting-fields-separator-line {
-    flex: 1;
-    height: 1px;
-    background: #c3c4c7;
-    border: none;
-    margin: 0;
-}
-
-.setting-fields-separator-title {
-    margin: 0;
-    padding: 0;
+.setting-fields-clipboard-code {
+    display: inline-block;
+    padding: 6px 12px;
+    background: #f0f0f1;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
     font-size: 13px;
-    font-weight: 600;
-    color: #1d2327;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    line-height: 1.6;
+    color: #2c3338;
+    word-break: break-all;
+    max-width: 500px;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.setting-fields-separator-description {
-    margin: 8px 0 0;
-    padding: 0;
-    color: #646970;
+.setting-fields-clipboard .regular-text {
+    background: #f0f0f1;
+    cursor: default;
+}
+
+.setting-fields-clipboard-btn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.setting-fields-clipboard-btn .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+}
+
+.setting-fields-clipboard-btn--copied {
+    color: #00a32a !important;
+    border-color: #00a32a !important;
+}
+
+/* ==========================================================================
+   27. Action Button Field
+   ========================================================================== */
+
+.setting-fields-action-button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.setting-fields-action-button .setting-fields-action-input {
+    flex: 0 1 auto;
+}
+
+.setting-fields-action-btn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.setting-fields-action-btn .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+}
+
+.setting-fields-action-btn .dashicons.spin {
+    animation: setting-fields-spin 1s linear infinite;
+}
+
+.setting-fields-action-result {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     font-size: 13px;
+    line-height: 1.4;
+    padding: 4px 0;
 }
 
-/* Heading field */
-.setting-fields-heading {
-    padding: 20px 0 10px;
+.setting-fields-action-result-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
 }
 
-.setting-fields-heading-title {
-    margin: 0 0 5px;
-    padding: 0;
-    color: #1d2327;
+.setting-fields-action-result--success {
+    color: #00a32a;
 }
 
-h2.setting-fields-heading-title {
-    font-size: 1.3em;
+.setting-fields-action-result--error {
+    color: #d63638;
 }
 
-h3.setting-fields-heading-title {
-    font-size: 1.1em;
-}
+/* ==========================================================================
+   28. Email Editor Field
+   ========================================================================== */
 
-h4.setting-fields-heading-title {
-    font-size: 1em;
-}
-
-.setting-fields-heading-description {
-    margin: 5px 0 0;
-    color: #646970;
-}
-
-/* Full-width rows for separator/heading/message/email_editor */
-.setting-fields-row-fullwidth th {
-    display: none !important;
-}
-
-.setting-fields-row-fullwidth td {
-    padding-left: 0 !important;
-}
-
-/* Email Editor Field */
 .setting-fields-email-editor {
     max-width: 800px;
 }
 
-/* Collapsible Email Editor */
+/* Collapsible variant */
 .setting-fields-email-editor--collapsible {
     background: #fff;
     border: 1px solid #c3c4c7;
@@ -1680,6 +1381,7 @@ h4.setting-fields-heading-title {
     overflow: hidden;
 }
 
+/* Header */
 .setting-fields-email-header {
     display: flex;
     align-items: center;
@@ -1719,6 +1421,12 @@ h4.setting-fields-heading-title {
     flex-shrink: 0;
 }
 
+.setting-fields-email-header-actions button {
+    display: flex !important;
+    align-items: center;
+}
+
+/* Configure toggle button */
 .setting-fields-email-configure {
     display: inline-flex;
     align-items: center;
@@ -1741,7 +1449,7 @@ h4.setting-fields-heading-title {
     transform: rotate(180deg);
 }
 
-/* Body wrap for collapsible */
+/* Body wrap */
 .setting-fields-email-body-wrap {
     padding: 20px;
 }
@@ -1754,7 +1462,7 @@ h4.setting-fields-heading-title {
     padding: 0;
 }
 
-/* Non-collapsible enable toggle */
+/* Enable/disable toggle */
 .setting-fields-email-enable {
     margin-bottom: 20px;
     padding-bottom: 15px;
@@ -1773,6 +1481,7 @@ h4.setting-fields-heading-title {
     pointer-events: none;
 }
 
+/* Subject */
 .setting-fields-email-subject {
     margin-bottom: 15px;
 }
@@ -1792,17 +1501,49 @@ h4.setting-fields-heading-title {
     flex: 1;
 }
 
-.setting-fields-email-body {
+.setting-fields-email-subject-wrap .setting-fields-insert-tag-btn {
+    padding: 0 10px;
+    height: auto;
+}
+
+.setting-fields-email-subject-wrap .setting-fields-insert-tag-btn .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+/* Recipient */
+.setting-fields-email-recipient {
     margin-bottom: 15px;
 }
 
-.setting-fields-email-body > label {
+.setting-fields-email-recipient label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.setting-fields-email-recipient-wrap {
+    display: flex;
+    gap: 8px;
+}
+
+.setting-fields-email-recipient-wrap input {
+    flex: 1;
+}
+
+/* Message body */
+.setting-fields-email-message {
+    margin-bottom: 15px;
+}
+
+.setting-fields-email-message > label {
     display: block;
     font-weight: 600;
     margin-bottom: 8px;
 }
 
-/* Insert Tag button styling - match Add Media */
+/* Insert tag button — match Add Media style */
 .setting-fields-insert-tag-btn {
     display: inline-flex;
     align-items: center;
@@ -1819,18 +1560,7 @@ h4.setting-fields-heading-title {
     margin-top: -2px;
 }
 
-/* Subject line tag button */
-.setting-fields-email-subject-wrap .setting-fields-insert-tag-btn {
-    padding: 0 10px;
-    height: auto;
-}
-
-.setting-fields-email-subject-wrap .setting-fields-insert-tag-btn .dashicons {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-}
-
+/* Action buttons (preview, send test) */
 .setting-fields-email-actions {
     display: flex;
     align-items: center;
@@ -1853,7 +1583,11 @@ h4.setting-fields-heading-title {
     vertical-align: middle;
 }
 
-/* Inline test email input */
+.setting-fields-email-actions .dashicons.spin {
+    animation: setting-fields-spin 1s linear infinite;
+}
+
+/* Send test email inline input */
 .setting-fields-email-test-wrap {
     display: flex;
     align-items: center;
@@ -1876,17 +1610,10 @@ h4.setting-fields-heading-title {
     outline: none;
 }
 
-/* Spinning animation for loading state */
-@keyframes setting-fields-spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
+/* ==========================================================================
+   29. Merge Tags Modal
+   ========================================================================== */
 
-.setting-fields-email-actions .dashicons.spin {
-    animation: setting-fields-spin 1s linear infinite;
-}
-
-/* Merge Tags Modal */
 .setting-fields-merge-tags-modal {
     position: fixed;
     top: 0;
@@ -1975,7 +1702,7 @@ h4.setting-fields-heading-title {
 .setting-fields-tag-item {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: baseline !important;
     gap: 4px;
     padding: 12px 15px;
     background: #f6f7f7;
@@ -2014,7 +1741,10 @@ h4.setting-fields-heading-title {
     color: #646970;
 }
 
-/* Encryption status indicator base */
+/* ==========================================================================
+   30. Encryption Indicators
+   ========================================================================== */
+
 .setting-fields-encryption-status {
     display: inline-flex;
     align-items: center;
@@ -2032,7 +1762,7 @@ h4.setting-fields-heading-title {
     line-height: 14px;
 }
 
-/* Database encrypted status */
+/* Database encrypted */
 .setting-fields-encryption-database {
     background: #f0f6fc;
     color: #0969da;
@@ -2043,7 +1773,7 @@ h4.setting-fields-heading-title {
     color: #0969da;
 }
 
-/* Constant-defined status */
+/* Constant-defined */
 .setting-fields-encryption-constant {
     background: #f6f8fa;
     color: #57606a;
@@ -2062,19 +1792,7 @@ h4.setting-fields-heading-title {
     margin-left: 4px;
 }
 
-/* Disabled field styling when value comes from constant */
-.setting-fields-wrap input[readonly],
-.setting-fields-wrap input[disabled],
-.setting-fields-wrap textarea[readonly],
-.setting-fields-wrap textarea[disabled],
-.setting-fields-wrap select[disabled] {
-    background-color: #f6f7f7;
-    border-color: #dcdcde;
-    color: #646970;
-    cursor: not-allowed;
-}
-
-/* Lock icon in field labels for encrypted fields */
+/* Lock icon in field labels */
 .setting-fields-field-encrypted-label {
     display: inline-flex;
     align-items: center;
@@ -2088,145 +1806,447 @@ h4.setting-fields-heading-title {
     color: #0969da;
 }
 
-/**
- * Additional CSS for clipboard, action_button, and section visibility
- *
- * Add these rules to your existing setting-fields.css file.
- */
-
 /* ==========================================================================
-   Clipboard Field
+   31. Tooltips
    ========================================================================== */
 
-.setting-fields-clipboard {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    max-width: 100%;
-}
-
-.setting-fields-clipboard-code {
+.setting-fields-tooltip {
     display: inline-block;
-    padding: 6px 12px;
-    background: #f0f0f1;
-    border: 1px solid #c3c4c7;
-    border-radius: 4px;
-    font-size: 13px;
-    line-height: 1.6;
-    color: #2c3338;
-    word-break: break-all;
-    max-width: 500px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    margin-left: 4px;
+    cursor: help;
+    vertical-align: middle;
+    position: relative;
 }
 
-.setting-fields-clipboard .regular-text {
-    background: #f0f0f1;
-    cursor: default;
-}
-
-.setting-fields-clipboard-btn {
-    display: inline-flex !important;
-    align-items: center;
-    gap: 4px;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.setting-fields-clipboard-btn .dashicons {
+.setting-fields-tooltip .dashicons {
     font-size: 16px;
     width: 16px;
     height: 16px;
-    line-height: 16px;
+    color: #787c82;
+    transition: color 0.15s ease;
 }
 
-.setting-fields-clipboard-btn--copied {
-    color: #00a32a !important;
-    border-color: #00a32a !important;
+.setting-fields-tooltip:hover .dashicons {
+    color: #2271b1;
+}
+
+.setting-fields-tooltip .setting-fields-tooltip-content {
+    display: none;
+    position: absolute;
+    z-index: 100000;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 8px;
+    padding: 8px 12px;
+    min-width: 200px;
+    max-width: 300px;
+    background: #1d2327;
+    color: #fff;
+    font-size: 12px;
+    line-height: 1.5;
+    font-weight: 400;
+    text-align: left;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    white-space: normal;
+}
+
+.setting-fields-tooltip .setting-fields-tooltip-content::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #1d2327;
+}
+
+.setting-fields-tooltip:hover .setting-fields-tooltip-content {
+    display: block;
 }
 
 /* ==========================================================================
-   Action Button Field
+   32. Conditional Logic
    ========================================================================== */
 
-.setting-fields-action-button {
+tr[data-conditions] {
+    transition: opacity 0.2s ease;
+}
+
+tr[data-conditions].setting-field-hidden {
+    display: none;
+}
+
+/* ==========================================================================
+   33. Full-Width Rows
+   ========================================================================== */
+
+.setting-fields-row-fullwidth th {
+    display: none !important;
+}
+
+.setting-fields-row-fullwidth td {
+    padding-left: 0 !important;
+}
+
+/* ==========================================================================
+   34. Separator & Heading Layout Fields
+   ========================================================================== */
+
+/* Separator */
+.setting-fields-separator {
+    padding: 25px 0 15px;
+}
+
+.setting-fields-separator-wrap {
     display: flex;
     align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
+    gap: 15px;
 }
 
-.setting-fields-action-button .setting-fields-action-input {
-    flex: 0 1 auto;
+.setting-fields-separator-line {
+    flex: 1;
+    height: 1px;
+    background: #c3c4c7;
+    border: none;
+    margin: 0;
 }
 
-.setting-fields-action-btn {
-    display: inline-flex !important;
-    align-items: center;
-    gap: 6px;
+.setting-fields-separator-title {
+    margin: 0;
+    padding: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1d2327;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     white-space: nowrap;
 }
 
-.setting-fields-action-btn .dashicons {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-    line-height: 16px;
-}
-
-.setting-fields-action-btn .dashicons.spin {
-    animation: setting-fields-spin 1s linear infinite;
-}
-
-@keyframes setting-fields-spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-.setting-fields-action-result {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+.setting-fields-separator-description {
+    margin: 8px 0 0;
+    padding: 0;
+    color: #646970;
     font-size: 13px;
-    line-height: 1.4;
-    padding: 4px 0;
 }
 
-.setting-fields-action-result-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
-    line-height: 18px;
+/* Heading */
+.setting-fields-heading {
+    padding: 20px 0 10px;
 }
 
-.setting-fields-action-result--success {
-    color: #00a32a;
+.setting-fields-heading-title {
+    margin: 0 0 5px;
+    padding: 0;
+    color: #1d2327;
 }
 
-.setting-fields-action-result--error {
-    color: #d63638;
+h2.setting-fields-heading-title {
+    font-size: 1.3em;
 }
 
-/*!* ==========================================================================*/
-/*   Section Visibility (for conditional logic)*/
-/*   ========================================================================== *!*/
+h3.setting-fields-heading-title {
+    font-size: 1.1em;
+}
 
-/*.setting-fields-section-hidden {*/
-/*    display: none !important;*/
-/*}*/
+h4.setting-fields-heading-title {
+    font-size: 1em;
+}
 
-/*!* Section wrapper styling *!*/
-/*.setting-fields-section {*/
-/*    !* Ensures smooth transitions when toggling visibility *!*/
-/*}*/
+.setting-fields-heading-description {
+    margin: 5px 0 0;
+    color: #646970;
+}
 
-/*.setting-fields-section-title {*/
-/*    !* Matches WP default h2 in settings *!*/
-/*}*/
+/* ==========================================================================
+   35. Responsive — Tablet (≤ 782px)
+   ========================================================================== */
 
-/*.setting-fields-section-description {*/
-/*    color: #646970;*/
-/*    font-size: 13px;*/
-/*    margin: 0 0 10px;*/
-/*}*/
+@media screen and (max-width: 782px) {
+
+    /* Header */
+    .setting-fields-header {
+        margin: -8px -10px 0 -10px;
+    }
+
+    .setting-fields-header__branding {
+        min-height: 80px;
+        padding: 0 15px;
+    }
+
+    .setting-fields-header__tabs {
+        padding: 0 15px;
+    }
+
+    .setting-fields-header__tabs .setting-fields-tab {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+
+    /* Form table — stack labels above fields */
+    .setting-fields-wrap .form-table th {
+        width: 100%;
+        display: block;
+        padding: 15px 10px 5px 0;
+    }
+
+    .setting-fields-wrap .form-table td {
+        display: block;
+        padding: 5px 10px 15px;
+    }
+
+    .setting-fields-wrap .form-table input[type="text"],
+    .setting-fields-wrap .form-table input[type="email"],
+    .setting-fields-wrap .form-table input[type="url"],
+    .setting-fields-wrap .form-table input[type="tel"],
+    .setting-fields-wrap .form-table input[type="password"],
+    .setting-fields-wrap .form-table select,
+    .setting-fields-wrap .form-table textarea {
+        max-width: 100%;
+    }
+
+    /* Dimensions */
+    .setting-fields-dimensions-inputs {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .setting-fields-dimension-input {
+        width: 100%;
+    }
+
+    .setting-fields-dimension-input input {
+        width: 100%;
+    }
+
+    /* Button group — stack vertically */
+    .setting-fields-button-group {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .setting-fields-button-group .setting-fields-button-group-item {
+        margin-left: 0;
+        margin-top: -1px;
+        border-radius: 0;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .setting-fields-button-group .setting-fields-button-group-item:first-of-type {
+        margin-top: 0;
+        border-radius: 3px 3px 0 0;
+    }
+
+    .setting-fields-button-group .setting-fields-button-group-item:last-of-type {
+        border-radius: 0 0 3px 3px;
+    }
+
+    /* Repeater */
+    .setting-fields-repeater-row--row .setting-fields-repeater-row-content {
+        flex-direction: column;
+    }
+
+    .setting-fields-repeater-table {
+        display: block;
+        overflow-x: auto;
+    }
+
+    /* Range slider */
+    .setting-fields-range-wrapper {
+        flex-wrap: wrap;
+    }
+
+    .setting-fields-range {
+        width: 100%;
+        order: 2;
+    }
+
+    .setting-fields-range-value {
+        order: 1;
+    }
+
+    /* Email editor */
+    .setting-fields-email-editor {
+        max-width: 100%;
+    }
+
+    .setting-fields-email-subject-wrap {
+        flex-direction: column;
+    }
+
+    .setting-fields-email-actions {
+        flex-direction: column;
+    }
+
+    .setting-fields-email-actions .button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Sortable */
+    .setting-fields-sortable {
+        max-width: 100%;
+    }
+
+    /* Link field */
+    .setting-fields-link-field {
+        max-width: 100%;
+    }
+
+    /* Gallery */
+    .setting-fields-gallery-item {
+        width: 80px;
+        height: 80px;
+    }
+
+    /* Modal */
+    .setting-fields-modal-content {
+        width: 95%;
+        max-height: 90vh;
+        margin: 10px;
+    }
+
+    /* Tooltips */
+    .setting-fields-tooltip .setting-fields-tooltip-content {
+        min-width: 150px;
+        max-width: 250px;
+        font-size: 11px;
+    }
+}
+
+/* ==========================================================================
+   36. Responsive — Mobile (≤ 600px, Dropdown Tabs)
+   ========================================================================== */
+
+@media screen and (max-width: 600px) {
+
+    .setting-fields-header__branding {
+        padding: 0 10px;
+    }
+
+    .setting-fields-header__tabs {
+        padding: 0;
+        border-top: none;
+    }
+
+    /* Toggle button */
+    .setting-fields-tabs-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 12px 15px;
+        background: #f6f7f7;
+        border: none;
+        border-top: 1px solid #dcdcde;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        color: #1d2327;
+        text-align: left;
+    }
+
+    .setting-fields-tabs-toggle:hover {
+        background: #f0f0f1;
+    }
+
+    .setting-fields-tabs-toggle:focus {
+        outline: none;
+        box-shadow: inset 0 0 0 1px #2271b1;
+    }
+
+    .setting-fields-tabs-toggle .dashicons {
+        color: #50575e;
+        transition: transform 0.2s ease;
+    }
+
+    .setting-fields-header__tabs.is-open .setting-fields-tabs-toggle .dashicons {
+        transform: rotate(180deg);
+    }
+
+    /* Dropdown navigation */
+    .setting-fields-header__tabs .setting-fields-tabs-nav {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        background: #fff;
+        border: 1px solid #c3c4c7;
+        border-top: none;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        z-index: 100;
+        overflow: visible;
+    }
+
+    .setting-fields-header__tabs.is-open .setting-fields-tabs-nav {
+        display: flex;
+    }
+
+    .setting-fields-header__tabs .setting-fields-tab {
+        padding: 12px 15px;
+        border-bottom: 1px solid #e5e5e5;
+        border-left: 3px solid transparent;
+        margin-bottom: 0;
+    }
+
+    .setting-fields-header__tabs .setting-fields-tab:last-child {
+        border-bottom: none;
+    }
+
+    .setting-fields-header__tabs .setting-fields-tab:hover {
+        background: #f6f7f7;
+        border-bottom-color: #e5e5e5;
+    }
+
+    .setting-fields-header__tabs .setting-fields-tab-active {
+        background: #f0f6fc;
+        border-left-color: #2271b1;
+        border-bottom-color: #e5e5e5;
+    }
+
+    .setting-fields-header__tabs .setting-fields-tab-active:last-child {
+        border-bottom-color: transparent;
+    }
+}
+
+/* ==========================================================================
+   37. Responsive — Small Mobile (≤ 480px)
+   ========================================================================== */
+
+@media screen and (max-width: 480px) {
+
+    .setting-fields-wrap {
+        margin-right: 10px;
+    }
+
+    .setting-fields-header {
+        margin: -8px -10px 0 -10px;
+    }
+
+    .setting-fields-header-branding {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .setting-fields-tab {
+        padding: 8px 10px;
+    }
+
+    .setting-fields-tab .dashicons {
+        display: none;
+    }
+
+    .setting-fields-gallery-item {
+        width: 60px;
+        height: 60px;
+    }
+
+    .setting-fields-image-preview {
+        max-width: 100%;
+    }
+}

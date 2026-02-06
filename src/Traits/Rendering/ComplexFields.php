@@ -12,6 +12,8 @@ declare( strict_types=1 );
 
 namespace ArrayPress\RegisterSettingFields\Traits\Rendering;
 
+use ArrayPress\RegisterEmails\Registry\Registry;
+
 /**
  * Trait ComplexFields
  *
@@ -405,7 +407,7 @@ trait ComplexFields {
         $value = wp_parse_args( (array) $value, [
                 'enabled'   => $default_enabled,
                 'subject'   => $default_subject,
-                'body'      => $default_body,
+                'message'   => $default_body,
                 'recipient' => $field['default_recipient'] ?? get_option( 'admin_email' ),
         ] );
 
@@ -548,20 +550,20 @@ trait ComplexFields {
                         </div>
                     </div>
 
-                    <!-- Body Editor -->
-                    <div class="setting-fields-email-body">
-                        <label for="<?php echo esc_attr( $id ); ?>_body">
+                    <!-- Message Editor -->
+                    <div class="setting-fields-email-message">
+                        <label for="<?php echo esc_attr( $id ); ?>_message">
                             <?php esc_html_e( 'Message', 'setting-fields' ); ?>
                         </label>
                         <?php
                         // Add merge tags button next to media buttons via filter
-                        $editor_id = $id . '_body';
+                        $editor_id = $id . '_message';
                         $field_id  = $id;
 
                         if ( ! empty( $merge_tags ) ) {
                             add_action( 'media_buttons', function ( $eid ) use ( $editor_id, $field_id ) {
                                 if ( $eid === $editor_id ) {
-                                    echo '<button type="button" class="button setting-fields-insert-tag-btn" data-target="body" data-editor-id="' . esc_attr( $field_id ) . '" title="' . esc_attr__( 'Insert merge tag', 'setting-fields' ) . '">';
+                                    echo '<button type="button" class="button setting-fields-insert-tag-btn" data-target="message" data-editor-id="' . esc_attr( $field_id ) . '" title="' . esc_attr__( 'Insert merge tag', 'setting-fields' ) . '">';
                                     echo '<span class="dashicons dashicons-shortcode"></span> ';
                                     echo esc_html__( 'Insert Tag', 'setting-fields' );
                                     echo '</button>';
@@ -569,8 +571,8 @@ trait ComplexFields {
                             }, 20 );
                         }
 
-                        wp_editor( $value['body'], $editor_id, [
-                                'textarea_name' => $name . '[body]',
+                        wp_editor( $value['message'], $editor_id, [
+                                'textarea_name' => $name . '[message]',
                                 'textarea_rows' => $field['rows'] ?? 15,
                                 'media_buttons' => true,
                                 'teeny'         => false,
@@ -685,7 +687,7 @@ trait ComplexFields {
             return [];
         }
 
-        $registry     = \ArrayPress\RegisterEmails\Registry\Registry::get_instance();
+        $registry     = Registry::get_instance();
         $template_obj = $registry->get_template( $group, $template );
 
         if ( ! $template_obj ) {

@@ -129,7 +129,7 @@ class RestApi {
 					'default'           => '',
 					'sanitize_callback' => 'sanitize_text_field',
 				],
-				'body'        => [
+				'message'     => [
 					'type'    => 'string',
 					'default' => '',
 				],
@@ -162,7 +162,7 @@ class RestApi {
 					'default'           => '',
 					'sanitize_callback' => 'sanitize_text_field',
 				],
-				'body'        => [
+				'message'     => [
 					'type'    => 'string',
 					'default' => '',
 				],
@@ -346,7 +346,7 @@ class RestApi {
 		$settings_id = $request->get_param( 'settings_id' );
 		$field_key   = $request->get_param( 'field_key' );
 		$subject     = $request->get_param( 'subject' );
-		$body        = wp_kses_post( $request->get_param( 'body' ) );
+		$message     = wp_kses_post( $request->get_param( 'message' ) );
 
 		$field = $this->get_field_config( $settings_id, $field_key );
 
@@ -385,7 +385,7 @@ class RestApi {
 				'<!DOCTYPE html><html><head><meta charset="utf-8"><title>%s</title></head><body style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto;"><h2 style="margin-bottom: 20px;">%s</h2><hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">%s</body></html>',
 				esc_html( $subject ),
 				esc_html( $subject ),
-				wpautop( $body )
+				wpautop( $message )
 			);
 
 			return new WP_REST_Response( [ 'html' => $html ], 200 );
@@ -394,7 +394,7 @@ class RestApi {
 		try {
 			$data = [
 				'subject'     => $subject,
-				'body'        => $body,
+				'message'     => $message,
 				'settings_id' => $settings_id,
 				'field_key'   => $field_key,
 				'field'       => $field,
@@ -410,12 +410,12 @@ class RestApi {
 				if ( isset( $result['html'] ) ) {
 					return new WP_REST_Response( $result, 200 );
 				}
-				if ( isset( $result['subject'] ) && isset( $result['body'] ) ) {
+				if ( isset( $result['subject'] ) && isset( $result['message'] ) ) {
 					$html = sprintf(
 						'<!DOCTYPE html><html><head><meta charset="utf-8"><title>%s</title></head><body style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto;"><h2 style="margin-bottom: 20px;">%s</h2><hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">%s</body></html>',
 						esc_html( $result['subject'] ),
 						esc_html( $result['subject'] ),
-						$result['body']
+						$result['message']
 					);
 
 					return new WP_REST_Response( [ 'html' => $html ], 200 );
@@ -445,7 +445,7 @@ class RestApi {
 		$field_key   = $request->get_param( 'field_key' );
 		$email       = $request->get_param( 'email' );
 		$subject     = $request->get_param( 'subject' );
-		$body        = wp_kses_post( $request->get_param( 'body' ) );
+		$message     = wp_kses_post( $request->get_param( 'message' ) );
 
 		if ( ! is_email( $email ) ) {
 			return new WP_Error( 'invalid_email', __( 'Invalid email address.', 'setting-fields' ), [ 'status' => 400 ] );
@@ -492,7 +492,7 @@ class RestApi {
 		if ( ! is_callable( $callback ) ) {
 			// Fallback: send email using wp_mail
 			$headers = [ 'Content-Type: text/html; charset=UTF-8' ];
-			$sent    = wp_mail( $email, $subject, wpautop( $body ), $headers );
+			$sent    = wp_mail( $email, $subject, wpautop( $message ), $headers );
 
 			if ( $sent ) {
 				return new WP_REST_Response( [
@@ -508,7 +508,7 @@ class RestApi {
 			$data = [
 				'to'          => $email,
 				'subject'     => $subject,
-				'body'        => $body,
+				'message'     => $message,
 				'settings_id' => $settings_id,
 				'field_key'   => $field_key,
 				'field'       => $field,
