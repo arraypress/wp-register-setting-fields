@@ -1046,6 +1046,35 @@
                 $field.find('.setting-fields-dimensions-inputs input[type="number"]').val(value);
             });
         },
+        /**
+         * Get current values from an email editor instance.
+         *
+         * Reads subject, title, subtitle, and message from the editor
+         * fields for use in preview and send-test AJAX requests.
+         *
+         * @param {jQuery} $editor The email editor wrapper element.
+         * @returns {Object} Editor values with settings_id, field_key, subject, title, subtitle, message.
+         */
+        getEmailEditorValues: function ($editor) {
+            const fieldId = $editor.data('field-id');
+            const editorId = fieldId + '_message';
+            let message = '';
+
+            if (typeof tinyMCE !== 'undefined' && tinyMCE.get(editorId)) {
+                message = tinyMCE.get(editorId).getContent();
+            } else {
+                message = $('#' + editorId).val();
+            }
+
+            return {
+                settings_id: $editor.closest('.setting-fields-wrap').data('setting-id'),
+                field_key: $editor.data('field-key'),
+                subject: $editor.find('.setting-fields-email-subject-input').val(),
+                title: $editor.find('.setting-fields-email-title-input').val() || '',
+                subtitle: $editor.find('.setting-fields-email-subtitle-input').val() || '',
+                message: message
+            };
+        },
 
         /**
          * Initialize email editor functionality.
@@ -1150,7 +1179,7 @@
                 });
             });
 
-            // Insert selected tag into subject or message editor
+            // Insert selected tag into target field
             $(document).on('click', '.setting-fields-tag-item', function (e) {
                 e.preventDefault();
 
@@ -1162,6 +1191,12 @@
 
                 if (target === 'subject') {
                     const $input = $editor.find('.setting-fields-email-subject-input');
+                    self.insertAtCursor($input[0], tag);
+                } else if (target === 'title') {
+                    const $input = $editor.find('.setting-fields-email-title-input');
+                    self.insertAtCursor($input[0], tag);
+                } else if (target === 'subtitle') {
+                    const $input = $editor.find('.setting-fields-email-subtitle-input');
                     self.insertAtCursor($input[0], tag);
                 } else {
                     const editorId = fieldId + '_message';
@@ -1186,18 +1221,7 @@
                 e.preventDefault();
 
                 const $editor = $(this).closest('.setting-fields-email-editor');
-                const fieldKey = $editor.data('field-key');
-                const fieldId = $editor.data('field-id');
-                const settingsId = $editor.closest('.setting-fields-wrap').data('setting-id');
-                const subject = $editor.find('.setting-fields-email-subject-input').val();
-                const editorId = fieldId + '_message';
-                let message = '';
-
-                if (typeof tinyMCE !== 'undefined' && tinyMCE.get(editorId)) {
-                    message = tinyMCE.get(editorId).getContent();
-                } else {
-                    message = $('#' + editorId).val();
-                }
+                const data = self.getEmailEditorValues($editor);
 
                 const $btn = $(this);
                 $btn.prop('disabled', true);
@@ -1208,12 +1232,7 @@
                     headers: {
                         'X-WP-Nonce': settingFieldsData.restNonce
                     },
-                    data: {
-                        settings_id: settingsId,
-                        field_key: fieldKey,
-                        subject: subject,
-                        message: message
-                    },
+                    data: data,
                     success: function (response) {
                         if (response.html) {
                             self.openPreviewWindow(response.html);
@@ -1238,9 +1257,6 @@
                 e.preventDefault();
 
                 const $editor = $(this).closest('.setting-fields-email-editor');
-                const fieldKey = $editor.data('field-key');
-                const fieldId = $editor.data('field-id');
-                const settingsId = $editor.closest('.setting-fields-wrap').data('setting-id');
                 const $emailInput = $editor.find('.setting-fields-email-test-input');
                 const email = $emailInput.val();
 
@@ -1250,15 +1266,8 @@
                     return;
                 }
 
-                const subject = $editor.find('.setting-fields-email-subject-input').val();
-                const editorId = fieldId + '_message';
-                let message = '';
-
-                if (typeof tinyMCE !== 'undefined' && tinyMCE.get(editorId)) {
-                    message = tinyMCE.get(editorId).getContent();
-                } else {
-                    message = $('#' + editorId).val();
-                }
+                const data = self.getEmailEditorValues($editor);
+                data.email = email;
 
                 const $btn = $(this);
                 const originalHtml = $btn.html();
@@ -1270,13 +1279,7 @@
                     headers: {
                         'X-WP-Nonce': settingFieldsData.restNonce
                     },
-                    data: {
-                        settings_id: settingsId,
-                        field_key: fieldKey,
-                        email: email,
-                        subject: subject,
-                        message: message
-                    },
+                    data: data,
                     success: function (response) {
                         alert(response.message || 'Test email sent successfully!');
                     },

@@ -129,6 +129,16 @@ class RestApi {
 					'default'           => '',
 					'sanitize_callback' => 'sanitize_text_field',
 				],
+				'title'       => [
+					'type'              => 'string',
+					'default'           => '',
+					'sanitize_callback' => 'sanitize_text_field',
+				],
+				'subtitle'    => [
+					'type'              => 'string',
+					'default'           => '',
+					'sanitize_callback' => 'sanitize_text_field',
+				],
 				'message'     => [
 					'type'    => 'string',
 					'default' => '',
@@ -158,6 +168,16 @@ class RestApi {
 					'sanitize_callback' => 'sanitize_email',
 				],
 				'subject'     => [
+					'type'              => 'string',
+					'default'           => '',
+					'sanitize_callback' => 'sanitize_text_field',
+				],
+				'title'       => [
+					'type'              => 'string',
+					'default'           => '',
+					'sanitize_callback' => 'sanitize_text_field',
+				],
+				'subtitle'    => [
 					'type'              => 'string',
 					'default'           => '',
 					'sanitize_callback' => 'sanitize_text_field',
@@ -346,6 +366,8 @@ class RestApi {
 		$settings_id = $request->get_param( 'settings_id' );
 		$field_key   = $request->get_param( 'field_key' );
 		$subject     = $request->get_param( 'subject' );
+		$title       = $request->get_param( 'title' );
+		$subtitle    = $request->get_param( 'subtitle' );
 		$message     = wp_kses_post( $request->get_param( 'message' ) );
 
 		$field = $this->get_field_config( $settings_id, $field_key );
@@ -364,7 +386,12 @@ class RestApi {
 
 		if ( $email_group && $email_template && function_exists( 'get_email_preview_html' ) ) {
 			try {
-				$html = get_email_preview_html( $email_group, $email_template );
+				$html = get_email_preview_html( $email_group, $email_template, [
+					'subject'  => $subject,
+					'title'    => $title,
+					'subtitle' => $subtitle,
+					'message'  => $message,
+				] );
 
 				if ( $html ) {
 					return new WP_REST_Response( [ 'html' => $html ], 200 );
@@ -394,6 +421,8 @@ class RestApi {
 		try {
 			$data = [
 				'subject'     => $subject,
+				'title'       => $title,
+				'subtitle'    => $subtitle,
 				'message'     => $message,
 				'settings_id' => $settings_id,
 				'field_key'   => $field_key,
@@ -445,6 +474,8 @@ class RestApi {
 		$field_key   = $request->get_param( 'field_key' );
 		$email       = $request->get_param( 'email' );
 		$subject     = $request->get_param( 'subject' );
+		$title       = $request->get_param( 'title' );
+		$subtitle    = $request->get_param( 'subtitle' );
 		$message     = wp_kses_post( $request->get_param( 'message' ) );
 
 		if ( ! is_email( $email ) ) {
@@ -468,9 +499,13 @@ class RestApi {
 		if ( $email_group && $email_template && function_exists( 'send_email_template' ) ) {
 			try {
 				$sent = send_email_template( $email_group, $email_template, [
-					'to'      => $email,
-					'context' => 'test',
-					'preview' => true,
+					'to'       => $email,
+					'context'  => 'test',
+					'preview'  => true,
+					'subject'  => $subject,
+					'title'    => $title,
+					'subtitle' => $subtitle,
+					'message'  => $message,
 				] );
 
 				if ( $sent ) {
@@ -508,6 +543,8 @@ class RestApi {
 			$data = [
 				'to'          => $email,
 				'subject'     => $subject,
+				'title'       => $title,
+				'subtitle'    => $subtitle,
 				'message'     => $message,
 				'settings_id' => $settings_id,
 				'field_key'   => $field_key,

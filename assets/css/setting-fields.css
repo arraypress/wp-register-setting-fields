@@ -1512,6 +1512,68 @@
     height: 16px;
 }
 
+/* Title Field */
+.setting-fields-email-title-field {
+    margin-bottom: 15px;
+}
+
+.setting-fields-email-title-field label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.setting-fields-email-title-wrap {
+    display: flex;
+    gap: 8px;
+}
+
+.setting-fields-email-title-wrap input {
+    flex: 1;
+}
+
+.setting-fields-email-title-wrap .setting-fields-insert-tag-btn {
+    padding: 0 10px;
+    height: auto;
+}
+
+.setting-fields-email-title-wrap .setting-fields-insert-tag-btn .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+/* Subtitle Field */
+.setting-fields-email-subtitle-field {
+    margin-bottom: 15px;
+}
+
+.setting-fields-email-subtitle-field label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.setting-fields-email-subtitle-wrap {
+    display: flex;
+    gap: 8px;
+}
+
+.setting-fields-email-subtitle-wrap input {
+    flex: 1;
+}
+
+.setting-fields-email-subtitle-wrap .setting-fields-insert-tag-btn {
+    padding: 0 10px;
+    height: auto;
+}
+
+.setting-fields-email-subtitle-wrap .setting-fields-insert-tag-btn .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
 /* Recipient */
 .setting-fields-email-recipient {
     margin-bottom: 15px;
@@ -1677,6 +1739,10 @@
 .setting-fields-modal-search {
     padding: 12px 20px;
     border-bottom: 1px solid #e5e5e5;
+}
+
+.setting-fields-modal-search input {
+    max-width: none !important;
 }
 
 .setting-fields-tag-search {

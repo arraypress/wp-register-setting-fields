@@ -15,9 +15,9 @@ if ( ! function_exists( 'get_setting_fields_email' ) ) {
 	/**
 	 * Get email editor settings for use by wp-register-emails settings_callback.
 	 *
-	 * Reads the stored email_editor field value (enabled, subject, body, recipient)
-	 * and returns it in the format expected by register_email_template's
-	 * settings_callback: ['enabled', 'subject', 'message'].
+	 * Reads the stored email_editor field value (enabled, recipient, subject,
+	 * title, subtitle, message) and returns it in the format expected by
+	 * register_email_template's settings_callback.
 	 *
 	 * Usage in register_email_template:
 	 *   'settings_callback' => fn() => get_setting_fields_email( 'my_plugin', 'email_purchase_receipt' ),
@@ -25,8 +25,8 @@ if ( ! function_exists( 'get_setting_fields_email' ) ) {
 	 * @param string $settings_id Settings ID (e.g., 'sugarcart').
 	 * @param string $field_key   The email_editor field key (e.g., 'email_purchase_receipt').
 	 *
-	 * @return array Settings array with 'enabled', 'subject', 'message' keys.
-	 *               Returns empty array if settings not found.
+	 * @return array Settings array with 'enabled', 'recipient', 'subject', 'title',
+	 *               'subtitle', 'message' keys. Returns empty array if not found.
 	 */
 	function get_setting_fields_email( string $settings_id, string $field_key ): array {
 		$value = get_setting_field_value( $settings_id, $field_key );
@@ -41,8 +41,20 @@ if ( ! function_exists( 'get_setting_fields_email' ) ) {
 			$result['enabled'] = (bool) $value['enabled'];
 		}
 
+		if ( ! empty( $value['recipient'] ) ) {
+			$result['recipient'] = sanitize_email( $value['recipient'] );
+		}
+
 		if ( ! empty( $value['subject'] ) ) {
 			$result['subject'] = $value['subject'];
+		}
+
+		if ( ! empty( $value['title'] ) ) {
+			$result['title'] = $value['title'];
+		}
+
+		if ( ! empty( $value['subtitle'] ) ) {
+			$result['subtitle'] = $value['subtitle'];
 		}
 
 		// wp_editor stores content without <p> tags; wpautop restores them.

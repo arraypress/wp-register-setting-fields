@@ -537,6 +537,8 @@ trait FieldSanitizer {
 				'enabled'   => true,
 				'recipient' => '',
 				'subject'   => '',
+				'title'     => '',
+				'subtitle'  => '',
 				'message'   => '',
 			];
 		}
@@ -545,6 +547,8 @@ trait FieldSanitizer {
 			'enabled'   => ! empty( $value['enabled'] ),
 			'recipient' => sanitize_email( $value['recipient'] ?? '' ),
 			'subject'   => sanitize_text_field( $value['subject'] ?? '' ),
+			'title'     => sanitize_text_field( $value['title'] ?? '' ),
+			'subtitle'  => sanitize_text_field( $value['subtitle'] ?? '' ),
 			'message'   => wp_kses_post( $value['message'] ?? '' ),
 		];
 	}

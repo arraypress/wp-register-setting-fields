@@ -364,6 +364,8 @@ trait ComplexFields {
      * Additional options:
      * - show_enable       (bool)   Show enable/disable toggle. Default: false.
      * - show_recipient    (bool)   Show recipient email field. Default: false.
+     * - show_title        (bool)   Show email header title field. Default: false.
+     * - show_subtitle     (bool)   Show email header subtitle field. Default: false.
      * - default_recipient (string) Default recipient email. Default: admin email.
      * - show_preview      (bool)   Show preview button. Default: true.
      * - show_send_test    (bool)   Show send test button. Default: true.
@@ -396,23 +398,31 @@ trait ComplexFields {
             $template_defaults = $this->get_email_template_defaults( $email_group, $email_template );
             $default_enabled   = $template_defaults['enabled'] ?? true;
             $default_subject   = $template_defaults['subject'] ?? '';
+            $default_title     = $template_defaults['title'] ?? '';
+            $default_subtitle  = $template_defaults['subtitle'] ?? '';
             $default_body      = $template_defaults['message'] ?? '';
         } else {
-            $merge_tags      = $field['merge_tags'] ?? [];
-            $default_enabled = $field['default_enabled'] ?? true;
-            $default_subject = $field['default_subject'] ?? '';
-            $default_body    = $field['default_body'] ?? '';
+            $merge_tags       = $field['merge_tags'] ?? [];
+            $default_enabled  = $field['default_enabled'] ?? true;
+            $default_subject  = $field['default_subject'] ?? '';
+            $default_title    = $field['default_title'] ?? '';
+            $default_subtitle = $field['default_subtitle'] ?? '';
+            $default_body     = $field['default_body'] ?? '';
         }
 
         $value = wp_parse_args( (array) $value, [
                 'enabled'   => $default_enabled,
-                'subject'   => $default_subject,
-                'message'   => $default_body,
                 'recipient' => $field['default_recipient'] ?? get_option( 'admin_email' ),
+                'subject'   => $default_subject,
+                'title'     => $default_title,
+                'subtitle'  => $default_subtitle,
+                'message'   => $default_body,
         ] );
 
         $show_enable    = $field['show_enable'] ?? false;
         $show_recipient = $field['show_recipient'] ?? false;
+        $show_title     = $field['show_title'] ?? false;
+        $show_subtitle  = $field['show_subtitle'] ?? false;
         $show_preview   = $field['show_preview'] ?? true;
         $show_send_test = $field['show_send_test'] ?? true;
 
@@ -550,6 +560,54 @@ trait ComplexFields {
                         </div>
                     </div>
 
+                    <?php if ( $show_title ) : ?>
+                        <!-- Email Header Title -->
+                        <div class="setting-fields-email-title-field">
+                            <label for="<?php echo esc_attr( $id ); ?>_title">
+                                <?php esc_html_e( 'Title', 'setting-fields' ); ?>
+                            </label>
+                            <div class="setting-fields-email-title-wrap">
+                                <input type="text"
+                                       name="<?php echo esc_attr( $name ); ?>[title]"
+                                       id="<?php echo esc_attr( $id ); ?>_title"
+                                       value="<?php echo esc_attr( $value['title'] ); ?>"
+                                       class="large-text setting-fields-email-title-input"/>
+                                <?php if ( ! empty( $merge_tags ) ) : ?>
+                                    <button type="button" class="button setting-fields-insert-tag-btn"
+                                            data-target="title"
+                                            title="<?php esc_attr_e( 'Insert merge tag', 'setting-fields' ); ?>">
+                                        <span class="dashicons dashicons-shortcode"></span>
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                            <p class="description"><?php esc_html_e( 'Displayed in the email header.', 'setting-fields' ); ?></p>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if ( $show_subtitle ) : ?>
+                        <!-- Email Header Subtitle -->
+                        <div class="setting-fields-email-subtitle-field">
+                            <label for="<?php echo esc_attr( $id ); ?>_subtitle">
+                                <?php esc_html_e( 'Subtitle', 'setting-fields' ); ?>
+                            </label>
+                            <div class="setting-fields-email-subtitle-wrap">
+                                <input type="text"
+                                       name="<?php echo esc_attr( $name ); ?>[subtitle]"
+                                       id="<?php echo esc_attr( $id ); ?>_subtitle"
+                                       value="<?php echo esc_attr( $value['subtitle'] ); ?>"
+                                       class="large-text setting-fields-email-subtitle-input"/>
+                                <?php if ( ! empty( $merge_tags ) ) : ?>
+                                    <button type="button" class="button setting-fields-insert-tag-btn"
+                                            data-target="subtitle"
+                                            title="<?php esc_attr_e( 'Insert merge tag', 'setting-fields' ); ?>">
+                                        <span class="dashicons dashicons-shortcode"></span>
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                            <p class="description"><?php esc_html_e( 'Displayed below the title in the email header.', 'setting-fields' ); ?></p>
+                        </div>
+                    <?php endif; ?>
+
                     <!-- Message Editor -->
                     <div class="setting-fields-email-message">
                         <label for="<?php echo esc_attr( $id ); ?>_message">
@@ -650,6 +708,35 @@ trait ComplexFields {
     }
 
     /**
+     * Sanitize email editor field.
+     *
+     * @param mixed $value The value.
+     *
+     * @return array
+     */
+    protected function sanitize_email_editor( $value ): array {
+        if ( ! is_array( $value ) ) {
+            return [
+                    'enabled'   => true,
+                    'recipient' => '',
+                    'subject'   => '',
+                    'title'     => '',
+                    'subtitle'  => '',
+                    'message'   => '',
+            ];
+        }
+
+        return [
+                'enabled'   => ! empty( $value['enabled'] ),
+                'recipient' => sanitize_email( $value['recipient'] ?? '' ),
+                'subject'   => sanitize_text_field( $value['subject'] ?? '' ),
+                'title'     => sanitize_text_field( $value['title'] ?? '' ),
+                'subtitle'  => sanitize_text_field( $value['subtitle'] ?? '' ),
+                'message'   => wp_kses_post( $value['message'] ?? '' ),
+        ];
+    }
+
+    /**
      * Convert email library tags to merge tags format for the editor UI.
      *
      * @param array $template_tags Tags from get_email_template_tags().
@@ -680,7 +767,7 @@ trait ComplexFields {
      * @param string $group    Email group/prefix.
      * @param string $template Template name.
      *
-     * @return array Array with 'enabled', 'subject', 'message' keys.
+     * @return array Array with 'enabled', 'subject', 'title', 'subtitle', 'message' keys.
      */
     protected function get_email_template_defaults( string $group, string $template ): array {
         if ( ! class_exists( '\\ArrayPress\\RegisterEmails\\Registry\\Registry' ) ) {
