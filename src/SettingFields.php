@@ -110,6 +110,7 @@ class SettingFields {
         // Branded header options
             'logo'          => '',
             'header_title'  => '',
+            'header_badge'  => '',
             'header_class'  => '',
 
         // Help screen options
@@ -422,6 +423,9 @@ class SettingFields {
                     <?php if ( $has_title ) : ?>
                         <h1 class="setting-fields-header__title"><?php echo esc_html( $header_title ); ?></h1>
                     <?php endif; ?>
+                    <?php if ( ! empty( $header_badge ) ) : ?>
+                        <?php self::render_header_badge( $header_badge ); ?>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -446,6 +450,49 @@ class SettingFields {
         </div>
         <hr class="wp-header-end">
         <?php
+    }
+
+    /**
+     * Render the header badge.
+     *
+     * Outputs an inline badge next to the header title. Supports:
+     * 1. String — rendered with default styling
+     * 2. Array — with 'text' and optional 'class' keys
+     * 3. Callable — full control over output
+     *
+     * @param string|array|callable $badge Badge configuration.
+     *
+     * @return void
+     * @since 2.0.0
+     */
+    private static function render_header_badge( $badge ): void {
+        if ( is_callable( $badge ) ) {
+            echo call_user_func( $badge );
+            return;
+        }
+
+        if ( is_array( $badge ) ) {
+            $text  = $badge['text'] ?? '';
+            $class = $badge['class'] ?? '';
+
+            if ( empty( $text ) ) {
+                return;
+            }
+
+            printf(
+                    '<span class="setting-fields-header__badge %s">%s</span>',
+                    esc_attr( $class ),
+                    esc_html( $text )
+            );
+            return;
+        }
+
+        if ( is_string( $badge ) && ! empty( $badge ) ) {
+            printf(
+                    '<span class="setting-fields-header__badge">%s</span>',
+                    esc_html( $badge )
+            );
+        }
     }
 
     /**

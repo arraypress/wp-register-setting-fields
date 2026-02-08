@@ -39,6 +39,7 @@
  * 35. Responsive — Tablet
  * 36. Responsive — Mobile
  * 37. Responsive — Small Mobile
+ * 38. Tweaks
  *
  * @package ArrayPress\RegisterSettingFields
  */
@@ -2319,4 +2320,45 @@ h4.setting-fields-heading-title {
     .setting-fields-image-preview {
         max-width: 100%;
     }
+}
+
+/* ==========================================================================
+   38. Tweaks
+   ========================================================================== */
+
+/* Header badge */
+.setting-fields-header__badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    margin-left: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.6;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 3px;
+    background: #f0f0f1;
+    color: #50575e;
+    vertical-align: middle;
+}
+
+.setting-fields-header__badge.badge-warning {
+    background: #fcf0e3;
+    color: #9a6700;
+}
+
+.setting-fields-header__badge.badge-success {
+    background: #edfaef;
+    color: #1a7a2e;
+}
+
+.setting-fields-header__badge.badge-error {
+    background: #fce4e4;
+    color: #8a1f1f;
+}
+
+.setting-fields-header__badge.badge-info {
+    background: #e5f0fa;
+    color: #1d4ed8;
 }
