@@ -399,11 +399,11 @@ class SettingFields {
         $header_title = ! empty( $this->config['header_title'] )
                 ? $this->config['header_title']
                 : $this->config['page_title'];
+        $header_badge = $this->config['header_badge'] ?? '';
 
         $has_title = ! empty( $header_title );
         $has_tabs  = ! empty( $this->tabs );
 
-        // Don't render header if nothing to show
         if ( ! $logo_url && ! $has_title && ! $has_tabs ) {
             echo '<hr class="wp-header-end">';
 
@@ -468,6 +468,7 @@ class SettingFields {
     private static function render_header_badge( $badge ): void {
         if ( is_callable( $badge ) ) {
             echo call_user_func( $badge );
+
             return;
         }
 
@@ -484,6 +485,7 @@ class SettingFields {
                     esc_attr( $class ),
                     esc_html( $text )
             );
+
             return;
         }
 
