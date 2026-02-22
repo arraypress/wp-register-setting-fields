@@ -136,20 +136,28 @@ trait AssetManager {
 	 * @return void
 	 */
 	protected function enqueue_select2(): void {
-		wp_enqueue_style(
-			'arraypress-select2',
-			'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css',
-			[],
-			'4.1.0-rc.0'
-		);
+		if ( ! wp_script_is( 'arraypress-select2', 'registered' ) ) {
+			wp_register_composer_script(
+				'arraypress-select2',
+				__FILE__,
+				'js/select2.min.js',
+				[ 'jquery' ],
+				'4.1.0-rc.0'
+			);
+		}
 
-		wp_enqueue_script(
-			'arraypress-select2',
-			'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js',
-			[ 'jquery' ],
-			'4.1.0-rc.0',
-			true
-		);
+		if ( ! wp_style_is( 'arraypress-select2', 'registered' ) ) {
+			wp_register_composer_style(
+				'arraypress-select2',
+				__FILE__,
+				'css/select2.min.css',
+				[],
+				'4.1.0-rc.0'
+			);
+		}
+
+		wp_enqueue_script( 'arraypress-select2' );
+		wp_enqueue_style( 'arraypress-select2' );
 	}
 
 	/**
