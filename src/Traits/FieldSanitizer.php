@@ -12,6 +12,8 @@ declare( strict_types=1 );
 
 namespace ArrayPress\RegisterSettingFields\Traits;
 
+use DateTime;
+
 /**
  * Trait FieldSanitizer
  *
@@ -45,7 +47,6 @@ trait FieldSanitizer {
 			$sanitized = call_user_func( $field['sanitize_callback'], $value, $field, $key );
 		} else {
 			$sanitized = match ( $type ) {
-				'text', 'password' => sanitize_text_field( (string) $value ),
 				'textarea' => sanitize_textarea_field( (string) $value ),
 				'email' => sanitize_email( (string) $value ),
 				'url' => esc_url_raw( (string) $value ),
@@ -115,7 +116,7 @@ trait FieldSanitizer {
 		$value = is_numeric( $value ) ? $value : 0;
 		$step  = $field['step'] ?? 1;
 
-		if ( is_float( $step ) || strpos( (string) $step, '.' ) !== false ) {
+		if ( is_float( $step ) || str_contains( (string) $step, '.' ) ) {
 			$value = (float) $value;
 		} else {
 			$value = (int) $value;
@@ -197,7 +198,7 @@ trait FieldSanitizer {
 	protected function sanitize_date( $value ): string {
 		$value = sanitize_text_field( (string) $value );
 
-		$date = \DateTime::createFromFormat( 'Y-m-d', $value );
+		$date = DateTime::createFromFormat( 'Y-m-d', $value );
 		if ( $date && $date->format( 'Y-m-d' ) === $value ) {
 			return $value;
 		}
@@ -232,7 +233,7 @@ trait FieldSanitizer {
 	protected function sanitize_datetime( $value ): string {
 		$value = sanitize_text_field( (string) $value );
 
-		$date = \DateTime::createFromFormat( 'Y-m-d\TH:i', $value );
+		$date = DateTime::createFromFormat( 'Y-m-d\TH:i', $value );
 		if ( $date ) {
 			return $value;
 		}
@@ -469,7 +470,7 @@ trait FieldSanitizer {
 		$sub_fields = $field['sub_fields'] ?? [];
 		$sanitized  = [];
 
-		foreach ( $value as $index => $row ) {
+		foreach ( $value as $row ) {
 			if ( ! is_array( $row ) ) {
 				continue;
 			}

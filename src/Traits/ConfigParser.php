@@ -119,7 +119,7 @@ trait ConfigParser {
 			'required'    => false,
 			'class'       => '',
 			'placeholder' => '',
-			'show_when'   => [],
+			'depends'     => [],
 		];
 
 		$field = wp_parse_args( $field, $defaults );

@@ -137,7 +137,7 @@ trait FieldRenderer {
 			'custom' => $this->render_custom( $field, $name, $id, $value ),
 
 			// Default fallback
-			default => $this->render_text_input( $field, $name, $id, $value, 'text' ),
+			default => $this->render_text_input( $field, $name, $id, $value ),
 		};
 	}
 

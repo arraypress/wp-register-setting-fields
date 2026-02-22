@@ -12,6 +12,8 @@ declare( strict_types=1 );
 
 namespace ArrayPress\RegisterSettingFields\Traits;
 
+use ArrayPress\RegisterSettingFields\RestApi;
+
 /**
  * Trait AssetManager
  *
@@ -157,7 +159,7 @@ trait AssetManager {
 	 */
 	protected function localize_scripts(): void {
 		wp_localize_script( 'arraypress-setting-fields', 'settingFieldsData', [
-			'restUrl'    => rest_url( 'setting-fields/v1/' ),
+			'restUrl'    => rest_url( RestApi::NAMESPACE . '/' ),
 			'restNonce'  => wp_create_nonce( 'wp_rest' ),
 			'settingsId' => $this->id,
 			'optionName' => $this->config['option_name'],

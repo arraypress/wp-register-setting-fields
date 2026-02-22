@@ -27,11 +27,11 @@ trait ConditionalLogic {
 	 * @return string HTML attributes string.
 	 */
 	protected function get_conditional_attributes( array $field ): string {
-		if ( empty( $field['show_when'] ) ) {
+		if ( empty( $field['depends'] ) ) {
 			return '';
 		}
 
-		$conditions = $this->normalize_conditions( $field['show_when'] );
+		$conditions = $this->normalize_conditions( $field['depends'] );
 
 		if ( empty( $conditions ) ) {
 			return '';
@@ -46,23 +46,23 @@ trait ConditionalLogic {
 	/**
 	 * Normalize conditions to a consistent array format.
 	 *
-	 * @param array $show_when The show_when configuration.
+	 * @param array $depends The depends configuration.
 	 *
 	 * @return array
 	 */
-	protected function normalize_conditions( array $show_when ): array {
-		if ( empty( $show_when ) ) {
+	protected function normalize_conditions( array $depends ): array {
+		if ( empty( $depends ) ) {
 			return [];
 		}
 
 		// Check if it's a simple key => value format
 		// e.g., ['enable_feature' => 1]
-		$first_key = array_key_first( $show_when );
+		$first_key = array_key_first( $depends );
 
 		if ( is_string( $first_key ) && ! in_array( $first_key, [ 'field', 'value', 'operator' ], true ) ) {
 			// Simple format - convert to array of conditions
 			$conditions = [];
-			foreach ( $show_when as $field => $value ) {
+			foreach ( $depends as $field => $value ) {
 				$conditions[] = [
 					'field'    => $field,
 					'value'    => $value,
@@ -75,13 +75,13 @@ trait ConditionalLogic {
 
 		// Check if it's a single condition array
 		// e.g., ['field' => 'enable_feature', 'value' => 1]
-		if ( isset( $show_when['field'] ) ) {
-			return [ $this->normalize_single_condition( $show_when ) ];
+		if ( isset( $depends['field'] ) ) {
+			return [ $this->normalize_single_condition( $depends ) ];
 		}
 
 		// Array of condition arrays
 		// e.g., [['field' => 'a', 'value' => 1], ['field' => 'b', 'value' => 2]]
-		return array_map( [ $this, 'normalize_single_condition' ], $show_when );
+		return array_map( [ $this, 'normalize_single_condition' ], $depends );
 	}
 
 	/**
@@ -110,11 +110,11 @@ trait ConditionalLogic {
 	 * @return bool
 	 */
 	public function check_conditions( array $field, array $values ): bool {
-		if ( empty( $field['show_when'] ) ) {
+		if ( empty( $field['depends'] ) ) {
 			return true;
 		}
 
-		$conditions = $this->normalize_conditions( $field['show_when'] );
+		$conditions = $this->normalize_conditions( $field['depends'] );
 
 		foreach ( $conditions as $condition ) {
 			$field_key     = $condition['field'];

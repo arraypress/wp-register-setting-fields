@@ -27,7 +27,7 @@ class RestApi {
 	 *
 	 * @var string
 	 */
-	private string $namespace = 'setting-fields/v1';
+	const NAMESPACE = 'setting-fields/v1';
 
 	/**
 	 * Whether routes have been registered.
@@ -57,13 +57,12 @@ class RestApi {
 	 * @return void
 	 */
 	public static function register_routes(): void {
-		$instance = new self();
 
 		// Ajax field search endpoint
-		register_rest_route( $instance->namespace, '/ajax', [
+		register_rest_route( self::NAMESPACE, '/ajax', [
 			'methods'             => 'GET',
-			'callback'            => [ $instance, 'handle_request' ],
-			'permission_callback' => [ $instance, 'permission_check' ],
+			'callback'            => [ __CLASS__, 'handle_request' ],
+			'permission_callback' => [ __CLASS__, 'permission_check' ],
 			'args'                => [
 				'settings_id' => [
 					'required'          => true,
@@ -109,10 +108,10 @@ class RestApi {
 		] );
 
 		// Email preview endpoint
-		register_rest_route( $instance->namespace, '/email/preview', [
+		register_rest_route( self::NAMESPACE, '/email/preview', [
 			'methods'             => 'POST',
-			'callback'            => [ $instance, 'handle_email_preview' ],
-			'permission_callback' => [ $instance, 'permission_check' ],
+			'callback'            => [ __CLASS__, 'handle_email_preview' ],
+			'permission_callback' => [ __CLASS__, 'permission_check' ],
 			'args'                => [
 				'settings_id' => [
 					'required'          => true,
@@ -147,10 +146,10 @@ class RestApi {
 		] );
 
 		// Email send test endpoint
-		register_rest_route( $instance->namespace, '/email/send-test', [
+		register_rest_route( self::NAMESPACE, '/email/send-test', [
 			'methods'             => 'POST',
-			'callback'            => [ $instance, 'handle_email_send_test' ],
-			'permission_callback' => [ $instance, 'permission_check' ],
+			'callback'            => [ __CLASS__, 'handle_email_send_test' ],
+			'permission_callback' => [ __CLASS__, 'permission_check' ],
 			'args'                => [
 				'settings_id' => [
 					'required'          => true,
@@ -190,10 +189,10 @@ class RestApi {
 		] );
 
 		// Action button endpoint
-		register_rest_route( $instance->namespace, '/action', [
+		register_rest_route( self::NAMESPACE, '/action', [
 			'methods'             => 'POST',
-			'callback'            => [ $instance, 'handle_action_button' ],
-			'permission_callback' => [ $instance, 'permission_check' ],
+			'callback'            => [ __CLASS__, 'handle_action_button' ],
+			'permission_callback' => [ __CLASS__, 'permission_check' ],
 			'args'                => [
 				'settings_id' => [
 					'required'          => true,
@@ -233,7 +232,7 @@ class RestApi {
 	 *
 	 * @return bool
 	 */
-	public function permission_check(): bool {
+	public static function permission_check(): bool {
 		$capability = apply_filters( 'setting_fields_rest_capability', 'manage_options' );
 
 		return current_user_can( $capability );
@@ -246,14 +245,14 @@ class RestApi {
 	 *
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function handle_request( WP_REST_Request $request ) {
+	public static function handle_request( WP_REST_Request $request ) {
 		$field_type = $request->get_param( 'field_type' );
 
 		return match ( $field_type ) {
-			'post', 'page' => $this->handle_post_search( $request ),
-			'taxonomy' => $this->handle_taxonomy_search( $request ),
-			'user' => $this->handle_user_search( $request ),
-			default => $this->handle_custom_ajax( $request ),
+			'post', 'page' => self::handle_post_search( $request ),
+			'taxonomy' => self::handle_taxonomy_search( $request ),
+			'user' => self::handle_user_search( $request ),
+			default => self::handle_custom_ajax( $request ),
 		};
 	}
 
@@ -266,12 +265,12 @@ class RestApi {
 	 *
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function handle_action_button( WP_REST_Request $request ) {
+	public static function handle_action_button( WP_REST_Request $request ) {
 		$settings_id = $request->get_param( 'settings_id' );
 		$field_key   = $request->get_param( 'field_key' );
 		$input_value = $request->get_param( 'input_value' );
 
-		$field = $this->get_field_config( $settings_id, $field_key );
+		$field = self::get_field_config( $settings_id, $field_key );
 
 		if ( ! $field ) {
 			return new WP_Error(
@@ -326,7 +325,6 @@ class RestApi {
 			}
 
 			if ( is_array( $result ) ) {
-				// Ensure success and message keys exist
 				$result = wp_parse_args( $result, [
 					'success' => true,
 					'message' => __( 'Action completed.', 'setting-fields' ),
@@ -362,7 +360,7 @@ class RestApi {
 	 *
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function handle_email_preview( WP_REST_Request $request ) {
+	public static function handle_email_preview( WP_REST_Request $request ) {
 		$settings_id = $request->get_param( 'settings_id' );
 		$field_key   = $request->get_param( 'field_key' );
 		$subject     = $request->get_param( 'subject' );
@@ -370,7 +368,7 @@ class RestApi {
 		$subtitle    = $request->get_param( 'subtitle' );
 		$message     = wp_kses_post( $request->get_param( 'message' ) );
 
-		$field = $this->get_field_config( $settings_id, $field_key );
+		$field = self::get_field_config( $settings_id, $field_key );
 
 		if ( ! $field ) {
 			return new WP_Error( 'invalid_field', __( 'Invalid field configuration.', 'setting-fields' ), [ 'status' => 400 ] );
@@ -469,7 +467,7 @@ class RestApi {
 	 *
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function handle_email_send_test( WP_REST_Request $request ) {
+	public static function handle_email_send_test( WP_REST_Request $request ) {
 		$settings_id = $request->get_param( 'settings_id' );
 		$field_key   = $request->get_param( 'field_key' );
 		$email       = $request->get_param( 'email' );
@@ -482,7 +480,7 @@ class RestApi {
 			return new WP_Error( 'invalid_email', __( 'Invalid email address.', 'setting-fields' ), [ 'status' => 400 ] );
 		}
 
-		$field = $this->get_field_config( $settings_id, $field_key );
+		$field = self::get_field_config( $settings_id, $field_key );
 
 		if ( ! $field ) {
 			return new WP_Error( 'invalid_field', __( 'Invalid field configuration.', 'setting-fields' ), [ 'status' => 400 ] );
@@ -580,13 +578,13 @@ class RestApi {
 	 *
 	 * @return WP_REST_Response|WP_Error
 	 */
-	protected function handle_custom_ajax( WP_REST_Request $request ) {
+	protected static function handle_custom_ajax( WP_REST_Request $request ) {
 		$settings_id = $request->get_param( 'settings_id' );
 		$field_key   = $request->get_param( 'field_key' );
 		$search      = $request->get_param( 'search' );
 		$include     = $request->get_param( 'include' );
 
-		$field = $this->get_field_config( $settings_id, $field_key );
+		$field = self::get_field_config( $settings_id, $field_key );
 
 		if ( ! $field ) {
 			return new WP_Error( 'invalid_field', __( 'Invalid field configuration.', 'setting-fields' ), [ 'status' => 400 ] );
@@ -612,7 +610,7 @@ class RestApi {
 		try {
 			$results = call_user_func( $callback, $search, $ids );
 
-			return $this->format_results( $results );
+			return self::format_results( $results );
 		} catch ( Exception $e ) {
 			return new WP_Error( 'callback_error', $e->getMessage(), [ 'status' => 500 ] );
 		}
@@ -625,7 +623,7 @@ class RestApi {
 	 *
 	 * @return WP_REST_Response
 	 */
-	protected function handle_post_search( WP_REST_Request $request ): WP_REST_Response {
+	protected static function handle_post_search( WP_REST_Request $request ): WP_REST_Response {
 		$search    = $request->get_param( 'search' );
 		$include   = $request->get_param( 'include' );
 		$post_type = $request->get_param( 'post_type' );
@@ -683,7 +681,7 @@ class RestApi {
 	 *
 	 * @return WP_REST_Response|WP_Error
 	 */
-	protected function handle_taxonomy_search( WP_REST_Request $request ) {
+	protected static function handle_taxonomy_search( WP_REST_Request $request ) {
 		$search   = $request->get_param( 'search' );
 		$include  = $request->get_param( 'include' );
 		$taxonomy = $request->get_param( 'taxonomy' );
@@ -738,7 +736,7 @@ class RestApi {
 	 *
 	 * @return WP_REST_Response
 	 */
-	protected function handle_user_search( WP_REST_Request $request ): WP_REST_Response {
+	protected static function handle_user_search( WP_REST_Request $request ): WP_REST_Response {
 		$search  = $request->get_param( 'search' );
 		$include = $request->get_param( 'include' );
 		$role    = $request->get_param( 'role' );
@@ -795,7 +793,7 @@ class RestApi {
 	 *
 	 * @return WP_REST_Response
 	 */
-	protected function format_results( $results ): WP_REST_Response {
+	protected static function format_results( $results ): WP_REST_Response {
 		if ( ! is_array( $results ) ) {
 			return new WP_REST_Response( [], 200 );
 		}
@@ -821,7 +819,7 @@ class RestApi {
 	 *
 	 * @return array|null The field configuration or null if not found.
 	 */
-	protected function get_field_config( string $settings_id, string $field_key ): ?array {
+	protected static function get_field_config( string $settings_id, string $field_key ): ?array {
 		$settings = Registry::instance()->get( $settings_id );
 
 		if ( ! $settings ) {
@@ -852,8 +850,8 @@ class RestApi {
 	 *
 	 * @return string
 	 */
-	public function get_namespace(): string {
-		return $this->namespace;
+	public static function get_namespace(): string {
+		return self::NAMESPACE;
 	}
 
 	/**
@@ -861,8 +859,8 @@ class RestApi {
 	 *
 	 * @return string
 	 */
-	public function get_rest_url(): string {
-		return rest_url( $this->namespace . '/ajax' );
+	public static function get_rest_url(): string {
+		return rest_url( self::NAMESPACE . '/ajax' );
 	}
 
 }
