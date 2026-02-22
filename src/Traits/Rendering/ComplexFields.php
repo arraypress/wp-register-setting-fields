@@ -905,7 +905,7 @@ trait ComplexFields {
              data-url-label="<?php echo esc_attr( $url_label ); ?>">
 
             <div class="setting-fields-license-input-row">
-                <input type="text"
+                <input type="password"
                        name="<?php echo esc_attr( $name ); ?>[key]"
                        id="<?php echo esc_attr( $id ); ?>"
                        value="<?php echo esc_attr( $key ); ?>"
