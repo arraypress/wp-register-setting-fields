@@ -66,7 +66,15 @@ trait AssetManager {
 
 		// Add Select2 dependency if any Select2-based fields exist
 		// This includes: select2, select_multiple, post, page, taxonomy, user, ajax
-		if ( array_intersect( [ 'select2', 'select_multiple', 'post', 'page', 'taxonomy', 'user', 'ajax' ], $types_used ) ) {
+		if ( array_intersect( [
+			'select2',
+			'select_multiple',
+			'post',
+			'page',
+			'taxonomy',
+			'user',
+			'ajax'
+		], $types_used ) ) {
 			$script_deps[] = 'arraypress-select2';
 		}
 
@@ -119,7 +127,15 @@ trait AssetManager {
 		}
 
 		// Select2 - needed for select2, select_multiple, and all relational fields
-		if ( array_intersect( [ 'select2', 'select_multiple', 'post', 'page', 'taxonomy', 'user', 'ajax' ], $types_used ) ) {
+		if ( array_intersect( [
+			'select2',
+			'select_multiple',
+			'post',
+			'page',
+			'taxonomy',
+			'user',
+			'ajax'
+		], $types_used ) ) {
 			$this->enqueue_select2();
 		}
 
@@ -172,22 +188,28 @@ trait AssetManager {
 			'settingsId' => $this->id,
 			'optionName' => $this->config['option_name'],
 			'i18n'       => [
-				'selectFile'      => __( 'Select File', 'setting-fields' ),
-				'selectImage'     => __( 'Select Image', 'setting-fields' ),
-				'selectImages'    => __( 'Select Images', 'setting-fields' ),
-				'useFile'         => __( 'Use This File', 'setting-fields' ),
-				'useImage'        => __( 'Use This Image', 'setting-fields' ),
-				'useImages'       => __( 'Use These Images', 'setting-fields' ),
-				'remove'          => __( 'Remove', 'setting-fields' ),
-				'addRow'          => __( 'Add Row', 'setting-fields' ),
-				'confirmRemove'   => __( 'Are you sure you want to remove this?', 'setting-fields' ),
-				'searching'       => __( 'Searching...', 'setting-fields' ),
-				'noResults'       => __( 'No results found', 'setting-fields' ),
-				'loading'         => __( 'Loading...', 'setting-fields' ),
-				'errorLoading'    => __( 'Error loading results', 'setting-fields' ),
-				'inputTooShort'   => __( 'Please enter {n} or more characters', 'setting-fields' ),
-				'inputTooLong'    => __( 'Please delete {n} characters', 'setting-fields' ),
-				'maximumSelected' => __( 'You can only select {n} items', 'setting-fields' ),
+				'selectFile'         => __( 'Select File', 'setting-fields' ),
+				'selectImage'        => __( 'Select Image', 'setting-fields' ),
+				'selectImages'       => __( 'Select Images', 'setting-fields' ),
+				'useFile'            => __( 'Use This File', 'setting-fields' ),
+				'useImage'           => __( 'Use This Image', 'setting-fields' ),
+				'useImages'          => __( 'Use These Images', 'setting-fields' ),
+				'remove'             => __( 'Remove', 'setting-fields' ),
+				'addRow'             => __( 'Add Row', 'setting-fields' ),
+				'confirmRemove'      => __( 'Are you sure you want to remove this?', 'setting-fields' ),
+				'searching'          => __( 'Searching...', 'setting-fields' ),
+				'noResults'          => __( 'No results found', 'setting-fields' ),
+				'loading'            => __( 'Loading...', 'setting-fields' ),
+				'errorLoading'       => __( 'Error loading results', 'setting-fields' ),
+				'inputTooShort'      => __( 'Please enter {n} or more characters', 'setting-fields' ),
+				'inputTooLong'       => __( 'Please delete {n} characters', 'setting-fields' ),
+				'maximumSelected'    => __( 'You can only select {n} items', 'setting-fields' ),
+				'licenseKeyRequired' => __( 'Please enter a license key.', 'arraypress' ),
+				'licenseInactive'    => __( 'Inactive', 'arraypress' ),
+				'licenseActive'      => __( 'Active', 'arraypress' ),
+				'licenseExpired'     => __( 'Expired', 'arraypress' ),
+				'licenseInvalid'     => __( 'Invalid', 'arraypress' ),
+				'licenseExpires'     => __( 'Expires: ', 'arraypress' ),
 			],
 		] );
 	}

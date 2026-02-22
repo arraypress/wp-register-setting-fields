@@ -211,6 +211,36 @@ class RestApi {
 				],
 			],
 		] );
+
+		// License endpoint
+		register_rest_route( self::NAMESPACE, '/license', [
+			'methods'             => 'POST',
+			'callback'            => [ __CLASS__, 'handle_license' ],
+			'permission_callback' => [ __CLASS__, 'permission_check' ],
+			'args'                => [
+				'settings_id' => [
+					'required'          => true,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_key',
+				],
+				'field_key'   => [
+					'required'          => true,
+					'type'              => 'string',
+					'sanitize_callback' => [ __CLASS__, 'sanitize_field_key' ],
+				],
+				'key'         => [
+					'type'              => 'string',
+					'default'           => '',
+					'sanitize_callback' => 'sanitize_text_field',
+				],
+				'action'      => [
+					'required'          => true,
+					'type'              => 'string',
+					'enum'              => [ 'activate', 'deactivate' ],
+					'sanitize_callback' => 'sanitize_key',
+				],
+			],
+		] );
 	}
 
 	/**
@@ -809,6 +839,125 @@ class RestApi {
 		}
 
 		return new WP_REST_Response( $formatted, 200 );
+	}
+
+	/**
+	 * Handle license activate/deactivate request.
+	 *
+	 * Executes the callback defined in the license field config,
+	 * then persists the returned status and expiry to the stored value.
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function handle_license( WP_REST_Request $request ) {
+		$settings_id = $request->get_param( 'settings_id' );
+		$field_key   = $request->get_param( 'field_key' );
+		$key         = $request->get_param( 'key' );
+		$action      = $request->get_param( 'action' );
+
+		$field = self::get_field_config( $settings_id, $field_key );
+
+		if ( ! $field ) {
+			return new WP_Error(
+				'invalid_field',
+				__( 'Invalid field configuration.', 'arraypress' ),
+				[ 'status' => 400 ]
+			);
+		}
+
+		if ( ( $field['type'] ?? '' ) !== 'license' ) {
+			return new WP_Error(
+				'invalid_field_type',
+				__( 'Field is not a license type.', 'arraypress' ),
+				[ 'status' => 400 ]
+			);
+		}
+
+		$callback = $field['callback'] ?? null;
+
+		if ( ! is_callable( $callback ) ) {
+			return new WP_Error(
+				'invalid_callback',
+				__( 'No callback defined for this license field.', 'arraypress' ),
+				[ 'status' => 500 ]
+			);
+		}
+
+		try {
+			$data = [
+				'settings_id' => $settings_id,
+				'field_key'   => $field_key,
+				'key'         => $key,
+				'action'      => $action,
+			];
+
+			$result = call_user_func( $callback, $data );
+
+			// Normalize result
+			if ( is_bool( $result ) ) {
+				$result = [
+					'success' => $result,
+					'message' => $result
+						? __( 'License action completed successfully.', 'arraypress' )
+						: __( 'License action failed.', 'arraypress' ),
+				];
+			}
+
+			if ( is_string( $result ) ) {
+				$result = [
+					'success' => true,
+					'message' => $result,
+				];
+			}
+
+			if ( $result instanceof WP_Error ) {
+				return $result;
+			}
+
+			$result = wp_parse_args( (array) $result, [
+				'success' => true,
+				'message' => __( 'License action completed.', 'arraypress' ),
+				'status'  => null,
+				'expiry'  => null,
+			] );
+
+			// Persist status and expiry to the stored value
+			if ( $result['status'] ) {
+				$instance = Registry::instance()->get( $settings_id );
+
+				if ( $instance ) {
+					$option_name = $instance->get_option_name();
+					$options     = get_option( $option_name, [] );
+					$current     = $options[ $field_key ] ?? [];
+
+					$current = wp_parse_args( (array) $current, [
+						'key'    => '',
+						'status' => 'inactive',
+						'expiry' => '',
+					] );
+
+					$current['status'] = sanitize_key( $result['status'] );
+
+					if ( $result['expiry'] !== null ) {
+						$current['expiry'] = sanitize_text_field( $result['expiry'] );
+					}
+
+					$options[ $field_key ] = $current;
+					update_option( $option_name, $options );
+				}
+			}
+
+			return new WP_REST_Response( $result, $result['success'] ? 200 : 400 );
+
+		} catch ( Exception $e ) {
+			return new WP_Error(
+				'license_error',
+				$e->getMessage(),
+				[ 'status' => 500 ]
+			);
+		}
 	}
 
 	/**

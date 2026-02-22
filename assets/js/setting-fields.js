@@ -38,6 +38,7 @@
             this.initSortable();
             this.initCollapsibleGroups();
             this.initClipboard();
+            this.initLicense();
             this.initActionButton();
         },
 
@@ -365,6 +366,163 @@
                     }, 2000);
                 }
             });
+        },
+
+        /**
+         * Initialize license key fields.
+         *
+         * Handles activate/deactivate button clicks via the dedicated
+         * REST license endpoint. Updates status badge, expiry display,
+         * input state, hidden inputs, and button inline without reload.
+         */
+        initLicense: function () {
+            $(document).on('click', '.setting-fields-license-btn', function (e) {
+                e.preventDefault();
+
+                const $btn = $(this);
+                const $container = $btn.closest('.setting-fields-license');
+                const action = $btn.data('action');
+                const fieldKey = $container.data('field-key');
+                const $input = $container.find('.setting-fields-license-key');
+                const $result = $container.find('.setting-fields-license-result');
+                const $resultIcon = $result.find('.setting-fields-license-result-icon');
+                const $resultMsg = $result.find('.setting-fields-license-result-message');
+                const key = $input.val();
+
+                // Require a key for activation
+                if (action === 'activate' && !key.trim()) {
+                    $resultIcon.attr('class', 'dashicons dashicons-warning setting-fields-license-result-icon');
+                    $resultMsg.text(settingFieldsData.i18n.licenseKeyRequired || 'Please enter a license key.');
+                    $result.removeClass('setting-fields-license-result--success').addClass('setting-fields-license-result--error').show();
+                    return;
+                }
+
+                const settingsId = $container.closest('.setting-fields-wrap').data('setting-id');
+                const originalLabel = $btn.data('label');
+                const loadingLabel = $btn.data('loading-label');
+
+                // Loading state
+                $btn.prop('disabled', true).text(loadingLabel);
+                $result.hide();
+
+                $.ajax({
+                    url: settingFieldsData.restUrl + 'license',
+                    method: 'POST',
+                    headers: {
+                        'X-WP-Nonce': settingFieldsData.restNonce
+                    },
+                    data: {
+                        settings_id: settingsId,
+                        field_key: fieldKey,
+                        key: key,
+                        action: action
+                    },
+                    success: function (response) {
+                        const success = response.success !== false;
+                        const message = response.message || '';
+
+                        // Show result message
+                        if (success) {
+                            $resultIcon.attr('class', 'dashicons dashicons-yes-alt setting-fields-license-result-icon');
+                            $result.removeClass('setting-fields-license-result--error').addClass('setting-fields-license-result--success');
+                        } else {
+                            $resultIcon.attr('class', 'dashicons dashicons-warning setting-fields-license-result-icon');
+                            $result.removeClass('setting-fields-license-result--success').addClass('setting-fields-license-result--error');
+                        }
+                        $resultMsg.text(message);
+                        $result.show();
+
+                        // Update status if returned
+                        if (response.status) {
+                            updateLicenseStatus($container, response.status, response.expiry || '');
+                        }
+                    },
+                    error: function (xhr) {
+                        const message = xhr.responseJSON && xhr.responseJSON.message
+                            ? xhr.responseJSON.message
+                            : (settingFieldsData.i18n.errorLoading || 'An error occurred.');
+                        $resultIcon.attr('class', 'dashicons dashicons-warning setting-fields-license-result-icon');
+                        $resultMsg.text(message);
+                        $result.removeClass('setting-fields-license-result--success').addClass('setting-fields-license-result--error').show();
+                    },
+                    complete: function () {
+                        $btn.prop('disabled', false).text(originalLabel);
+                    }
+                });
+            });
+
+            /**
+             * Update the license field status, badge, expiry, input state, and button.
+             *
+             * @param {jQuery} $container The license field container.
+             * @param {string} status     New status: active, inactive, expired, invalid.
+             * @param {string} expiry     New expiry date string.
+             */
+            function updateLicenseStatus($container, status, expiry) {
+                const statusLabels = {
+                    inactive: settingFieldsData.i18n.licenseInactive || 'Inactive',
+                    active: settingFieldsData.i18n.licenseActive || 'Active',
+                    expired: settingFieldsData.i18n.licenseExpired || 'Expired',
+                    invalid: settingFieldsData.i18n.licenseInvalid || 'Invalid'
+                };
+
+                const isActive = status === 'active';
+
+                // Update data attribute
+                $container.attr('data-status', status);
+
+                // Update badge
+                const $badge = $container.find('.setting-fields-license-badge');
+                $badge
+                    .removeClass('setting-fields-license-badge--inactive setting-fields-license-badge--active setting-fields-license-badge--expired setting-fields-license-badge--invalid')
+                    .addClass('setting-fields-license-badge--' + status);
+                $badge.find('.setting-fields-license-badge-text').text(statusLabels[status] || status);
+
+                // Update expiry
+                const $expiry = $container.find('.setting-fields-license-expiry');
+                if (expiry && (status === 'active' || status === 'expired')) {
+                    const expiryText = (settingFieldsData.i18n.licenseExpires || 'Expires: ') + expiry;
+                    if ($expiry.length) {
+                        $expiry.text(expiryText).show();
+                    } else {
+                        $container.find('.setting-fields-license-status-row').append(
+                            '<span class="setting-fields-license-expiry">' + expiryText + '</span>'
+                        );
+                    }
+                } else {
+                    $expiry.hide();
+                }
+
+                // Update hidden inputs
+                $container.find('.setting-fields-license-status-input').val(status);
+                $container.find('.setting-fields-license-expiry-input').val(expiry);
+
+                // Update input readonly state
+                $container.find('.setting-fields-license-key').prop('readonly', isActive);
+
+                // Replace button
+                const activateLabel = $container.data('activate-label');
+                const deactivateLabel = $container.data('deactivate-label');
+                const activateLoading = $container.data('activate-loading');
+                const deactivateLoading = $container.data('deactivate-loading');
+
+                const $oldBtn = $container.find('.setting-fields-license-btn');
+                const btnClass = isActive
+                    ? 'button setting-fields-license-btn'
+                    : 'button button-primary setting-fields-license-btn';
+                const btnLabel = isActive ? deactivateLabel : activateLabel;
+                const btnLoading = isActive ? deactivateLoading : activateLoading;
+                const btnAction = isActive ? 'deactivate' : 'activate';
+
+                const $newBtn = $('<button type="button"></button>')
+                    .attr('class', btnClass)
+                    .attr('data-action', btnAction)
+                    .attr('data-label', btnLabel)
+                    .attr('data-loading-label', btnLoading)
+                    .text(btnLabel);
+
+                $oldBtn.replaceWith($newBtn);
+            }
         },
 
         /**

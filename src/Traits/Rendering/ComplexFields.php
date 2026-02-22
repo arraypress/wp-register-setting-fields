@@ -839,4 +839,129 @@ trait ComplexFields {
         }
     }
 
+    /**
+     * Render a license key field.
+     *
+     * Composite field with a text input, status badge, expiry display,
+     * and activate/deactivate buttons. Uses a dedicated REST endpoint
+     * for license actions. Status and expiry are read from the stored
+     * value array automatically.
+     *
+     * Stored value structure:
+     * [
+     *     'key'    => 'XXXX-XXXX-XXXX-XXXX',
+     *     'status' => 'active',    // inactive, active, expired, invalid
+     *     'expiry' => '2027-01-15' // Optional expiry date string
+     * ]
+     *
+     * @param array  $field Field configuration.
+     * @param string $name  Input name.
+     * @param string $id    Input id.
+     * @param mixed  $value Current value (array with key, status, expiry).
+     *
+     * @return void
+     */
+    protected function render_license( array $field, string $name, string $id, $value ): void {
+        $value = wp_parse_args( (array) $value, [
+                'key'    => '',
+                'status' => 'inactive',
+                'expiry' => '',
+        ] );
+
+        $key               = $value['key'];
+        $status            = $value['status'];
+        $expiry            = $value['expiry'];
+        $placeholder       = $field['placeholder'] ?? __( 'Enter your license key...', 'arraypress' );
+        $activate_label    = $field['activate_label'] ?? __( 'Activate', 'arraypress' );
+        $deactivate_label  = $field['deactivate_label'] ?? __( 'Deactivate', 'arraypress' );
+        $activate_loading  = $field['activate_loading'] ?? __( 'Activating...', 'arraypress' );
+        $deactivate_loading = $field['deactivate_loading'] ?? __( 'Deactivating...', 'arraypress' );
+        $field_key         = $field['_key'] ?? '';
+
+        $is_active = $status === 'active';
+
+        $status_labels = [
+                'inactive' => __( 'Inactive', 'arraypress' ),
+                'active'   => __( 'Active', 'arraypress' ),
+                'expired'  => __( 'Expired', 'arraypress' ),
+                'invalid'  => __( 'Invalid', 'arraypress' ),
+        ];
+
+        $status_label = $status_labels[ $status ] ?? $status_labels['inactive'];
+
+        ?>
+        <div class="setting-fields-license"
+             data-field-id="<?php echo esc_attr( $id ); ?>"
+             data-field-key="<?php echo esc_attr( $field_key ); ?>"
+             data-status="<?php echo esc_attr( $status ); ?>"
+             data-activate-label="<?php echo esc_attr( $activate_label ); ?>"
+             data-deactivate-label="<?php echo esc_attr( $deactivate_label ); ?>"
+             data-activate-loading="<?php echo esc_attr( $activate_loading ); ?>"
+             data-deactivate-loading="<?php echo esc_attr( $deactivate_loading ); ?>">
+
+            <div class="setting-fields-license-input-row">
+                <input type="text"
+                       name="<?php echo esc_attr( $name ); ?>[key]"
+                       id="<?php echo esc_attr( $id ); ?>"
+                       value="<?php echo esc_attr( $key ); ?>"
+                       class="regular-text setting-fields-license-key"
+                       placeholder="<?php echo esc_attr( $placeholder ); ?>"
+                        <?php echo $is_active ? 'readonly' : ''; ?> />
+
+                <input type="hidden"
+                       name="<?php echo esc_attr( $name ); ?>[status]"
+                       class="setting-fields-license-status-input"
+                       value="<?php echo esc_attr( $status ); ?>" />
+
+                <input type="hidden"
+                       name="<?php echo esc_attr( $name ); ?>[expiry]"
+                       class="setting-fields-license-expiry-input"
+                       value="<?php echo esc_attr( $expiry ); ?>" />
+
+                <?php if ( $is_active ) : ?>
+                    <button type="button"
+                            class="button setting-fields-license-btn"
+                            data-action="deactivate"
+                            data-label="<?php echo esc_attr( $deactivate_label ); ?>"
+                            data-loading-label="<?php echo esc_attr( $deactivate_loading ); ?>">
+                        <?php echo esc_html( $deactivate_label ); ?>
+                    </button>
+                <?php else : ?>
+                    <button type="button"
+                            class="button button-primary setting-fields-license-btn"
+                            data-action="activate"
+                            data-label="<?php echo esc_attr( $activate_label ); ?>"
+                            data-loading-label="<?php echo esc_attr( $activate_loading ); ?>">
+                        <?php echo esc_html( $activate_label ); ?>
+                    </button>
+                <?php endif; ?>
+            </div>
+
+            <div class="setting-fields-license-status-row">
+				<span class="setting-fields-license-badge setting-fields-license-badge--<?php echo esc_attr( $status ); ?>">
+					<span class="setting-fields-license-badge-dot"></span>
+					<span class="setting-fields-license-badge-text"><?php echo esc_html( $status_label ); ?></span>
+				</span>
+
+                <?php if ( ! empty( $expiry ) && in_array( $status, [ 'active', 'expired' ], true ) ) : ?>
+                    <span class="setting-fields-license-expiry">
+						<?php
+                        printf(
+                        /* translators: %s: expiry date */
+                                esc_html__( 'Expires: %s', 'arraypress' ),
+                                esc_html( $expiry )
+                        );
+                        ?>
+					</span>
+                <?php endif; ?>
+            </div>
+
+            <div class="setting-fields-license-result" style="display: none;">
+                <span class="dashicons setting-fields-license-result-icon"></span>
+                <span class="setting-fields-license-result-message"></span>
+            </div>
+        </div>
+        <?php
+    }
+
 }

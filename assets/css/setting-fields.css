@@ -40,6 +40,7 @@
  * 36. Responsive — Mobile
  * 37. Responsive — Small Mobile
  * 38. Tweaks
+ * 39. License Field
  *
  * @package ArrayPress\RegisterSettingFields
  */
@@ -2361,4 +2362,146 @@ h4.setting-fields-heading-title {
 .setting-fields-header__badge.badge-info {
     background: #e5f0fa;
     color: #1d4ed8;
+}
+
+/* ==========================================================================
+   39. License Field
+   ========================================================================== */
+
+/* Container */
+.setting-fields-license {
+    max-width: 500px;
+}
+
+/* Input Row */
+.setting-fields-license-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.setting-fields-license-key {
+    flex: 1;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+}
+
+.setting-fields-license-key[readonly] {
+    background-color: #f0f0f1;
+    color: #50575e;
+}
+
+.setting-fields-license-btn {
+    white-space: nowrap;
+    min-width: 100px;
+    text-align: center;
+}
+
+.setting-fields-license-btn[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Status Row */
+.setting-fields-license-status-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+/* Badge */
+.setting-fields-license-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    padding: 4px 10px;
+    border-radius: 10px;
+    background: #f0f0f1;
+    color: #50575e;
+}
+
+.setting-fields-license-badge-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #a7aaad;
+    flex-shrink: 0;
+}
+
+/* Badge: Active */
+.setting-fields-license-badge--active {
+    background: #edfaef;
+    color: #1a7a2e;
+}
+
+.setting-fields-license-badge--active .setting-fields-license-badge-dot {
+    background: #00a32a;
+}
+
+/* Badge: Expired */
+.setting-fields-license-badge--expired {
+    background: #fef4e8;
+    color: #996800;
+}
+
+.setting-fields-license-badge--expired .setting-fields-license-badge-dot {
+    background: #dba617;
+}
+
+/* Badge: Invalid */
+.setting-fields-license-badge--invalid {
+    background: #fce9e9;
+    color: #8a1e1e;
+}
+
+.setting-fields-license-badge--invalid .setting-fields-license-badge-dot {
+    background: #d63638;
+}
+
+/* Expiry */
+.setting-fields-license-expiry {
+    font-size: 12px;
+    color: #646970;
+}
+
+/* Result Message */
+.setting-fields-license-result {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.setting-fields-license-result-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.setting-fields-license-result--success {
+    background: #edfaef;
+    color: #1a7a2e;
+}
+
+.setting-fields-license-result--success .setting-fields-license-result-icon {
+    color: #00a32a;
+}
+
+.setting-fields-license-result--error {
+    background: #fce9e9;
+    color: #8a1e1e;
+}
+
+.setting-fields-license-result--error .setting-fields-license-result-icon {
+    color: #d63638;
 }

@@ -73,6 +73,7 @@ trait FieldSanitizer {
 				'group' => $this->sanitize_group( $value, $field ),
 				'sortable' => $this->sanitize_sortable( $value ),
 				'email_editor' => $this->sanitize_email_editor( $value ),
+				'license' => $this->sanitize_license( $value ),
 				default => sanitize_text_field( (string) $value ),
 			};
 		}
@@ -551,6 +552,35 @@ trait FieldSanitizer {
 			'title'     => sanitize_text_field( $value['title'] ?? '' ),
 			'subtitle'  => sanitize_text_field( $value['subtitle'] ?? '' ),
 			'message'   => wp_kses_post( $value['message'] ?? '' ),
+		];
+	}
+
+	/**
+	 * Sanitize license field value.
+	 *
+	 * Normalizes the stored array with key, status, and expiry.
+	 * Preserves existing status/expiry if not provided in the
+	 * submitted value (e.g., during a normal form save).
+	 *
+	 * @param mixed $value The submitted value.
+	 *
+	 * @return array Sanitized license data.
+	 */
+	protected function sanitize_license( $value ): array {
+		$value = wp_parse_args( (array) $value, [
+			'key'    => '',
+			'status' => 'inactive',
+			'expiry' => '',
+		] );
+
+		$allowed_statuses = [ 'inactive', 'active', 'expired', 'invalid' ];
+
+		return [
+			'key'    => sanitize_text_field( $value['key'] ),
+			'status' => in_array( $value['status'], $allowed_statuses, true )
+				? $value['status']
+				: 'inactive',
+			'expiry' => sanitize_text_field( $value['expiry'] ),
 		];
 	}
 

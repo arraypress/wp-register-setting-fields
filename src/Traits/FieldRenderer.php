@@ -136,6 +136,8 @@ trait FieldRenderer {
 			// Custom type with callback
 			'custom' => $this->render_custom( $field, $name, $id, $value ),
 
+			'license' => $this->render_license( $field, $name, $id, $value ),
+
 			// Default fallback
 			default => $this->render_text_input( $field, $name, $id, $value ),
 		};
