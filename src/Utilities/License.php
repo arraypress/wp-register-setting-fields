@@ -5,8 +5,7 @@
  * Utility functions for reading and updating license field data
  * stored by the setting fields library.
  *
- * Add these to a new file: src/Helpers/License.php
- * And include it in the autoloader or helpers bootstrap.
+ * File: src/Helpers/License.php
  *
  * @package ArrayPress\WP\Register\SettingFields
  */

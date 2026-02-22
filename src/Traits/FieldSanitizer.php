@@ -559,8 +559,6 @@ trait FieldSanitizer {
 	 * Sanitize license field value.
 	 *
 	 * Normalizes the stored array with key, status, and expiry.
-	 * Preserves existing status/expiry if not provided in the
-	 * submitted value (e.g., during a normal form save).
 	 *
 	 * @param mixed $value The submitted value.
 	 *

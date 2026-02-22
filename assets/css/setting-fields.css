@@ -2409,6 +2409,7 @@ h4.setting-fields-heading-title {
     align-items: center;
     gap: 12px;
     margin-top: 8px;
+    flex-wrap: wrap;
 }
 
 /* Badge */
@@ -2467,6 +2468,28 @@ h4.setting-fields-heading-title {
 .setting-fields-license-expiry {
     font-size: 12px;
     color: #646970;
+}
+
+/* Action URL */
+.setting-fields-license-url {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: none;
+    color: #2271b1;
+}
+
+.setting-fields-license-url:hover {
+    color: #135e96;
+}
+
+.setting-fields-license-url .dashicons {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    line-height: 14px;
 }
 
 /* Result Message */

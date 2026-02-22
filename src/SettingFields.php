@@ -172,7 +172,7 @@ class SettingFields {
      * @return bool
      */
     protected function has_rest_fields(): bool {
-        $rest_types = [ 'ajax', 'post', 'page', 'taxonomy', 'user', 'email_editor', 'action_button' ];
+        $rest_types = [ 'ajax', 'post', 'page', 'taxonomy', 'user', 'email_editor', 'action_button', 'license' ];
 
         foreach ( $this->fields as $field ) {
             if ( in_array( $field['type'] ?? '', $rest_types, true ) ) {

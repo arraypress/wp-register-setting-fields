@@ -23,7 +23,8 @@
       "src/Utilities/Core.php",
       "src/Utilities/Email.php",
       "src/Utilities/Page.php",
-      "src/Utilities/TypeCheck.php"
+      "src/Utilities/TypeCheck.php",
+      "src/Utilities/License.php"
     ]
   },
   "scripts": {

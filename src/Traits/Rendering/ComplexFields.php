@@ -843,9 +843,9 @@ trait ComplexFields {
      * Render a license key field.
      *
      * Composite field with a text input, status badge, expiry display,
-     * and activate/deactivate buttons. Uses a dedicated REST endpoint
-     * for license actions. Status and expiry are read from the stored
-     * value array automatically.
+     * optional action URL, and activate/deactivate buttons. Uses a dedicated
+     * REST endpoint for license actions. Status and expiry are read from the
+     * stored value array automatically.
      *
      * Stored value structure:
      * [
@@ -868,17 +868,20 @@ trait ComplexFields {
                 'expiry' => '',
         ] );
 
-        $key               = $value['key'];
-        $status            = $value['status'];
-        $expiry            = $value['expiry'];
-        $placeholder       = $field['placeholder'] ?? __( 'Enter your license key...', 'arraypress' );
-        $activate_label    = $field['activate_label'] ?? __( 'Activate', 'arraypress' );
-        $deactivate_label  = $field['deactivate_label'] ?? __( 'Deactivate', 'arraypress' );
-        $activate_loading  = $field['activate_loading'] ?? __( 'Activating...', 'arraypress' );
+        $key                = $value['key'];
+        $status             = $value['status'];
+        $expiry             = $value['expiry'];
+        $placeholder        = $field['placeholder'] ?? __( 'Enter your license key...', 'arraypress' );
+        $activate_label     = $field['activate_label'] ?? __( 'Activate', 'arraypress' );
+        $deactivate_label   = $field['deactivate_label'] ?? __( 'Deactivate', 'arraypress' );
+        $activate_loading   = $field['activate_loading'] ?? __( 'Activating...', 'arraypress' );
         $deactivate_loading = $field['deactivate_loading'] ?? __( 'Deactivating...', 'arraypress' );
-        $field_key         = $field['_key'] ?? '';
+        $url                = $field['url'] ?? '';
+        $url_label          = $field['url_label'] ?? __( 'Renew License', 'arraypress' );
+        $field_key          = $field['_key'] ?? '';
 
-        $is_active = $status === 'active';
+        $is_active  = $status === 'active';
+        $show_url   = ! empty( $url ) && in_array( $status, [ 'expired', 'invalid' ], true );
 
         $status_labels = [
                 'inactive' => __( 'Inactive', 'arraypress' ),
@@ -897,7 +900,9 @@ trait ComplexFields {
              data-activate-label="<?php echo esc_attr( $activate_label ); ?>"
              data-deactivate-label="<?php echo esc_attr( $deactivate_label ); ?>"
              data-activate-loading="<?php echo esc_attr( $activate_loading ); ?>"
-             data-deactivate-loading="<?php echo esc_attr( $deactivate_loading ); ?>">
+             data-deactivate-loading="<?php echo esc_attr( $deactivate_loading ); ?>"
+             data-url="<?php echo esc_attr( $url ); ?>"
+             data-url-label="<?php echo esc_attr( $url_label ); ?>">
 
             <div class="setting-fields-license-input-row">
                 <input type="text"
@@ -953,6 +958,16 @@ trait ComplexFields {
                         );
                         ?>
 					</span>
+                <?php endif; ?>
+
+                <?php if ( $show_url ) : ?>
+                    <a href="<?php echo esc_url( $url ); ?>"
+                       class="setting-fields-license-url"
+                       target="_blank"
+                       rel="noopener noreferrer">
+                        <?php echo esc_html( $url_label ); ?>
+                        <span class="dashicons dashicons-external"></span>
+                    </a>
                 <?php endif; ?>
             </div>
 

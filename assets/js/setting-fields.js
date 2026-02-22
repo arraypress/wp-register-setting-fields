@@ -373,7 +373,8 @@
          *
          * Handles activate/deactivate button clicks via the dedicated
          * REST license endpoint. Updates status badge, expiry display,
-         * input state, hidden inputs, and button inline without reload.
+         * action URL, input state, hidden inputs, and button inline
+         * without page reload.
          */
         initLicense: function () {
             $(document).on('click', '.setting-fields-license-btn', function (e) {
@@ -435,6 +436,14 @@
                         // Update status if returned
                         if (response.status) {
                             updateLicenseStatus($container, response.status, response.expiry || '');
+                        }
+
+                        // Update URL if returned
+                        if (response.url !== undefined && response.url !== null) {
+                            updateLicenseUrl($container, response.status || $container.attr('data-status'), response.url, response.url_label || '');
+                        } else {
+                            // Re-evaluate URL visibility based on new status
+                            updateLicenseUrl($container, response.status || $container.attr('data-status'));
                         }
                     },
                     error: function (xhr) {
@@ -522,6 +531,49 @@
                     .text(btnLabel);
 
                 $oldBtn.replaceWith($newBtn);
+            }
+
+            /**
+             * Update the action URL visibility, href, and label.
+             *
+             * Shows the link only when status is expired or invalid.
+             * If a dynamic URL is provided by the callback response, it
+             * overrides the static config URL.
+             *
+             * @param {jQuery} $container The license field container.
+             * @param {string} status     Current status.
+             * @param {string} url        Optional dynamic URL override.
+             * @param {string} urlLabel   Optional dynamic label override.
+             */
+            function updateLicenseUrl($container, status, url, urlLabel) {
+                const $statusRow = $container.find('.setting-fields-license-status-row');
+                let $link = $container.find('.setting-fields-license-url');
+                const showUrl = (status === 'expired' || status === 'invalid');
+
+                // Determine the URL to use: dynamic override > static config
+                const finalUrl = url || $container.data('url') || '';
+                const finalLabel = urlLabel || $container.data('url-label') || '';
+
+                if (showUrl && finalUrl) {
+                    if ($link.length) {
+                        // Update existing link
+                        $link.attr('href', finalUrl).show();
+                        if (finalLabel) {
+                            $link.contents().first().replaceWith(finalLabel);
+                        }
+                    } else {
+                        // Create new link
+                        $link = $('<a></a>')
+                            .attr('class', 'setting-fields-license-url')
+                            .attr('href', finalUrl)
+                            .attr('target', '_blank')
+                            .attr('rel', 'noopener noreferrer')
+                            .html(finalLabel + ' <span class="dashicons dashicons-external"></span>');
+                        $statusRow.append($link);
+                    }
+                } else {
+                    $link.hide();
+                }
             }
         },
 

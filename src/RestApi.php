@@ -846,6 +846,8 @@ class RestApi {
 	 *
 	 * Executes the callback defined in the license field config,
 	 * then persists the returned status and expiry to the stored value.
+	 * If the callback returns url/url_label, those are passed through
+	 * to the client for dynamic link updates.
 	 *
 	 * @param WP_REST_Request $request The request object.
 	 *
@@ -917,10 +919,12 @@ class RestApi {
 			}
 
 			$result = wp_parse_args( (array) $result, [
-				'success' => true,
-				'message' => __( 'License action completed.', 'arraypress' ),
-				'status'  => null,
-				'expiry'  => null,
+				'success'   => true,
+				'message'   => __( 'License action completed.', 'arraypress' ),
+				'status'    => null,
+				'expiry'    => null,
+				'url'       => null,
+				'url_label' => null,
 			] );
 
 			// Persist status and expiry to the stored value
@@ -930,9 +934,7 @@ class RestApi {
 				if ( $instance ) {
 					$option_name = $instance->get_option_name();
 					$options     = get_option( $option_name, [] );
-					$current     = $options[ $field_key ] ?? [];
-
-					$current = wp_parse_args( (array) $current, [
+					$current     = wp_parse_args( (array) ( $options[ $field_key ] ?? [] ), [
 						'key'    => '',
 						'status' => 'inactive',
 						'expiry' => '',
