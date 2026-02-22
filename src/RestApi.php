@@ -940,6 +940,7 @@ class RestApi {
 						'expiry' => '',
 					] );
 
+					$current['key']    = $key;
 					$current['status'] = sanitize_key( $result['status'] );
 
 					if ( $result['expiry'] !== null ) {
