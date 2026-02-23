@@ -72,6 +72,27 @@ trait BasicFields {
 	}
 
 	/**
+	 * Render a hidden input field.
+	 *
+	 * Outputs only a hidden <input> element with no label, description, or wrapper.
+	 *
+	 * @param array  $field Field configuration.
+	 * @param string $name  Input name.
+	 * @param string $id    Input id.
+	 * @param mixed  $value Current value.
+	 *
+	 * @return void
+	 */
+	protected function render_hidden_input( array $field, string $name, string $id, $value ): void {
+		printf(
+			'<input type="hidden" name="%s" id="%s" value="%s" />',
+			esc_attr( $name ),
+			esc_attr( $id ),
+			esc_attr( $value )
+		);
+	}
+
+	/**
 	 * Render a textarea field.
 	 *
 	 * @param array  $field Field configuration.

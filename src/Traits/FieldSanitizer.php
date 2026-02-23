@@ -95,6 +95,38 @@ trait FieldSanitizer {
 	}
 
 	/**
+	 * Flatten options array, resolving optgroups into a flat key => value map.
+	 *
+	 * Supports both:
+	 * - Simple: ['val' => 'Label', ...]
+	 * - Optgroup shorthand: ['Group' => ['val' => 'Label', ...]]
+	 * - Optgroup explicit: ['group' => ['label' => 'Group', 'options' => [...]]]
+	 *
+	 * @param array $options The options array (may contain optgroups).
+	 *
+	 * @return array Flat associative array of value => label.
+	 */
+	protected function flatten_options( array $options ): array {
+		$flat = [];
+
+		foreach ( $options as $key => $value ) {
+			if ( is_array( $value ) ) {
+				// Explicit optgroup format: ['label' => '...', 'options' => [...]]
+				if ( isset( $value['options'] ) && is_array( $value['options'] ) ) {
+					$flat = array_merge( $flat, $this->flatten_options( $value['options'] ) );
+				} else {
+					// Shorthand optgroup: 'Group Name' => ['val' => 'Label', ...]
+					$flat = array_merge( $flat, $this->flatten_options( $value ) );
+				}
+			} else {
+				$flat[ $key ] = $value;
+			}
+		}
+
+		return $flat;
+	}
+
+	/**
 	 * Sanitize telephone number.
 	 *
 	 * @param mixed $value The value.
@@ -147,6 +179,9 @@ trait FieldSanitizer {
 	/**
 	 * Sanitize single choice value.
 	 *
+	 * Validates the submitted value exists in the field's options,
+	 * including options nested inside optgroups.
+	 *
 	 * @param mixed $value The value.
 	 * @param array $field Field configuration.
 	 *
@@ -156,8 +191,12 @@ trait FieldSanitizer {
 		$value   = sanitize_text_field( (string) $value );
 		$options = $field['options'] ?? [];
 
-		if ( ! empty( $options ) && ! array_key_exists( $value, $options ) ) {
-			return $field['default'] ?? '';
+		if ( ! empty( $options ) ) {
+			$flat = $this->flatten_options( $options );
+
+			if ( ! array_key_exists( $value, $flat ) ) {
+				return $field['default'] ?? '';
+			}
 		}
 
 		return $value;
@@ -165,6 +204,9 @@ trait FieldSanitizer {
 
 	/**
 	 * Sanitize multiple choice value.
+	 *
+	 * Validates each submitted value exists in the field's options,
+	 * including options nested inside optgroups.
 	 *
 	 * @param mixed $value The value.
 	 * @param array $field Field configuration.
@@ -177,11 +219,12 @@ trait FieldSanitizer {
 		}
 
 		$options   = $field['options'] ?? [];
+		$flat      = ! empty( $options ) ? $this->flatten_options( $options ) : [];
 		$sanitized = [];
 
 		foreach ( $value as $v ) {
 			$v = sanitize_text_field( (string) $v );
-			if ( empty( $options ) || array_key_exists( $v, $options ) ) {
+			if ( empty( $flat ) || array_key_exists( $v, $flat ) ) {
 				$sanitized[] = $v;
 			}
 		}

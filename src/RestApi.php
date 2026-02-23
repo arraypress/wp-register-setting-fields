@@ -241,6 +241,46 @@ class RestApi {
 				],
 			],
 		] );
+
+		// Reset settings endpoint
+		register_rest_route( self::NAMESPACE, '/reset', [
+			'methods'             => 'POST',
+			'callback'            => [ __CLASS__, 'handle_reset' ],
+			'permission_callback' => [ __CLASS__, 'permission_check' ],
+			'args'                => [
+				'settings_id' => [
+					'required'          => true,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_key',
+				],
+				'tab'         => [
+					'type'              => 'string',
+					'default'           => '',
+					'sanitize_callback' => 'sanitize_key',
+				],
+			],
+		] );
+
+		// Export settings endpoint
+		register_rest_route( self::NAMESPACE, '/export', [
+			'methods'             => 'GET',
+			'callback'            => [ __CLASS__, 'handle_export' ],
+			'permission_callback' => [ __CLASS__, 'permission_check' ],
+			'args'                => [
+				'settings_id' => [
+					'required'          => true,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_key',
+				],
+			],
+		] );
+
+		// Import settings endpoint
+		register_rest_route( self::NAMESPACE, '/import', [
+			'methods'             => 'POST',
+			'callback'            => [ __CLASS__, 'handle_import' ],
+			'permission_callback' => [ __CLASS__, 'permission_check' ],
+		] );
 	}
 
 	/**
@@ -864,7 +904,7 @@ class RestApi {
 		if ( ! $field ) {
 			return new WP_Error(
 				'invalid_field',
-				__( 'Invalid field configuration.', 'arraypress' ),
+				__( 'Invalid field configuration.', 'setting-fields' ),
 				[ 'status' => 400 ]
 			);
 		}
@@ -872,7 +912,7 @@ class RestApi {
 		if ( ( $field['type'] ?? '' ) !== 'license' ) {
 			return new WP_Error(
 				'invalid_field_type',
-				__( 'Field is not a license type.', 'arraypress' ),
+				__( 'Field is not a license type.', 'setting-fields' ),
 				[ 'status' => 400 ]
 			);
 		}
@@ -882,7 +922,7 @@ class RestApi {
 		if ( ! is_callable( $callback ) ) {
 			return new WP_Error(
 				'invalid_callback',
-				__( 'No callback defined for this license field.', 'arraypress' ),
+				__( 'No callback defined for this license field.', 'setting-fields' ),
 				[ 'status' => 500 ]
 			);
 		}
@@ -902,8 +942,8 @@ class RestApi {
 				$result = [
 					'success' => $result,
 					'message' => $result
-						? __( 'License action completed successfully.', 'arraypress' )
-						: __( 'License action failed.', 'arraypress' ),
+						? __( 'License action completed successfully.', 'setting-fields' )
+						: __( 'License action failed.', 'setting-fields' ),
 				];
 			}
 
@@ -920,7 +960,7 @@ class RestApi {
 
 			$result = wp_parse_args( (array) $result, [
 				'success'   => true,
-				'message'   => __( 'License action completed.', 'arraypress' ),
+				'message'   => __( 'License action completed.', 'setting-fields' ),
 				'status'    => null,
 				'expiry'    => null,
 				'url'       => null,
@@ -961,6 +1001,160 @@ class RestApi {
 				[ 'status' => 500 ]
 			);
 		}
+	}
+
+	/**
+	 * Handle settings reset request.
+	 *
+	 * Resets fields for the specified tab (or all fields) to their
+	 * configured default values. Preserves values for fields not
+	 * included in the reset scope.
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function handle_reset( WP_REST_Request $request ) {
+		$settings_id = $request->get_param( 'settings_id' );
+		$tab         = $request->get_param( 'tab' );
+
+		$instance = Registry::instance()->get( $settings_id );
+
+		if ( ! $instance ) {
+			return new WP_Error(
+				'invalid_settings',
+				__( 'Settings not found.', 'setting-fields' ),
+				[ 'status' => 404 ]
+			);
+		}
+
+		$fields      = $instance->get_fields();
+		$option_name = $instance->get_option_name();
+		$current     = get_option( $option_name, [] );
+
+		if ( ! is_array( $current ) ) {
+			$current = [];
+		}
+
+		$reset_count = 0;
+		$skip_types  = [ 'message', 'html', 'separator', 'heading', 'action_button', 'clipboard' ];
+
+		foreach ( $fields as $field_key => $field ) {
+			// If a tab was specified, only reset fields on that tab
+			if ( ! empty( $tab ) && ( $field['tab'] ?? '' ) !== $tab ) {
+				continue;
+			}
+
+			// Skip layout-only fields that store nothing
+			if ( in_array( $field['type'] ?? '', $skip_types, true ) ) {
+				continue;
+			}
+
+			$current[ $field_key ] = $field['default'] ?? '';
+			$reset_count ++;
+		}
+
+		update_option( $option_name, $current );
+
+		return new WP_REST_Response( [
+			'success' => true,
+			'message' => sprintf(
+			/* translators: %d: number of settings reset */
+				_n(
+					'%d setting reset to default.',
+					'%d settings reset to defaults.',
+					$reset_count,
+					'setting-fields'
+				),
+				$reset_count
+			),
+			'count'   => $reset_count,
+		], 200 );
+	}
+
+	/**
+	 * Handle settings export request.
+	 *
+	 * Returns a JSON-encodable array of all exportable field values
+	 * (decrypted) with metadata for reimport validation.
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function handle_export( WP_REST_Request $request ) {
+		$settings_id = $request->get_param( 'settings_id' );
+
+		$instance = Registry::instance()->get( $settings_id );
+
+		if ( ! $instance ) {
+			return new WP_Error(
+				'invalid_settings',
+				__( 'Settings not found.', 'setting-fields' ),
+				[ 'status' => 404 ]
+			);
+		}
+
+		return new WP_REST_Response( $instance->export_settings(), 200 );
+	}
+
+	/**
+	 * Handle settings import request.
+	 *
+	 * Accepts the JSON payload previously produced by export, validates
+	 * the settings_id matches, sanitizes every value through the standard
+	 * field sanitizer, and merges with existing options.
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function handle_import( WP_REST_Request $request ) {
+		$body = $request->get_json_params();
+
+		$settings_id = sanitize_key( $body['settings_id'] ?? '' );
+		$import_data = $body['data'] ?? null;
+
+		if ( empty( $settings_id ) ) {
+			return new WP_Error(
+				'missing_settings_id',
+				__( 'Missing settings_id.', 'setting-fields' ),
+				[ 'status' => 400 ]
+			);
+		}
+
+		$instance = Registry::instance()->get( $settings_id );
+
+		if ( ! $instance ) {
+			return new WP_Error(
+				'invalid_settings',
+				__( 'Settings not found.', 'setting-fields' ),
+				[ 'status' => 404 ]
+			);
+		}
+
+		if ( ! is_array( $import_data ) ) {
+			return new WP_Error(
+				'invalid_import',
+				__( 'Invalid import data.', 'setting-fields' ),
+				[ 'status' => 400 ]
+			);
+		}
+
+		$result = $instance->import_settings( $import_data );
+
+		if ( is_string( $result ) ) {
+			return new WP_Error(
+				'import_failed',
+				$result,
+				[ 'status' => 400 ]
+			);
+		}
+
+		return new WP_REST_Response( [
+			'success' => true,
+			'message' => __( 'Settings imported successfully. Reloading…', 'setting-fields' ),
+		], 200 );
 	}
 
 	/**

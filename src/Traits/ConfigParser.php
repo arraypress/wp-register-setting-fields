@@ -202,9 +202,9 @@ trait ConfigParser {
 					$field['options'] = [];
 				}
 				$field = wp_parse_args( $field, [
-					'multiple' => true,
+					'multiple' => false,
 				] );
-				if ( $field['default'] === '' ) {
+				if ( ! empty( $field['multiple'] ) && $field['default'] === '' ) {
 					$field['default'] = [];
 				}
 				break;

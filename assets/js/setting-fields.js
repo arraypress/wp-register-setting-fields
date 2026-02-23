@@ -3,7 +3,7 @@
  *
  * Handles all interactive functionality for the WordPress settings framework
  * including conditional logic, media uploads, repeaters, email editor,
- * and various field type initializations.
+ * reset, export/import, and various field type initializations.
  *
  * @package ArrayPress\WP\Register\SettingFields
  */
@@ -40,6 +40,8 @@
             this.initClipboard();
             this.initLicense();
             this.initActionButton();
+            this.initReset();
+            this.initExportImport();
         },
 
         /**
@@ -1256,6 +1258,7 @@
                 $field.find('.setting-fields-dimensions-inputs input[type="number"]').val(value);
             });
         },
+
         /**
          * Get current values from an email editor instance.
          *
@@ -1625,6 +1628,232 @@
                     $(this).find('.setting-fields-group-toggle').trigger('click');
                 }
             });
+        },
+
+        /**
+         * Initialize reset button functionality.
+         *
+         * Handles click on the reset button with a confirm dialog,
+         * then calls the REST reset endpoint and reloads the page.
+         */
+        initReset: function () {
+            $(document).on('click', '.setting-fields-reset-btn', function (e) {
+                e.preventDefault();
+
+                const $btn = $(this);
+                const confirmMsg = $btn.data('confirm');
+
+                if (confirmMsg && !confirm(confirmMsg)) {
+                    return;
+                }
+
+                const settingsId = $btn.closest('.setting-fields-wrap').data('setting-id');
+                const tab = $btn.data('tab') || '';
+                const originalText = $btn.text();
+
+                $btn.prop('disabled', true).text(settingFieldsData.i18n.resetting || 'Resetting…');
+
+                $.ajax({
+                    url: settingFieldsData.restUrl + 'reset',
+                    method: 'POST',
+                    headers: {
+                        'X-WP-Nonce': settingFieldsData.restNonce
+                    },
+                    data: {
+                        settings_id: settingsId,
+                        tab: tab
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            window.location.reload();
+                        }
+                    },
+                    error: function (xhr) {
+                        const message = xhr.responseJSON && xhr.responseJSON.message
+                            ? xhr.responseJSON.message
+                            : (settingFieldsData.i18n.resetFailed || 'Reset failed.');
+                        alert(message);
+                    },
+                    complete: function () {
+                        $btn.prop('disabled', false).text(originalText);
+                    }
+                });
+            });
+        },
+
+        /**
+         * Initialize export/import functionality.
+         *
+         * Handles export button click (downloads JSON via REST endpoint),
+         * import button click (triggers file input), and file selection
+         * (reads JSON and posts to REST import endpoint).
+         */
+        initExportImport: function () {
+            const self = this;
+
+            // Export: fetch JSON from REST and trigger download
+            $(document).on('click', '.setting-fields-export-btn', function (e) {
+                e.preventDefault();
+
+                const $btn = $(this);
+                const $wrap = $btn.closest('.setting-fields-wrap');
+                const settingsId = $wrap.data('setting-id');
+                const $result = $wrap.find('.setting-fields-export-import-result');
+                const $icon = $result.find('.setting-fields-export-import-icon');
+                const $message = $result.find('.setting-fields-export-import-message');
+
+                $btn.prop('disabled', true);
+
+                $.ajax({
+                    url: settingFieldsData.restUrl + 'export',
+                    method: 'GET',
+                    headers: {
+                        'X-WP-Nonce': settingFieldsData.restNonce
+                    },
+                    data: {
+                        settings_id: settingsId
+                    },
+                    success: function (response) {
+                        // Trigger file download
+                        const json = JSON.stringify(response, null, 2);
+                        const blob = new Blob([json], {type: 'application/json'});
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+
+                        a.href = url;
+                        a.download = settingsId + '-settings-' + self.getDateStamp() + '.json';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+
+                        $icon.attr('class', 'dashicons dashicons-yes-alt setting-fields-export-import-icon');
+                        $message.text(settingFieldsData.i18n.exportSuccess || 'Settings exported successfully.');
+                        $result.removeClass('setting-fields-export-import--error')
+                            .addClass('setting-fields-export-import--success').show();
+                    },
+                    error: function (xhr) {
+                        const message = xhr.responseJSON && xhr.responseJSON.message
+                            ? xhr.responseJSON.message
+                            : (settingFieldsData.i18n.exportFailed || 'Export failed.');
+                        $icon.attr('class', 'dashicons dashicons-warning setting-fields-export-import-icon');
+                        $message.text(message);
+                        $result.removeClass('setting-fields-export-import--success')
+                            .addClass('setting-fields-export-import--error').show();
+                    },
+                    complete: function () {
+                        $btn.prop('disabled', false);
+                    }
+                });
+            });
+
+            // Import: trigger hidden file input
+            $(document).on('click', '.setting-fields-import-btn', function (e) {
+                e.preventDefault();
+                $(this).closest('.setting-fields-import-wrap')
+                    .find('.setting-fields-import-file').trigger('click');
+            });
+
+            // Import: read selected file and POST to REST endpoint
+            $(document).on('change', '.setting-fields-import-file', function () {
+                const file = this.files[0];
+                if (!file) return;
+
+                const $wrap = $(this).closest('.setting-fields-wrap');
+                const settingsId = $wrap.data('setting-id');
+                const $result = $wrap.find('.setting-fields-export-import-result');
+                const $icon = $result.find('.setting-fields-export-import-icon');
+                const $message = $result.find('.setting-fields-export-import-message');
+                const $importBtn = $wrap.find('.setting-fields-import-btn');
+
+                if (!file.name.endsWith('.json')) {
+                    $icon.attr('class', 'dashicons dashicons-warning setting-fields-export-import-icon');
+                    $message.text(settingFieldsData.i18n.importInvalidFile || 'Please select a valid JSON file.');
+                    $result.removeClass('setting-fields-export-import--success')
+                        .addClass('setting-fields-export-import--error').show();
+                    return;
+                }
+
+                const confirmMsg = settingFieldsData.i18n.importConfirm
+                    || 'Are you sure you want to import settings? This will overwrite current values for any matching fields.';
+                if (!confirm(confirmMsg)) {
+                    // Reset file input
+                    $(this).val('');
+                    return;
+                }
+
+                $importBtn.prop('disabled', true);
+
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    let parsed;
+                    try {
+                        parsed = JSON.parse(e.target.result);
+                    } catch (err) {
+                        $icon.attr('class', 'dashicons dashicons-warning setting-fields-export-import-icon');
+                        $message.text(settingFieldsData.i18n.importInvalidJson || 'File contains invalid JSON.');
+                        $result.removeClass('setting-fields-export-import--success')
+                            .addClass('setting-fields-export-import--error').show();
+                        $importBtn.prop('disabled', false);
+                        return;
+                    }
+
+                    $.ajax({
+                        url: settingFieldsData.restUrl + 'import',
+                        method: 'POST',
+                        headers: {
+                            'X-WP-Nonce': settingFieldsData.restNonce
+                        },
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            settings_id: settingsId,
+                            data: parsed
+                        }),
+                        success: function (response) {
+                            $icon.attr('class', 'dashicons dashicons-yes-alt setting-fields-export-import-icon');
+                            $message.text(response.message || (settingFieldsData.i18n.importSuccess || 'Settings imported. Reloading…'));
+                            $result.removeClass('setting-fields-export-import--error')
+                                .addClass('setting-fields-export-import--success').show();
+
+                            // Reload after short delay so user sees the success message
+                            setTimeout(function () {
+                                window.location.reload();
+                            }, 1000);
+                        },
+                        error: function (xhr) {
+                            const message = xhr.responseJSON && xhr.responseJSON.message
+                                ? xhr.responseJSON.message
+                                : (settingFieldsData.i18n.importFailed || 'Import failed.');
+                            $icon.attr('class', 'dashicons dashicons-warning setting-fields-export-import-icon');
+                            $message.text(message);
+                            $result.removeClass('setting-fields-export-import--success')
+                                .addClass('setting-fields-export-import--error').show();
+                        },
+                        complete: function () {
+                            $importBtn.prop('disabled', false);
+                        }
+                    });
+                };
+
+                reader.readAsText(file);
+
+                // Reset file input so the same file can be selected again
+                $(this).val('');
+            });
+        },
+
+        /**
+         * Generate a date stamp string for export filenames.
+         *
+         * @returns {string} Date in YYYY-MM-DD format.
+         */
+        getDateStamp: function () {
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return year + '-' + month + '-' + day;
         }
     };
 

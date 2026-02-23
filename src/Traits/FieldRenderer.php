@@ -77,6 +77,7 @@ trait FieldRenderer {
 		match ( $type ) {
 			// Basic text inputs
 			'text', 'url', 'email', 'tel', 'password' => $this->render_text_input( $field, $name, $id, $value, $type ),
+			'hidden' => $this->render_hidden_input( $field, $name, $id, $value ),
 			'textarea' => $this->render_textarea( $field, $name, $id, $value ),
 			'wysiwyg' => $this->render_wysiwyg( $field, $name, $id, $value ),
 			'code' => $this->render_code_editor( $field, $name, $id, $value ),

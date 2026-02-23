@@ -210,6 +210,15 @@ trait AssetManager {
 				'licenseExpired'     => __( 'Expired', 'arraypress' ),
 				'licenseInvalid'     => __( 'Invalid', 'arraypress' ),
 				'licenseExpires'     => __( 'Expires: ', 'arraypress' ),
+				'resetting'          => __( 'Resetting…', 'setting-fields' ),
+				'resetFailed'        => __( 'Reset failed.', 'setting-fields' ),
+				'exportSuccess'      => __( 'Settings exported successfully.', 'setting-fields' ),
+				'exportFailed'       => __( 'Export failed.', 'setting-fields' ),
+				'importConfirm'      => __( 'Are you sure you want to import settings? This will overwrite current values for any matching fields.', 'setting-fields' ),
+				'importInvalidFile'  => __( 'Please select a valid JSON file.', 'setting-fields' ),
+				'importInvalidJson'  => __( 'File contains invalid JSON.', 'setting-fields' ),
+				'importSuccess'      => __( 'Settings imported. Reloading…', 'setting-fields' ),
+				'importFailed'       => __( 'Import failed.', 'setting-fields' ),
 			],
 		] );
 	}
