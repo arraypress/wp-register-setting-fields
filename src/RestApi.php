@@ -16,6 +16,7 @@ use Exception;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
+use WP_User_Query;
 
 /**
  * Class RestApi
@@ -843,7 +844,7 @@ class RestApi {
 			$args['search_columns'] = [ 'user_login', 'user_email', 'display_name' ];
 		}
 
-		$user_query = new \WP_User_Query( $args );
+		$user_query = new WP_User_Query( $args );
 		$results    = [];
 
 		foreach ( $user_query->get_results() as $user ) {
@@ -895,101 +896,25 @@ class RestApi {
 	 */
 	public static function handle_license( WP_REST_Request $request ) {
 		$settings_id = $request->get_param( 'settings_id' );
-		$field_key   = $request->get_param( 'field_key' );
-		$key         = $request->get_param( 'key' );
-		$action      = $request->get_param( 'action' );
+		$instance    = Registry::instance()->get( $settings_id );
 
-		$field = self::get_field_config( $settings_id, $field_key );
-
-		if ( ! $field ) {
+		if ( ! $instance ) {
 			return new WP_Error(
-				'invalid_field',
-				__( 'Invalid field configuration.', 'setting-fields' ),
-				[ 'status' => 400 ]
-			);
-		}
-
-		if ( ( $field['type'] ?? '' ) !== 'license' ) {
-			return new WP_Error(
-				'invalid_field_type',
-				__( 'Field is not a license type.', 'setting-fields' ),
-				[ 'status' => 400 ]
-			);
-		}
-
-		$callback = $field['callback'] ?? null;
-
-		if ( ! is_callable( $callback ) ) {
-			return new WP_Error(
-				'invalid_callback',
-				__( 'No callback defined for this license field.', 'setting-fields' ),
-				[ 'status' => 500 ]
+				'invalid_settings',
+				__( 'Settings not found.', 'setting-fields' ),
+				[ 'status' => 404 ]
 			);
 		}
 
 		try {
-			$data = [
-				'settings_id' => $settings_id,
-				'field_key'   => $field_key,
-				'key'         => $key,
-				'action'      => $action,
-			];
+			$result = $instance->process_license(
+				$request->get_param( 'field_key' ),
+				$request->get_param( 'key' ),
+				$request->get_param( 'action' )
+			);
 
-			$result = call_user_func( $callback, $data );
-
-			// Normalize result
-			if ( is_bool( $result ) ) {
-				$result = [
-					'success' => $result,
-					'message' => $result
-						? __( 'License action completed successfully.', 'setting-fields' )
-						: __( 'License action failed.', 'setting-fields' ),
-				];
-			}
-
-			if ( is_string( $result ) ) {
-				$result = [
-					'success' => true,
-					'message' => $result,
-				];
-			}
-
-			if ( $result instanceof WP_Error ) {
+			if ( is_wp_error( $result ) ) {
 				return $result;
-			}
-
-			$result = wp_parse_args( (array) $result, [
-				'success'   => true,
-				'message'   => __( 'License action completed.', 'setting-fields' ),
-				'status'    => null,
-				'expiry'    => null,
-				'url'       => null,
-				'url_label' => null,
-			] );
-
-			// Persist status and expiry to the stored value
-			if ( $result['status'] ) {
-				$instance = Registry::instance()->get( $settings_id );
-
-				if ( $instance ) {
-					$option_name = $instance->get_option_name();
-					$options     = get_option( $option_name, [] );
-					$current     = wp_parse_args( (array) ( $options[ $field_key ] ?? [] ), [
-						'key'    => '',
-						'status' => 'inactive',
-						'expiry' => '',
-					] );
-
-					$current['key']    = $key;
-					$current['status'] = sanitize_key( $result['status'] );
-
-					if ( $result['expiry'] !== null ) {
-						$current['expiry'] = sanitize_text_field( $result['expiry'] );
-					}
-
-					$options[ $field_key ] = $current;
-					update_option( $option_name, $options );
-				}
 			}
 
 			return new WP_REST_Response( $result, $result['success'] ? 200 : 400 );
@@ -1028,38 +953,11 @@ class RestApi {
 			);
 		}
 
-		$fields      = $instance->get_fields();
-		$option_name = $instance->get_option_name();
-		$current     = get_option( $option_name, [] );
-
-		if ( ! is_array( $current ) ) {
-			$current = [];
-		}
-
-		$reset_count = 0;
-		$skip_types  = [ 'message', 'html', 'separator', 'heading', 'action_button', 'clipboard' ];
-
-		foreach ( $fields as $field_key => $field ) {
-			// If a tab was specified, only reset fields on that tab
-			if ( ! empty( $tab ) && ( $field['tab'] ?? '' ) !== $tab ) {
-				continue;
-			}
-
-			// Skip layout-only fields that store nothing
-			if ( in_array( $field['type'] ?? '', $skip_types, true ) ) {
-				continue;
-			}
-
-			$current[ $field_key ] = $field['default'] ?? '';
-			$reset_count ++;
-		}
-
-		update_option( $option_name, $current );
+		$reset_count = $instance->reset_settings( $tab ?? '' );
 
 		return new WP_REST_Response( [
 			'success' => true,
 			'message' => sprintf(
-			/* translators: %d: number of settings reset */
 				_n(
 					'%d setting reset to default.',
 					'%d settings reset to defaults.',
@@ -1166,47 +1064,9 @@ class RestApi {
 	 * @return array|null The field configuration or null if not found.
 	 */
 	protected static function get_field_config( string $settings_id, string $field_key ): ?array {
-		$settings = Registry::instance()->get( $settings_id );
+		$instance = Registry::instance()->get( $settings_id );
 
-		if ( ! $settings ) {
-			return null;
-		}
-
-		$fields = $settings->get_fields();
-
-		// Check if this is a nested field path
-		if ( str_contains( $field_key, '.' ) ) {
-			$parts        = explode( '.', $field_key );
-			$parent_key   = $parts[0];
-			$child_key    = $parts[1];
-			$parent_field = $fields[ $parent_key ] ?? null;
-
-			if ( ! $parent_field || ! isset( $parent_field['sub_fields'] ) ) {
-				return null;
-			}
-
-			return $parent_field['sub_fields'][ $child_key ] ?? null;
-		}
-
-		return $fields[ $field_key ] ?? null;
-	}
-
-	/**
-	 * Get the REST namespace.
-	 *
-	 * @return string
-	 */
-	public static function get_namespace(): string {
-		return self::NAMESPACE;
-	}
-
-	/**
-	 * Get the full REST URL for ajax requests.
-	 *
-	 * @return string
-	 */
-	public static function get_rest_url(): string {
-		return rest_url( self::NAMESPACE . '/ajax' );
+		return $instance?->get_field( $field_key );
 	}
 
 }
