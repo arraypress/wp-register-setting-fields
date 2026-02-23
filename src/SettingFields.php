@@ -386,29 +386,51 @@ class SettingFields {
                 ?>
             </form>
 
-            <?php $this->render_export_import_ui(); ?>
+            <?php if ( $this->config['export_import'] ) : ?>
+                <div class="setting-fields-export-import-result" style="display: none;">
+                    <span class="dashicons setting-fields-export-import-icon"></span>
+                    <span class="setting-fields-export-import-message"></span>
+                </div>
+            <?php endif; ?>
         </div>
         <?php
     }
 
     /**
-     * Render footer action buttons (submit, reset, export/import).
+     * Render footer action buttons (submit only).
+     *
+     * Reset and export/import actions are rendered in the header.
      *
      * @return void
      */
     protected function render_footer_actions(): void {
-        if ( ! $this->config['submit_button'] && ! $this->config['reset_button'] ) {
+        if ( ! $this->config['submit_button'] ) {
             return;
         }
 
-        echo '<div class="setting-fields-footer-actions">';
+        submit_button();
+    }
 
-        if ( $this->config['submit_button'] ) {
-            submit_button( null, 'primary', 'submit', false );
+    /**
+     * Render header action buttons (reset, export, import).
+     *
+     * Displayed in the header branding row, right-aligned.
+     *
+     * @param string $current_tab Current active tab.
+     *
+     * @return void
+     */
+    protected function render_header_actions( string $current_tab ): void {
+        $has_reset  = $this->config['reset_button'];
+        $has_export = $this->config['export_import'];
+
+        if ( ! $has_reset && ! $has_export ) {
+            return;
         }
 
-        if ( $this->config['reset_button'] ) {
-            $current_tab = $this->get_current_tab();
+        echo '<div class="setting-fields-header__actions">';
+
+        if ( $has_reset ) {
             $reset_label = ! empty( $this->tabs )
                     ? sprintf( __( 'Reset %s', 'setting-fields' ), $this->tabs[ $current_tab ]['label'] ?? __( 'Tab', 'setting-fields' ) )
                     : __( 'Reset to Defaults', 'setting-fields' );
@@ -422,51 +444,28 @@ class SettingFields {
             <?php
         }
 
-        echo '</div>';
-    }
+        if ( $has_export ) {
+            ?>
+            <button type="button" class="button setting-fields-export-btn">
+                <span class="dashicons dashicons-download"></span>
+                <?php esc_html_e( 'Export Settings', 'setting-fields' ); ?>
+            </button>
 
-    /**
-     * Render the export/import UI below the form.
-     *
-     * Only rendered when 'export_import' is enabled.
-     *
-     * @return void
-     */
-    protected function render_export_import_ui(): void {
-        if ( ! $this->config['export_import'] ) {
-            return;
+            <div class="setting-fields-import-wrap">
+                <input type="file"
+                       accept=".json"
+                       class="setting-fields-import-file"
+                       id="<?php echo esc_attr( $this->id ); ?>_import_file"
+                       style="display:none;"/>
+                <button type="button" class="button setting-fields-import-btn">
+                    <span class="dashicons dashicons-upload"></span>
+                    <?php esc_html_e( 'Import Settings', 'setting-fields' ); ?>
+                </button>
+            </div>
+            <?php
         }
 
-        ?>
-        <div class="setting-fields-export-import">
-            <h3><?php esc_html_e( 'Export / Import', 'setting-fields' ); ?></h3>
-            <p class="description"><?php esc_html_e( 'Export your settings as a JSON file or import from a previously exported file.', 'setting-fields' ); ?></p>
-
-            <div class="setting-fields-export-import-actions">
-                <button type="button" class="button setting-fields-export-btn">
-                    <span class="dashicons dashicons-download"></span>
-                    <?php esc_html_e( 'Export Settings', 'setting-fields' ); ?>
-                </button>
-
-                <div class="setting-fields-import-wrap">
-                    <input type="file"
-                           accept=".json"
-                           class="setting-fields-import-file"
-                           id="<?php echo esc_attr( $this->id ); ?>_import_file"
-                           style="display:none;" />
-                    <button type="button" class="button setting-fields-import-btn">
-                        <span class="dashicons dashicons-upload"></span>
-                        <?php esc_html_e( 'Import Settings', 'setting-fields' ); ?>
-                    </button>
-                </div>
-            </div>
-
-            <div class="setting-fields-export-import-result" style="display: none;">
-                <span class="dashicons setting-fields-export-import-icon"></span>
-                <span class="setting-fields-export-import-message"></span>
-            </div>
-        </div>
-        <?php
+        echo '</div>';
     }
 
     /**
@@ -510,6 +509,8 @@ class SettingFields {
                     <?php if ( ! empty( $header_badge ) ) : ?>
                         <?php self::render_header_badge( $header_badge ); ?>
                     <?php endif; ?>
+
+                    <?php $this->render_header_actions( $current_tab ); ?>
                 </div>
             </div>
 
@@ -687,6 +688,7 @@ class SettingFields {
         $type = $field['type'] ?? 'text';
         if ( $type === 'hidden' ) {
             $this->render_field( $field_key, $field, $field_name, $field_id, $value );
+
             return;
         }
 
@@ -871,7 +873,15 @@ class SettingFields {
             }
 
             // Skip layout fields that have no stored data
-            if ( in_array( $field['type'] ?? '', [ 'message', 'html', 'separator', 'heading', 'hidden', 'action_button', 'clipboard' ], true ) ) {
+            if ( in_array( $field['type'] ?? '', [
+                    'message',
+                    'html',
+                    'separator',
+                    'heading',
+                    'hidden',
+                    'action_button',
+                    'clipboard'
+            ], true ) ) {
                 continue;
             }
 

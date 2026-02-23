@@ -2529,3 +2529,54 @@ h4.setting-fields-heading-title {
 .setting-fields-license-result--error .setting-fields-license-result-icon {
     color: #d63638;
 }
+
+/* ==========================================================================
+   Header Actions (Reset, Export, Import)
+   ========================================================================== */
+
+.setting-fields-header__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.setting-fields-header__actions .button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.setting-fields-header__actions .button .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+}
+
+.setting-fields-header__actions .setting-fields-import-wrap {
+    display: inline-flex;
+}
+
+/* Export/Import result toast — now positioned relative to the header */
+.setting-fields-export-import-result {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-left: 4px solid #00a32a;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    font-size: 13px;
+}
+
+.setting-fields-export-import-result--error {
+    border-left-color: #d63638;
+}
