@@ -1302,7 +1302,7 @@
     font-size: 16px;
     width: 16px;
     height: 16px;
-    line-height: 16px;
+    line-height: 16px !important;
 }
 
 .setting-fields-clipboard-btn--copied {
@@ -1336,7 +1336,7 @@
     font-size: 16px;
     width: 16px;
     height: 16px;
-    line-height: 16px;
+    line-height: 16px !important;
 }
 
 .setting-fields-action-btn .dashicons.spin {
@@ -1440,6 +1440,7 @@
     font-size: 16px;
     width: 16px;
     height: 16px;
+    line-height: 16px !important;
     transition: transform 0.2s ease;
 }
 

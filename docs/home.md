@@ -1,4 +1,4 @@
-# WP Setting Fields
+# WordPress Register Setting Fields
 
 A WordPress library for creating settings pages with tabs, sections, branded headers, and 30+ field types. Handles registration, rendering, sanitization, and the Settings API — you just define your fields.
 
@@ -25,7 +25,7 @@ composer require arraypress/wp-register-setting-fields
 
 ## Requirements
 
-- PHP 7.4+
+- PHP 8.2+
 - WordPress 5.8+
 
 ## License
