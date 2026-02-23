@@ -642,6 +642,9 @@ class SettingFields {
      * div with a data-section attribute. This allows the conditional logic
      * JS to hide entire sections when all their fields are hidden.
      *
+     * If the section has 'disabled' => true, all child fields inherit the
+     * disabled state automatically.
+     *
      * @param string $section_key Section key.
      * @param array  $section     Section config.
      * @param array  $fields      Fields in this section.
@@ -649,10 +652,28 @@ class SettingFields {
      * @return void
      */
     protected function render_section( string $section_key, array $section, array $fields ): void {
-        echo '<div class="setting-fields-section" data-section="' . esc_attr( $section_key ) . '">';
+        $is_disabled = ! empty( $section['disabled'] );
+        $has_badge   = ! empty( $section['badge'] );
 
-        if ( ! empty( $section['title'] ) ) {
-            echo '<h2 class="setting-fields-section-title">' . esc_html( $section['title'] ) . '</h2>';
+        $classes = 'setting-fields-section';
+        if ( $is_disabled ) {
+            $classes .= ' setting-fields-section--disabled';
+        }
+
+        echo '<div class="' . esc_attr( $classes ) . '" data-section="' . esc_attr( $section_key ) . '">';
+
+        if ( ! empty( $section['title'] ) || $has_badge ) {
+            echo '<div class="setting-fields-section-header">';
+
+            if ( ! empty( $section['title'] ) ) {
+                echo '<h2 class="setting-fields-section-title">' . esc_html( $section['title'] ) . '</h2>';
+            }
+
+            if ( $has_badge ) {
+                self::render_badge( $section['badge'] );
+            }
+
+            echo '</div>';
         }
 
         if ( ! empty( $section['description'] ) ) {
@@ -661,11 +682,71 @@ class SettingFields {
 
         echo '<table class="form-table" role="presentation">';
         foreach ( $fields as $field_key => $field ) {
+            // Cascade disabled state from section to fields
+            if ( $is_disabled ) {
+                $field['disabled'] = true;
+            }
+
             $this->render_field_row( $field_key, $field );
         }
         echo '</table>';
 
         echo '</div>';
+    }
+
+    /**
+     * Render an inline badge.
+     *
+     * Outputs a small pill badge next to a field label or section title.
+     * Supports a simple string or a full config array with text, url,
+     * class, and icon options.
+     *
+     * @param string|array $badge Badge configuration.
+     *
+     * @return void
+     */
+    private static function render_badge( $badge ): void {
+        // Normalize string shorthand to array
+        if ( is_string( $badge ) ) {
+            $badge = [ 'text' => $badge ];
+        }
+
+        if ( ! is_array( $badge ) || empty( $badge['text'] ) ) {
+            return;
+        }
+
+        $text  = $badge['text'];
+        $url   = $badge['url'] ?? '';
+        $class = $badge['class'] ?? '';
+        $icon  = $badge['icon'] ?? '';
+
+        $badge_class = 'setting-fields-badge';
+        if ( ! empty( $class ) ) {
+            $badge_class .= ' ' . $class;
+        }
+
+        $inner = '';
+
+        if ( ! empty( $icon ) ) {
+            $inner .= '<span class="dashicons ' . esc_attr( $icon ) . '"></span> ';
+        }
+
+        $inner .= esc_html( $text );
+
+        if ( ! empty( $url ) ) {
+            printf(
+                    '<a href="%s" class="%s" target="_blank" rel="noopener noreferrer">%s</a>',
+                    esc_url( $url ),
+                    esc_attr( $badge_class ),
+                    $inner
+            );
+        } else {
+            printf(
+                    '<span class="%s">%s</span>',
+                    esc_attr( $badge_class ),
+                    $inner
+            );
+        }
     }
 
     /**
@@ -694,7 +775,6 @@ class SettingFields {
         $type = $field['type'] ?? 'text';
         if ( $type === 'hidden' ) {
             $this->render_field( $field_key, $field, $field_name, $field_id, $value );
-
             return;
         }
 
@@ -718,6 +798,9 @@ class SettingFields {
                         <?php echo esc_html( $field['label'] ); ?>
                         <?php if ( ! empty( $field['required'] ) ) : ?>
                             <span class="required">*</span>
+                        <?php endif; ?>
+                        <?php if ( ! empty( $field['badge'] ) ) : ?>
+                            <?php self::render_badge( $field['badge'] ); ?>
                         <?php endif; ?>
                         <?php if ( ! empty( $field['tooltip'] ) ) : ?>
                             <span class="setting-fields-tooltip">

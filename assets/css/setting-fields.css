@@ -2580,3 +2580,168 @@ h4.setting-fields-heading-title {
 .setting-fields-export-import-result--error {
     border-left-color: #d63638;
 }
+
+/* ==========================================================================
+   Badges (Pro, Premium, etc.)
+   ========================================================================== */
+
+/**
+ * Inline badge pill — used on field labels and section titles.
+ */
+.setting-fields-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 8px;
+    margin-left: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 18px;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: #1d2327;
+    background: #f0f0f1;
+    border: 1px solid #c3c4c7;
+    border-radius: 10px;
+    vertical-align: middle;
+    white-space: nowrap;
+    cursor: default;
+}
+
+.setting-fields-badge .dashicons {
+    font-size: 12px;
+    width: 12px;
+    height: 12px;
+    line-height: 12px;
+}
+
+/**
+ * Linked badge — clickable, with hover state.
+ */
+a.setting-fields-badge {
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+a.setting-fields-badge:hover {
+    color: #fff;
+    background: #2271b1;
+    border-color: #2271b1;
+}
+
+a.setting-fields-badge:focus {
+    outline: 2px solid #2271b1;
+    outline-offset: 1px;
+}
+
+/**
+ * Color variants.
+ *
+ * Use via the 'class' key in badge config:
+ * 'badge' => ['text' => 'Pro', 'class' => 'setting-fields-badge--pro']
+ */
+.setting-fields-badge--pro {
+    color: #9a4900;
+    background: #fcf0e3;
+    border-color: #dba164;
+}
+
+a.setting-fields-badge--pro:hover {
+    color: #fff;
+    background: #b45309;
+    border-color: #b45309;
+}
+
+.setting-fields-badge--premium {
+    color: #6b21a8;
+    background: #f3e8ff;
+    border-color: #c084fc;
+}
+
+a.setting-fields-badge--premium:hover {
+    color: #fff;
+    background: #7c3aed;
+    border-color: #7c3aed;
+}
+
+.setting-fields-badge--business {
+    color: #065f46;
+    background: #d1fae5;
+    border-color: #6ee7b7;
+}
+
+a.setting-fields-badge--business:hover {
+    color: #fff;
+    background: #059669;
+    border-color: #059669;
+}
+
+.setting-fields-badge--gold {
+    color: #78350f;
+    background: #fef3c7;
+    border-color: #fbbf24;
+}
+
+a.setting-fields-badge--gold:hover {
+    color: #fff;
+    background: #d97706;
+    border-color: #d97706;
+}
+
+/* ==========================================================================
+   Section Header (title + badge inline)
+   ========================================================================== */
+
+.setting-fields-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.setting-fields-section-header .setting-fields-section-title {
+    margin-right: 0;
+}
+
+.setting-fields-section-header .setting-fields-badge {
+    margin-left: 10px;
+    position: relative;
+    top: -1px;
+}
+
+/* ==========================================================================
+   Disabled Sections
+   ========================================================================== */
+
+/**
+ * Disabled section — reduces opacity on the form table and
+ * prevents pointer events on inputs. The section title and
+ * badge remain fully visible and interactive (for upgrade links).
+ */
+.setting-fields-section--disabled .form-table {
+    opacity: 0.55;
+    pointer-events: none;
+    user-select: none;
+}
+
+.setting-fields-section--disabled .form-table::after {
+    content: '';
+    display: none;
+}
+
+/**
+ * Keep the section header fully visible and clickable
+ * even when the section is disabled.
+ */
+.setting-fields-section--disabled .setting-fields-section-header,
+.setting-fields-section--disabled .setting-fields-section-description {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/**
+ * Disabled field badge in label — keep clickable for upgrade links.
+ */
+th .setting-fields-badge {
+    pointer-events: auto;
+}
