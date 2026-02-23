@@ -1647,7 +1647,7 @@
                     return;
                 }
 
-                const settingsId = $btn.closest('.setting-fields-wrap').data('setting-id');
+                const settingsId = $('.setting-fields-wrap').data('setting-id');
                 const tab = $btn.data('tab') || '';
                 const originalText = $btn.text();
 
@@ -1696,7 +1696,7 @@
                 e.preventDefault();
 
                 const $btn = $(this);
-                const $wrap = $btn.closest('.setting-fields-wrap');
+                const $wrap = $('.setting-fields-wrap');
                 const settingsId = $wrap.data('setting-id');
                 const $result = $wrap.find('.setting-fields-export-import-result');
                 const $icon = $result.find('.setting-fields-export-import-icon');
@@ -1759,12 +1759,12 @@
                 const file = this.files[0];
                 if (!file) return;
 
-                const $wrap = $(this).closest('.setting-fields-wrap');
+                const $wrap = $('.setting-fields-wrap');
                 const settingsId = $wrap.data('setting-id');
                 const $result = $wrap.find('.setting-fields-export-import-result');
                 const $icon = $result.find('.setting-fields-export-import-icon');
                 const $message = $result.find('.setting-fields-export-import-message');
-                const $importBtn = $wrap.find('.setting-fields-import-btn');
+                const $importBtn = $('.setting-fields-import-btn');
 
                 if (!file.name.endsWith('.json')) {
                     $icon.attr('class', 'dashicons dashicons-warning setting-fields-export-import-icon');
