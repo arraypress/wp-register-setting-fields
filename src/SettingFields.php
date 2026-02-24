@@ -642,8 +642,9 @@ class SettingFields {
      * div with a data-section attribute. This allows the conditional logic
      * JS to hide entire sections when all their fields are hidden.
      *
-     * If the section has 'disabled' => true, all child fields inherit the
-     * disabled state automatically.
+     * If the section has a badge with an active (non-disabled) state, or
+     * has 'disabled' => true, all child fields inherit the disabled state
+     * automatically.
      *
      * @param string $section_key Section key.
      * @param array  $section     Section config.
@@ -652,8 +653,11 @@ class SettingFields {
      * @return void
      */
     protected function render_section( string $section_key, array $section, array $fields ): void {
-        $is_disabled = ! empty( $section['disabled'] );
-        $has_badge   = ! empty( $section['badge'] );
+        // Resolve badge (returns null if badge is disabled/hidden)
+        $badge = isset( $section['badge'] ) ? self::resolve_badge( $section['badge'] ) : null;
+
+        // Section is disabled if explicitly set OR if badge is active (visible)
+        $is_disabled = ! empty( $section['disabled'] ) || $badge !== null;
 
         $classes = 'setting-fields-section';
         if ( $is_disabled ) {
@@ -662,15 +666,15 @@ class SettingFields {
 
         echo '<div class="' . esc_attr( $classes ) . '" data-section="' . esc_attr( $section_key ) . '">';
 
-        if ( ! empty( $section['title'] ) || $has_badge ) {
+        if ( ! empty( $section['title'] ) || $badge !== null ) {
             echo '<div class="setting-fields-section-header">';
 
             if ( ! empty( $section['title'] ) ) {
                 echo '<h2 class="setting-fields-section-title">' . esc_html( $section['title'] ) . '</h2>';
             }
 
-            if ( $has_badge ) {
-                self::render_badge( $section['badge'] );
+            if ( $badge !== null ) {
+                self::render_badge( $badge );
             }
 
             echo '</div>';
@@ -695,26 +699,56 @@ class SettingFields {
     }
 
     /**
-     * Render an inline badge.
+     * Resolve a badge configuration and check if it should render.
      *
-     * Outputs a small pill badge next to a field label or section title.
-     * Supports a simple string or a full config array with text, url,
-     * class, and icon options.
+     * Normalizes string shorthand to array, resolves callable 'disabled'
+     * values, and returns null if the badge is disabled. When the badge
+     * has a 'disabled' key that resolves truthy, the badge is hidden
+     * and the associated field/section should become editable.
      *
      * @param string|array $badge Badge configuration.
      *
-     * @return void
+     * @return array|null Normalized badge config, or null if disabled.
      */
-    private static function render_badge( $badge ): void {
+    private static function resolve_badge( $badge ): ?array {
         // Normalize string shorthand to array
         if ( is_string( $badge ) ) {
             $badge = [ 'text' => $badge ];
         }
 
         if ( ! is_array( $badge ) || empty( $badge['text'] ) ) {
-            return;
+            return null;
         }
 
+        // Resolve the disabled condition
+        $disabled = $badge['disabled'] ?? false;
+        if ( is_callable( $disabled ) ) {
+            $disabled = (bool) call_user_func( $disabled );
+        }
+
+        // If disabled resolves truthy, badge should not render
+        if ( $disabled ) {
+            return null;
+        }
+
+        return $badge;
+    }
+
+    /**
+     * Render an inline badge.
+     *
+     * Outputs a small pill badge next to a field label or section title.
+     * Supports a simple string or a full config array with text, url,
+     * class, and icon options.
+     *
+     * Use resolve_badge() first to check if the badge should render
+     * and to normalize the configuration.
+     *
+     * @param array $badge Normalized badge configuration.
+     *
+     * @return void
+     */
+    private static function render_badge( array $badge ): void {
         $text  = $badge['text'];
         $url   = $badge['url'] ?? '';
         $class = $badge['class'] ?? '';
@@ -765,6 +799,14 @@ class SettingFields {
         // Add the field key to the field config
         $field['_key'] = $field_key;
 
+        // Resolve badge (returns null if badge is disabled/hidden)
+        $badge = isset( $field['badge'] ) ? self::resolve_badge( $field['badge'] ) : null;
+
+        // When badge is active (visible), disable the field
+        if ( $badge !== null ) {
+            $field['disabled'] = true;
+        }
+
         // Build conditional logic data attributes
         $row_attrs = $this->get_conditional_attributes( $field );
 
@@ -799,8 +841,8 @@ class SettingFields {
                         <?php if ( ! empty( $field['required'] ) ) : ?>
                             <span class="required">*</span>
                         <?php endif; ?>
-                        <?php if ( ! empty( $field['badge'] ) ) : ?>
-                            <?php self::render_badge( $field['badge'] ); ?>
+                        <?php if ( $badge !== null ) : ?>
+                            <?php self::render_badge( $badge ); ?>
                         <?php endif; ?>
                         <?php if ( ! empty( $field['tooltip'] ) ) : ?>
                             <span class="setting-fields-tooltip">

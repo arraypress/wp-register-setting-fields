@@ -1,6 +1,8 @@
 # Badges
 
-Display upgrade or tier indicators on individual fields or entire sections. Badges render as small inline pills next to labels and section titles. Combine with `disabled` to create a locked preview state for premium features.
+Display upgrade or tier indicators on individual fields or entire sections. Badges render as small inline pills next to
+labels and section titles. When a badge is visible, the associated field is automatically disabled — creating a locked
+preview state for premium features.
 
 ## Field Badge
 
@@ -8,14 +10,14 @@ Add a `badge` key to any field config:
 
 ```php
 'advanced_sync' => [
-    'type'     => 'toggle',
-    'label'    => 'Advanced Sync',
-    'badge'    => 'Pro',
-    'disabled' => true,
+    'type'  => 'toggle',
+    'label' => 'Advanced Sync',
+    'badge' => 'Pro',
 ],
 ```
 
-The badge appears inline after the field label, between the required asterisk and the tooltip icon.
+The badge appears inline after the field label, between the required asterisk and the tooltip icon. When the badge is
+visible, the field is automatically disabled — no need to set `disabled` separately.
 
 ### Full Config
 
@@ -24,12 +26,12 @@ The badge appears inline after the field label, between the required asterisk an
     'type'  => 'select',
     'label' => 'Webhook Mode',
     'badge' => [
-        'text'  => 'Business',
-        'url'   => 'https://example.com/upgrade',
-        'class' => 'setting-fields-badge--gold',
-        'icon'  => 'dashicons-lock',
+        'text'     => 'Business',
+        'url'      => 'https://example.com/upgrade',
+        'class'    => 'setting-fields-badge--gold',
+        'icon'     => 'dashicons-lock',
+        'disabled' => fn() => is_setting_field_license_active( 'my_plugin', 'license' ),
     ],
-    'disabled' => true,
 ],
 ```
 
@@ -37,7 +39,7 @@ When `url` is set, the badge renders as a link that opens in a new tab — usefu
 
 ## Section Badge
 
-Add a `badge` to a section definition. When combined with `disabled`, all fields in the section are automatically disabled:
+Add a `badge` to a section definition. When the badge is visible, all fields in the section are automatically disabled:
 
 ```php
 'sections' => [
@@ -46,38 +48,65 @@ Add a `badge` to a section definition. When combined with `disabled`, all fields
         'description' => 'These features require a Pro license.',
         'tab'         => 'general',
         'badge'       => [
-            'text' => 'Pro',
-            'url'  => 'https://example.com/upgrade',
+            'text'     => 'Pro',
+            'url'      => 'https://example.com/upgrade',
+            'disabled' => fn() => is_setting_field_license_active( 'my_plugin', 'license' ),
         ],
-        'disabled' => true,
     ],
 ],
 ```
 
-The section title and badge remain fully visible and clickable (for upgrade links) even when the section's fields are dimmed and disabled.
+The section title and badge remain fully visible and clickable (for upgrade links) even when the section's fields are
+dimmed and disabled.
 
 ## Badge Options
 
-| Key     | Type   | Required | Default | Description                                    |
-|---------|--------|----------|---------|------------------------------------------------|
-| `text`  | string | Yes      | —       | Badge label                                    |
-| `url`   | string | No       | `''`    | Links badge to upgrade page (opens new tab)    |
-| `class` | string | No       | `''`    | Additional CSS class for styling               |
-| `icon`  | string | No       | `''`    | Dashicon class (e.g., `dashicons-lock`)        |
+| Key        | Type           | Required | Default | Description                                 |
+|------------|----------------|----------|---------|---------------------------------------------|
+| `text`     | string         | Yes      | —       | Badge label                                 |
+| `url`      | string         | No       | `''`    | Links badge to upgrade page (opens new tab) |
+| `class`    | string         | No       | `''`    | Additional CSS class for styling            |
+| `icon`     | string         | No       | `''`    | Dashicon class (e.g., `dashicons-lock`)     |
+| `disabled` | bool\|callable | No       | `false` | When truthy, hides badge and unlocks field  |
 
 If `badge` is a string (e.g., `'Pro'`), it's treated as `['text' => 'Pro']`.
+
+## The `disabled` Key
+
+The `disabled` key on a badge controls both the badge visibility and the field's disabled state in a single declaration.
+This avoids the need to conditionally build the field array:
+
+- When `disabled` is **falsy or absent** — badge is visible, field is disabled
+- When `disabled` is **truthy** — badge is hidden, field is editable
+- When `disabled` is a **callable** — it's called at render time and the return value is used as a bool
+
+```php
+'badge' => [
+    'text'     => 'Pro',
+    'disabled' => fn() => has_pro_license(),
+],
+```
+
+This is equivalent to writing:
+
+```php
+'badge'    => has_pro_license() ? '' : 'Pro',
+'disabled' => ! has_pro_license(),
+```
+
+But the `disabled` key keeps the config static and declarative — the array never needs to be built conditionally.
 
 ## Built-in Color Variants
 
 Use the `class` key to apply a color variant:
 
-| Class                            | Colors         |
-|----------------------------------|----------------|
-| *(default — no class)*           | Neutral grey   |
-| `setting-fields-badge--pro`      | Amber/orange   |
-| `setting-fields-badge--premium`  | Purple         |
-| `setting-fields-badge--business` | Green          |
-| `setting-fields-badge--gold`     | Gold/yellow    |
+| Class                            | Colors       |
+|----------------------------------|--------------|
+| *(default — no class)*           | Neutral grey |
+| `setting-fields-badge--pro`      | Amber/orange |
+| `setting-fields-badge--premium`  | Purple       |
+| `setting-fields-badge--business` | Green        |
+| `setting-fields-badge--gold`     | Gold/yellow  |
 
 ```php
 'badge' => [
@@ -91,24 +120,46 @@ Linked badges change to a solid color on hover.
 
 ## Disabled Cascade
 
-When a section has `'disabled' => true`, all child fields inherit the disabled state automatically. You don't need to set `disabled` on each field individually. The section's form table is dimmed with reduced opacity while the section header remains fully interactive.
+When a section has an active badge, all child fields inherit the disabled state automatically. You don't need to set
+`disabled` on each field individually. The section's form table is dimmed with reduced opacity while the section header
+remains fully interactive.
 
-## Dynamic Badges
+## Example: License-Gated Features
 
-You can conditionally add badges based on license status or feature flags:
+A common pattern for freemium plugins — fields are locked with a badge until the user activates a license:
 
 ```php
-$is_pro = is_setting_field_license_active( 'my_plugin', 'license' );
+$license_check = fn() => is_setting_field_license_active( 'my_plugin', 'license' );
 
-'advanced_sync' => [
-    'type'     => 'toggle',
-    'label'    => 'Advanced Sync',
-    'badge'    => $is_pro ? '' : [
-        'text' => 'Pro',
-        'url'  => 'https://example.com/upgrade',
+'fields' => [
+    'basic_feature' => [
+        'type'  => 'toggle',
+        'label' => 'Basic Feature',
     ],
-    'disabled' => ! $is_pro,
+    'advanced_sync' => [
+        'type'  => 'toggle',
+        'label' => 'Advanced Sync',
+        'badge' => [
+            'text'     => 'Pro',
+            'url'      => 'https://example.com/upgrade',
+            'class'    => 'setting-fields-badge--pro',
+            'icon'     => 'dashicons-lock',
+            'disabled' => $license_check,
+        ],
+    ],
+    'webhook_mode' => [
+        'type'    => 'select',
+        'label'   => 'Webhook Mode',
+        'options' => [ 'basic' => 'Basic', 'advanced' => 'Advanced' ],
+        'badge'   => [
+            'text'     => 'Pro',
+            'url'      => 'https://example.com/upgrade',
+            'class'    => 'setting-fields-badge--pro',
+            'icon'     => 'dashicons-lock',
+            'disabled' => $license_check,
+        ],
+    ],
 ],
 ```
 
-When the license is active, the badge disappears and the field becomes editable.
+When the license is active, badges disappear and fields become editable — all from a static config array.

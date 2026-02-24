@@ -50,8 +50,12 @@
    ========================================================================== */
 
 @keyframes setting-fields-spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* ==========================================================================
@@ -2752,4 +2756,6 @@ a.setting-fields-badge--gold:hover {
  */
 th .setting-fields-badge {
     pointer-events: auto;
+    margin-top: 6px;
+    margin-left: 0;
 }
