@@ -8,6 +8,7 @@
   - [Tabs](tabs.md)
   - [Sections](sections.md)
   - [Branded Header](branded-header.md)
+  - [Badges](badges.md)
   - [Conditional Fields](conditional-fields.md)
   - [Reset & Export/Import](reset-export-import.md)
 

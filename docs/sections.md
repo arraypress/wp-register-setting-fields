@@ -45,10 +45,33 @@ register_setting_fields( 'my_plugin', [
 
 ## Section Options
 
-| Key           | Type   | Description                         |
-|---------------|--------|-------------------------------------|
-| `title`       | string | Section heading                     |
-| `description` | string | Text below the heading              |
-| `tab`         | string | Tab this section belongs to         |
+| Key           | Type   | Description                                          |
+|---------------|--------|------------------------------------------------------|
+| `title`       | string | Section heading                                      |
+| `description` | string | Text below the heading                               |
+| `tab`         | string | Tab this section belongs to                          |
+| `badge`       | mixed  | Upgrade badge pill — string or config array (see [Badges](badges.md)) |
+| `disabled`    | bool   | Disable all fields in the section (default: `false`) |
 
 Fields without a `section` key are rendered after all sectioned fields in a default table. When all fields inside a section are hidden (via conditional logic), the entire section container is automatically hidden by JavaScript.
+
+## Disabled Sections
+
+When a section has `'disabled' => true`, all child fields are automatically disabled with reduced opacity. The section title, description, and badge remain fully visible and interactive — useful for showing locked premium features with an upgrade link:
+
+```php
+'sections' => [
+    'advanced' => [
+        'title'       => 'Advanced Settings',
+        'description' => 'These features require a Pro license.',
+        'tab'         => 'general',
+        'badge'       => [
+            'text' => 'Pro',
+            'url'  => 'https://example.com/upgrade',
+        ],
+        'disabled' => true,
+    ],
+],
+```
+
+See [Badges](badges.md) for full badge configuration options and color variants.

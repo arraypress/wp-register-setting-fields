@@ -16,6 +16,7 @@ All field types share these common options:
     'class'             => '',               // CSS class on the input element
     'tab'               => '',               // Tab key (defaults to first tab)
     'section'           => '',               // Section key
+    'badge'             => '',               // Upgrade badge (see Badges)
     'depends'           => [],               // Conditional display (see Conditional Fields)
     'sanitize_callback' => null,             // Custom sanitization function
     'render_callback'   => null,             // Custom render function
@@ -23,6 +24,21 @@ All field types share these common options:
     'encrypted'         => false,            // Enable encryption (see Encryption)
 ],
 ```
+
+## Badge
+
+Display an inline pill next to the field label. Useful for marking fields as "Pro", "Premium", or any upgrade tier. Combine with `disabled` to create a locked preview state:
+
+```php
+'advanced_sync' => [
+    'type'     => 'toggle',
+    'label'    => 'Advanced Sync',
+    'badge'    => 'Pro',
+    'disabled' => true,
+],
+```
+
+Pass a string for a simple label, or an array for full control over URL, icon, and color. See [Badges](badges.md) for all options.
 
 ## Tooltip
 
