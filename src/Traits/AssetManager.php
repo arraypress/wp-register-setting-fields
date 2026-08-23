@@ -196,7 +196,7 @@ trait AssetManager {
 	 */
 	protected function localize_scripts(): void {
 		$data = [
-			'restUrl'    => rest_url( RestApi::NAMESPACE . '/' ),
+			'restUrl'    => rest_url( RestApi::rest_namespace() . '/' ),
 			'restNonce'  => wp_create_nonce( 'wp_rest' ),
 			'settingsId' => $this->id,
 			'optionName' => $this->config['option_name'],
@@ -236,7 +236,6 @@ trait AssetManager {
 		];
 
 		wp_localize_script( Runtime::handle(), Runtime::js_object( 'Data' ), $data );
-
 		// Also published into a registry keyed by script handle. Two
 		// Strauss-prefixed copies each enqueue their own script, and a bare
 		// global would leave whichever localized last owning it for both; the
@@ -251,6 +250,7 @@ trait AssetManager {
 			),
 			'before'
 		);
+
 	}
 
 	/**
