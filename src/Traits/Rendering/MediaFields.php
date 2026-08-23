@@ -196,7 +196,7 @@ trait MediaFields {
 		$attrs = $this->build_input_attrs( $field, $name, $id, $extra );
 		?>
 		<div class="setting-fields-oembed-field">
-			<input<?php echo esc_attr( $attrs ); ?> />
+			<input<?php echo $attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already a complete, escaped attribute string; esc_attr() here would render it as text and break the JSON payload. ?> />
 
 			<div class="setting-fields-oembed-preview">
 				<?php

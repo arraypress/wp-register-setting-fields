@@ -830,7 +830,7 @@ class SettingFields {
         // Message, HTML, separator, heading fields get full-width rendering
         if ( in_array( $type, [ 'message', 'html', 'separator', 'heading' ], true ) ) {
             ?>
-            <tr<?php echo esc_attr( $row_attrs ); ?> class="setting-fields-row-fullwidth">
+            <tr<?php echo $row_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already a complete, escaped attribute string; esc_attr() here would render it as text and break the JSON payload. ?> class="setting-fields-row-fullwidth">
                 <td colspan="2">
                     <?php $this->render_field( $field_key, $field, $field_name, $field_id, $value ); ?>
                 </td>
@@ -840,7 +840,7 @@ class SettingFields {
         }
 
         ?>
-        <tr<?php echo esc_attr( $row_attrs ); ?>>
+        <tr<?php echo $row_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already a complete, escaped attribute string; esc_attr() here would render it as text and break the JSON payload. ?>>
             <th scope="row">
                 <?php if ( ! empty( $field['label'] ) ) : ?>
                     <label for="<?php echo esc_attr( $field_id ); ?>">

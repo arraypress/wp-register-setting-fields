@@ -250,7 +250,6 @@ trait AssetManager {
 			),
 			'before'
 		);
-
 	}
 
 	/**
