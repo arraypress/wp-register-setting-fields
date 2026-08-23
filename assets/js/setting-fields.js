@@ -11,6 +11,24 @@
 (function ($) {
     'use strict';
 
+    /*
+     * This build's config.
+     *
+     * Each Strauss-prefixed copy enqueues its own script under its own handle
+     * and publishes its config into ArrayPressSettingFields keyed by that handle, so a shared
+     * global would leave two plugins on one screen reading the same REST URL
+     * and nonce. Resolve our own entry from the id WordPress stamped on the
+     * script element executing now.
+     */
+    var settingFieldsData = (function () {
+        var el = document.currentScript;
+        var handle = el && el.id ? el.id.replace(/-js$/, '') : '';
+        var registry = window.ArrayPressSettingFields || {};
+
+        return registry[handle] || window.settingFieldsData || {};
+    })();
+
+
     const SettingFields = {
 
         /**

@@ -111,5 +111,4 @@ class Registry {
 
 		return false;
 	}
-
 }

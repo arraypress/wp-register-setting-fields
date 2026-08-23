@@ -75,7 +75,8 @@ trait NestedFields {
                 <table class="form-table">
                     <?php endif; ?>
 
-                    <?php foreach ( $sub_fields as $sub_key => $sub_field ) :
+                    <?php
+                    foreach ( $sub_fields as $sub_key => $sub_field ) :
                         $sub_name  = $name . '[' . $sub_key . ']';
                         $sub_id    = $id . '_' . $sub_key;
                         $sub_value = $value[ $sub_key ] ?? ( $sub_field['default'] ?? '' );
@@ -163,12 +164,15 @@ trait NestedFields {
 
         ?>
         <div class="<?php echo esc_attr( $class ); ?>"
-             <?php if ( $style ) : ?>style="<?php echo $style; ?>"<?php endif; ?>
-             data-min="<?php echo esc_attr( $min ); ?>"
-             data-max="<?php echo esc_attr( $max ); ?>"
-             data-name="<?php echo esc_attr( $name ); ?>"
-             data-id="<?php echo esc_attr( $id ); ?>"
-             data-sortable="<?php echo $sortable ? 'true' : 'false'; ?>">
+            <?php
+            if ( $style ) :
+?>
+style="<?php echo esc_attr( $style ); ?>"<?php endif; ?>
+            data-min="<?php echo esc_attr( $min ); ?>"
+            data-max="<?php echo esc_attr( $max ); ?>"
+            data-name="<?php echo esc_attr( $name ); ?>"
+            data-id="<?php echo esc_attr( $id ); ?>"
+            data-sortable="<?php echo $sortable ? 'true' : 'false'; ?>">
 
             <?php if ( $layout === 'table' ) : ?>
                 <table class="setting-fields-repeater-table widefat">
@@ -249,7 +253,8 @@ trait NestedFields {
                 </td>
             <?php endif; ?>
 
-            <?php foreach ( $sub_fields as $sub_key => $sub_field ) :
+            <?php
+            foreach ( $sub_fields as $sub_key => $sub_field ) :
                 $sub_name  = $name . '[' . $index . '][' . $sub_key . ']';
                 $sub_id    = $id . '_' . $index . '_' . $sub_key;
                 $sub_value = $row[ $sub_key ] ?? ( $sub_field['default'] ?? '' );
@@ -297,7 +302,7 @@ trait NestedFields {
 
                 <?php if ( $collapsed ) : ?>
                     <span class="setting-fields-repeater-row-title">
-                        <?php echo esc_html( sprintf( __( 'Row %s', 'setting-fields' ), (int) $index + 1 ) ); ?>
+                        <?php /* translators: %s: row number within the repeater */ echo esc_html( sprintf( __( 'Row %s', 'setting-fields' ), (int) $index + 1 ) ); ?>
                     </span>
                     <button type="button" class="button-link setting-fields-repeater-toggle">
                         <span class="dashicons dashicons-arrow-down-alt2"></span>
@@ -311,7 +316,8 @@ trait NestedFields {
             </div>
 
             <div class="setting-fields-repeater-row-content">
-                <?php foreach ( $sub_fields as $sub_key => $sub_field ) :
+                <?php
+                foreach ( $sub_fields as $sub_key => $sub_field ) :
                     $sub_name  = $name . '[' . $index . '][' . $sub_key . ']';
                     $sub_id    = $id . '_' . $index . '_' . $sub_key;
                     $sub_value = $row[ $sub_key ] ?? ( $sub_field['default'] ?? '' );
@@ -336,5 +342,4 @@ trait NestedFields {
         </div>
         <?php
     }
-
 }

@@ -297,5 +297,4 @@ trait ConfigParser {
 			return ( $section['tab'] ?? '' ) === $tab;
 		} );
 	}
-
 }

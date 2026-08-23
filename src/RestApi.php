@@ -12,6 +12,8 @@ declare( strict_types=1 );
 
 namespace ArrayPress\RegisterSettingFields;
 
+use ArrayPress\RegisterSettingFields\Utils\Runtime;
+
 use Exception;
 use WP_Error;
 use WP_REST_Request;
@@ -28,7 +30,9 @@ class RestApi {
 	 *
 	 * @var string
 	 */
-	const NAMESPACE = 'setting-fields/v1';
+	public static function rest_namespace(): string {
+		return Runtime::rest_namespace();
+	}
 
 	/**
 	 * Whether routes have been registered.
@@ -60,7 +64,7 @@ class RestApi {
 	public static function register_routes(): void {
 
 		// Ajax field search endpoint
-		register_rest_route( self::NAMESPACE, '/ajax', [
+		register_rest_route( self::rest_namespace(), '/ajax', [
 			'methods'             => 'GET',
 			'callback'            => [ __CLASS__, 'handle_request' ],
 			'permission_callback' => [ __CLASS__, 'permission_check' ],
@@ -109,7 +113,7 @@ class RestApi {
 		] );
 
 		// Email preview endpoint
-		register_rest_route( self::NAMESPACE, '/email/preview', [
+		register_rest_route( self::rest_namespace(), '/email/preview', [
 			'methods'             => 'POST',
 			'callback'            => [ __CLASS__, 'handle_email_preview' ],
 			'permission_callback' => [ __CLASS__, 'permission_check' ],
@@ -147,7 +151,7 @@ class RestApi {
 		] );
 
 		// Email send test endpoint
-		register_rest_route( self::NAMESPACE, '/email/send-test', [
+		register_rest_route( self::rest_namespace(), '/email/send-test', [
 			'methods'             => 'POST',
 			'callback'            => [ __CLASS__, 'handle_email_send_test' ],
 			'permission_callback' => [ __CLASS__, 'permission_check' ],
@@ -190,7 +194,7 @@ class RestApi {
 		] );
 
 		// Action button endpoint
-		register_rest_route( self::NAMESPACE, '/action', [
+		register_rest_route( self::rest_namespace(), '/action', [
 			'methods'             => 'POST',
 			'callback'            => [ __CLASS__, 'handle_action_button' ],
 			'permission_callback' => [ __CLASS__, 'permission_check' ],
@@ -214,7 +218,7 @@ class RestApi {
 		] );
 
 		// License endpoint
-		register_rest_route( self::NAMESPACE, '/license', [
+		register_rest_route( self::rest_namespace(), '/license', [
 			'methods'             => 'POST',
 			'callback'            => [ __CLASS__, 'handle_license' ],
 			'permission_callback' => [ __CLASS__, 'permission_check' ],
@@ -244,7 +248,7 @@ class RestApi {
 		] );
 
 		// Reset settings endpoint
-		register_rest_route( self::NAMESPACE, '/reset', [
+		register_rest_route( self::rest_namespace(), '/reset', [
 			'methods'             => 'POST',
 			'callback'            => [ __CLASS__, 'handle_reset' ],
 			'permission_callback' => [ __CLASS__, 'permission_check' ],
@@ -263,7 +267,7 @@ class RestApi {
 		] );
 
 		// Export settings endpoint
-		register_rest_route( self::NAMESPACE, '/export', [
+		register_rest_route( self::rest_namespace(), '/export', [
 			'methods'             => 'GET',
 			'callback'            => [ __CLASS__, 'handle_export' ],
 			'permission_callback' => [ __CLASS__, 'permission_check' ],
@@ -277,7 +281,7 @@ class RestApi {
 		] );
 
 		// Import settings endpoint
-		register_rest_route( self::NAMESPACE, '/import', [
+		register_rest_route( self::rest_namespace(), '/import', [
 			'methods'             => 'POST',
 			'callback'            => [ __CLASS__, 'handle_import' ],
 			'permission_callback' => [ __CLASS__, 'permission_check' ],
@@ -304,7 +308,7 @@ class RestApi {
 	 * @return bool
 	 */
 	public static function permission_check(): bool {
-		$capability = apply_filters( 'setting_fields_rest_capability', 'manage_options' );
+		$capability = apply_filters( Runtime::hook( 'rest_capability' ), 'manage_options' );
 
 		return current_user_can( $capability );
 	}
@@ -580,6 +584,7 @@ class RestApi {
 				if ( $sent ) {
 					return new WP_REST_Response( [
 						'success' => true,
+						/* translators: %s: recipient email address */
 						'message' => sprintf( __( 'Test email sent to %s', 'setting-fields' ), $email ),
 					], 200 );
 				}
@@ -601,6 +606,7 @@ class RestApi {
 			if ( $sent ) {
 				return new WP_REST_Response( [
 					'success' => true,
+					/* translators: %s: recipient email address */
 					'message' => sprintf( __( 'Test email sent to %s', 'setting-fields' ), $email ),
 				], 200 );
 			}
@@ -625,6 +631,7 @@ class RestApi {
 			if ( $result === true || ( is_array( $result ) && ! empty( $result['success'] ) ) ) {
 				$message = is_array( $result ) && isset( $result['message'] )
 					? $result['message']
+					/* translators: %s: recipient email address */
 					: sprintf( __( 'Test email sent to %s', 'setting-fields' ), $email );
 
 				return new WP_REST_Response( [
@@ -958,6 +965,7 @@ class RestApi {
 		return new WP_REST_Response( [
 			'success' => true,
 			'message' => sprintf(
+				/* translators: %d: number of settings that were reset */
 				_n(
 					'%d setting reset to default.',
 					'%d settings reset to defaults.',
@@ -1068,5 +1076,4 @@ class RestApi {
 
 		return $instance?->get_field( $field_key );
 	}
-
 }

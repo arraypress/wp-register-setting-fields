@@ -45,4 +45,3 @@ if ( ! function_exists( 'is_setting_enabled' ) ) {
 		return is_array( $value ) && in_array( $option, $value, true );
 	}
 }
-

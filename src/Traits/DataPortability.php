@@ -81,7 +81,8 @@ trait DataPortability {
 		// Validate settings ID if present
 		if ( ! empty( $import['settings_id'] ) && $import['settings_id'] !== $this->id ) {
 			return sprintf(
-				__( 'Import file is for "%s", not "%s".', 'setting-fields' ),
+				/* translators: 1: plugin the export file came from, 2: plugin importing it */
+				__( 'Import file is for "%1$s", not "%2$s".', 'setting-fields' ),
 				$import['settings_id'],
 				$this->id
 			);
@@ -118,5 +119,4 @@ trait DataPortability {
 
 		return true;
 	}
-
 }

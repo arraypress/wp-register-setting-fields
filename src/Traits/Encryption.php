@@ -145,7 +145,7 @@ trait Encryption {
 
 		if ( ! in_array( $this->encryption_algorithm, openssl_get_cipher_methods(), true ) ) {
 			throw new RuntimeException(
-				"Encryption algorithm '{$this->encryption_algorithm}' is not supported by your OpenSSL installation."
+				esc_html( "Encryption algorithm '{$this->encryption_algorithm}' is not supported by your OpenSSL installation." )
 			);
 		}
 	}
@@ -495,16 +495,16 @@ trait Encryption {
 	 * Get detailed value information including source.
 	 *
 	 * @param string $field_key Field key.
-	 * @param mixed  $default   Default value.
+	 * @param mixed  $fallback   Default value.
 	 *
 	 * @return array{value: mixed, source: string, is_encrypted: bool, constant_name: string|null}
 	 */
-	public function get_value_info( string $field_key, $default = null ): array {
+	public function get_value_info( string $field_key, $fallback = null ): array {
 		$field = $this->fields[ $field_key ] ?? null;
 
 		if ( ! $field ) {
 			return [
-				'value'         => $default,
+				'value'         => $fallback,
 				'source'        => 'default',
 				'is_encrypted'  => false,
 				'constant_name' => null,
@@ -541,7 +541,7 @@ trait Encryption {
 
 		// Return default
 		return [
-			'value'         => $field['default'] ?? $default,
+			'value'         => $field['default'] ?? $fallback,
 			'source'        => 'default',
 			'is_encrypted'  => false,
 			'constant_name' => $constant_name,
@@ -657,5 +657,4 @@ trait Encryption {
 
 		return update_option( $this->config['option_name'], $updated_values );
 	}
-
 }

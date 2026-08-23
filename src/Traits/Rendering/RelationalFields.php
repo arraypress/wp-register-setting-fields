@@ -77,11 +77,14 @@ trait RelationalFields {
 			$extra['data-placeholder'] = $field['placeholder'];
 		} else {
 			$post_type_obj             = get_post_type_object( $post_types[0] );
+			/* translators: %s: singular name of the object type being searched */
 			$extra['data-placeholder'] = sprintf( __( 'Search %s...', 'setting-fields' ), $post_type_obj->labels->name ?? $post_types[0] );
 		}
 
 		$attrs = $this->build_input_attrs( $field, $name, $id, $extra );
 
+		// Built by build_input_attrs(), which esc_attr()s every attribute name and value before returning.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		printf( '<select%s>', $attrs );
 
 		if ( ! $multiple ) {
@@ -178,11 +181,14 @@ trait RelationalFields {
 			$extra['data-placeholder'] = $field['placeholder'];
 		} else {
 			$taxonomy_obj              = get_taxonomy( $taxonomy );
+			/* translators: %s: singular name of the object type being searched */
 			$extra['data-placeholder'] = sprintf( __( 'Search %s...', 'setting-fields' ), $taxonomy_obj->labels->name ?? $taxonomy );
 		}
 
 		$attrs = $this->build_input_attrs( $field, $name, $id, $extra );
 
+		// Built by build_input_attrs(), which esc_attr()s every attribute name and value before returning.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		printf( '<select%s>', $attrs );
 
 		if ( ! $multiple ) {
@@ -259,6 +265,8 @@ trait RelationalFields {
 
 		$attrs = $this->build_input_attrs( $field, $name, $id, $extra );
 
+		// Built by build_input_attrs(), which esc_attr()s every attribute name and value before returning.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		printf( '<select%s>', $attrs );
 
 		if ( ! $multiple ) {
@@ -338,6 +346,8 @@ trait RelationalFields {
 
 		$attrs = $this->build_input_attrs( $field, $name, $id, $extra );
 
+		// Built by build_input_attrs(), which esc_attr()s every attribute name and value before returning.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		printf( '<select%s>', $attrs );
 
 		if ( ! $multiple ) {
@@ -354,5 +364,4 @@ trait RelationalFields {
 
 		echo '</select>';
 	}
-
 }

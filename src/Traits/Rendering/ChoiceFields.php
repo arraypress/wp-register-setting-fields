@@ -44,6 +44,8 @@ trait ChoiceFields {
 
 		$attrs = $this->build_input_attrs( $field, $name, $id, $extra );
 
+		// Built by build_input_attrs(), which esc_attr()s every attribute name and value before returning.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		printf( '<select%s>', $attrs );
 
 		// Placeholder option
@@ -136,6 +138,8 @@ trait ChoiceFields {
 
 		$attrs = $this->build_input_attrs( $field, $name, $id, $extra );
 
+		// Built by build_input_attrs(), which esc_attr()s every attribute name and value before returning.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		printf( '<select%s>', $attrs );
 
 		if ( ! empty( $field['placeholder'] ) && ! $multiple ) {
@@ -173,6 +177,8 @@ trait ChoiceFields {
 		$attrs = $this->build_input_attrs( $field, $name, $id, $extra );
 
 		echo '<label class="setting-fields-checkbox-label">';
+		// Built by build_input_attrs(), which esc_attr()s every attribute name and value before returning.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		printf( '<input%s />', $attrs );
 
 		if ( ! empty( $field['checkbox_label'] ) ) {
@@ -207,6 +213,8 @@ trait ChoiceFields {
 		$attrs = $this->build_input_attrs( $field, $name, $id, $extra );
 
 		echo '<label class="setting-fields-toggle">';
+		// Built by build_input_attrs(), which esc_attr()s every attribute name and value before returning.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		printf( '<input%s />', $attrs );
 		echo '<span class="setting-fields-toggle-slider"></span>';
 		echo '</label>';
@@ -339,5 +347,4 @@ trait ChoiceFields {
 
 		echo '</div>';
 	}
-
 }

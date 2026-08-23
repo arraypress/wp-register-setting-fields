@@ -48,7 +48,7 @@ trait MediaFields {
 		?>
 		<div class="setting-fields-image-field" data-library="<?php echo esc_attr( $library ); ?>">
 			<input type="hidden" name="<?php echo esc_attr( $name ); ?>" id="<?php echo esc_attr( $id ); ?>"
-			       value="<?php echo esc_attr( $value ); ?>" class="setting-fields-image-value"/>
+					value="<?php echo esc_attr( $value ); ?>" class="setting-fields-image-value"/>
 
 			<div class="setting-fields-image-preview <?php echo $has_image ? '' : 'hidden'; ?>">
 				<img src="<?php echo esc_url( $image_url ); ?>" alt=""/>
@@ -98,14 +98,14 @@ trait MediaFields {
 		$has_file = ! empty( $file_url );
 		?>
 		<div class="setting-fields-file-field" data-library="<?php echo esc_attr( $library ); ?>"
-		     data-allowed-types="<?php echo esc_attr( $allowed_types ); ?>">
+			data-allowed-types="<?php echo esc_attr( $allowed_types ); ?>">
 			<input type="hidden" name="<?php echo esc_attr( $name ); ?>" id="<?php echo esc_attr( $id ); ?>"
-			       value="<?php echo esc_attr( $value ); ?>" class="setting-fields-file-value"/>
+					value="<?php echo esc_attr( $value ); ?>" class="setting-fields-file-value"/>
 
 			<div class="setting-fields-file-preview <?php echo $has_file ? '' : 'hidden'; ?>">
 				<span class="dashicons dashicons-media-default"></span>
 				<a href="<?php echo esc_url( $file_url ); ?>" target="_blank"
-				   class="setting-fields-file-name"><?php echo esc_html( $file_name ); ?></a>
+					class="setting-fields-file-name"><?php echo esc_html( $file_name ); ?></a>
 			</div>
 
 			<div class="setting-fields-file-actions">
@@ -143,11 +143,12 @@ trait MediaFields {
 		$min_items    = $field['min'] ?? 0;
 		?>
 		<div class="setting-fields-gallery-field" 
-		     data-name="<?php echo esc_attr( $name ); ?>"
-		     data-max="<?php echo esc_attr( $max_items ); ?>"
-		     data-min="<?php echo esc_attr( $min_items ); ?>">
+			data-name="<?php echo esc_attr( $name ); ?>"
+			data-max="<?php echo esc_attr( $max_items ); ?>"
+			data-min="<?php echo esc_attr( $min_items ); ?>">
 			<div class="setting-fields-gallery-items">
-				<?php foreach ( $values as $attachment_id ) :
+				<?php
+                foreach ( $values as $attachment_id ) :
 					$image = wp_get_attachment_image_src( $attachment_id, $preview_size );
 					if ( ! $image ) {
 						continue;
@@ -156,7 +157,7 @@ trait MediaFields {
 					<div class="setting-fields-gallery-item" data-id="<?php echo esc_attr( $attachment_id ); ?>">
 						<img src="<?php echo esc_url( $image[0] ); ?>" alt=""/>
 						<input type="hidden" name="<?php echo esc_attr( $name ); ?>[]"
-						       value="<?php echo esc_attr( $attachment_id ); ?>"/>
+								value="<?php echo esc_attr( $attachment_id ); ?>"/>
 						<button type="button" class="setting-fields-gallery-remove">
 							<span class="dashicons dashicons-no-alt"></span>
 						</button>
@@ -195,7 +196,7 @@ trait MediaFields {
 		$attrs = $this->build_input_attrs( $field, $name, $id, $extra );
 		?>
 		<div class="setting-fields-oembed-field">
-			<input<?php echo $attrs; ?> />
+			<input<?php echo esc_attr( $attrs ); ?> />
 
 			<div class="setting-fields-oembed-preview">
 				<?php
@@ -210,5 +211,4 @@ trait MediaFields {
 		</div>
 		<?php
 	}
-
 }

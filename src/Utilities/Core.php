@@ -52,22 +52,22 @@ if ( ! function_exists( 'get_setting_field_value' ) ) {
 	 *
 	 * @param string $settings_id Settings ID.
 	 * @param string $field_key   Field key.
-	 * @param mixed  $default     Default value if not set.
+	 * @param mixed  $fallback     Default value if not set.
 	 *
 	 * @return mixed The resolved value.
 	 */
-	function get_setting_field_value( string $settings_id, string $field_key, $default = null ) {
+	function get_setting_field_value( string $settings_id, string $field_key, $fallback = null ) {
 		$settings = Registry::instance()->get( $settings_id );
 
 		if ( $settings ) {
-			return $settings->get_value( $field_key, $default );
+			return $settings->get_value( $field_key, $fallback );
 		}
 
 		$options = get_option( $settings_id, [] );
 
 		return is_array( $options ) && isset( $options[ $field_key ] )
 			? $options[ $field_key ]
-			: $default;
+			: $fallback;
 	}
 }
 

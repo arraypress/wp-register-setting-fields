@@ -112,5 +112,4 @@ trait TabManager {
 	public function get_tab( string $tab ): ?array {
 		return $this->tabs[ $tab ] ?? null;
 	}
-
 }

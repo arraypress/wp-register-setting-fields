@@ -162,6 +162,7 @@ trait EmailActions {
 			if ( $sent ) {
 				return [
 					'success' => true,
+					/* translators: %s: recipient email address */
 					'message' => sprintf( __( 'Test email sent to %s', 'setting-fields' ), $email ),
 				];
 			}
@@ -183,6 +184,7 @@ trait EmailActions {
 			if ( $sent ) {
 				return [
 					'success' => true,
+					/* translators: %s: recipient email address */
 					'message' => sprintf( __( 'Test email sent to %s', 'setting-fields' ), $email ),
 				];
 			}
@@ -210,6 +212,7 @@ trait EmailActions {
 				'success' => true,
 				'message' => is_array( $result ) && isset( $result['message'] )
 					? $result['message']
+					/* translators: %s: recipient email address */
 					: sprintf( __( 'Test email sent to %s', 'setting-fields' ), $email ),
 			];
 		}
@@ -243,5 +246,4 @@ trait EmailActions {
 			wpautop( $message )
 		);
 	}
-
 }

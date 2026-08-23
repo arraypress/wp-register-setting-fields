@@ -68,6 +68,8 @@ trait BasicFields {
 
 		$attrs = $this->build_input_attrs( $field, $name, $id, $extra );
 
+		// Built by build_input_attrs(), which esc_attr()s every attribute name and value before returning.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		printf( '<input%s />', $attrs );
 	}
 
@@ -121,6 +123,8 @@ trait BasicFields {
 
 		printf(
 			'<textarea%s>%s</textarea>',
+			// Built by build_input_attrs(), which esc_attr()s every attribute name and value before returning.
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			$attrs,
 			esc_textarea( $value )
 		);
@@ -199,6 +203,8 @@ trait BasicFields {
 
 		printf(
 			'<textarea%s>%s</textarea>',
+			// Built by build_input_attrs(), which esc_attr()s every attribute name and value before returning.
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			$attrs,
 			esc_textarea( $value )
 		);
@@ -233,6 +239,8 @@ trait BasicFields {
 
 		$attrs = $this->build_input_attrs( $field, $name, $id, $extra );
 
+		// Built by build_input_attrs(), which esc_attr()s every attribute name and value before returning.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		printf( '<input%s />', $attrs );
 
 		// Suffix
@@ -268,6 +276,8 @@ trait BasicFields {
 		$attrs = $this->build_input_attrs( $field, $name, $id, $extra );
 
 		echo '<div class="setting-fields-range-wrapper">';
+		// Built by build_input_attrs(), which esc_attr()s every attribute name and value before returning.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		printf( '<input%s />', $attrs );
 
 		// Value display
@@ -317,6 +327,8 @@ trait BasicFields {
 
 		$attrs = $this->build_input_attrs( $field, $name, $id, $extra );
 
+		// Built by build_input_attrs(), which esc_attr()s every attribute name and value before returning.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		printf( '<input%s />', $attrs );
 	}
 
@@ -346,6 +358,8 @@ trait BasicFields {
 
 		$attrs = $this->build_input_attrs( $field, $name, $id, $extra );
 
+		// Built by build_input_attrs(), which esc_attr()s every attribute name and value before returning.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		printf( '<input%s />', $attrs );
 	}
 
@@ -378,6 +392,8 @@ trait BasicFields {
 
 		$attrs = $this->build_input_attrs( $field, $name, $id, $extra );
 
+		// Built by build_input_attrs(), which esc_attr()s every attribute name and value before returning.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		printf( '<input%s />', $attrs );
 	}
 
@@ -407,7 +423,8 @@ trait BasicFields {
 
 		$attrs = $this->build_input_attrs( $field, $name, $id, $extra );
 
+		// Built by build_input_attrs(), which esc_attr()s every attribute name and value before returning.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		printf( '<input%s />', $attrs );
 	}
-
 }

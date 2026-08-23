@@ -53,7 +53,7 @@ trait SettingsActions {
 			}
 
 			$current[ $field_key ] = $field['default'] ?? '';
-			$reset_count++;
+			++$reset_count;
 		}
 
 		update_option( $this->config['option_name'], $current );
@@ -238,5 +238,4 @@ trait SettingsActions {
 			'message' => __( 'Action completed.', 'setting-fields' ),
 		];
 	}
-
 }

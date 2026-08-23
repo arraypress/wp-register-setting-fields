@@ -12,6 +12,8 @@ declare( strict_types=1 );
 
 namespace ArrayPress\RegisterSettingFields\Traits;
 
+use ArrayPress\RegisterSettingFields\Utils\Runtime;
+
 use ArrayPress\RegisterSettingFields\Traits\Rendering\BasicFields;
 use ArrayPress\RegisterSettingFields\Traits\Rendering\ChoiceFields;
 use ArrayPress\RegisterSettingFields\Traits\Rendering\MediaFields;
@@ -60,7 +62,7 @@ trait FieldRenderer {
 		 * @param string $id       Input id attribute.
 		 * @param mixed  $value    Current value.
 		 */
-		$rendered = apply_filters( 'setting_fields_render_field', false, $key, $field, $name, $id, $value );
+		$rendered = apply_filters( Runtime::hook( 'render_field' ), false, $key, $field, $name, $id, $value );
 
 		if ( $rendered ) {
 			return;
@@ -239,5 +241,4 @@ trait FieldRenderer {
 			wp_kses_post( $message )
 		);
 	}
-
 }

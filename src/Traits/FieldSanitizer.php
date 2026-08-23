@@ -12,6 +12,8 @@ declare( strict_types=1 );
 
 namespace ArrayPress\RegisterSettingFields\Traits;
 
+use ArrayPress\RegisterSettingFields\Utils\Runtime;
+
 use DateTime;
 
 /**
@@ -40,7 +42,7 @@ trait FieldSanitizer {
 		 * @param array  $field The field configuration.
 		 * @param string $key   The field key.
 		 */
-		$value = apply_filters( 'setting_fields_pre_sanitize_value', $value, $field, $key );
+		$value = apply_filters( Runtime::hook( 'pre_sanitize_value' ), $value, $field, $key );
 
 		// Check for custom sanitize callback first
 		if ( ! empty( $field['sanitize_callback'] ) && is_callable( $field['sanitize_callback'] ) ) {
@@ -91,7 +93,7 @@ trait FieldSanitizer {
 		 * @param array  $field     The field configuration.
 		 * @param string $key       The field key.
 		 */
-		return apply_filters( 'setting_fields_sanitize_value', $sanitized, $value, $field, $key );
+		return apply_filters( Runtime::hook( 'sanitize_value' ), $sanitized, $value, $field, $key );
 	}
 
 	/**
@@ -624,5 +626,4 @@ trait FieldSanitizer {
 			'expiry' => sanitize_text_field( $value['expiry'] ),
 		];
 	}
-
 }

@@ -12,6 +12,8 @@ declare( strict_types=1 );
 
 namespace ArrayPress\RegisterSettingFields\Traits;
 
+use ArrayPress\RegisterSettingFields\Utils\Runtime;
+
 /**
  * Trait SettingsRegistration
  *
@@ -71,7 +73,7 @@ trait SettingsRegistration {
 		 * @param array $old_value The previous settings value.
 		 * @param string $id       The settings ID.
 		 */
-		return apply_filters( 'setting_fields_sanitize_settings', $sanitized, $input, $old_value, $this->id );
+		return apply_filters( Runtime::hook( 'sanitize_settings' ), $sanitized, $input, $old_value, $this->id );
 	}
 
 	/**
@@ -173,5 +175,4 @@ trait SettingsRegistration {
 	public function delete_settings(): bool {
 		return delete_option( $this->config['option_name'] );
 	}
-
 }

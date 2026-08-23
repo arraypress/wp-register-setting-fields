@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<ruleset name="Wp Register Setting Fields">
+    <description>Defect-hunting sniffs. Preferences live in phpcs-format.xml.dist.</description>
+
+    <file>src</file>
+
+    <arg name="extensions" value="php"/>
+    <arg name="colors"/>
+    <arg value="sp"/>
+
+    <config name="testVersion" value="8.3-"/>
+    <config name="installed_paths" value="vendor/wp-coding-standards/wpcs,vendor/phpcompatibility/php-compatibility,vendor/phpcompatibility/phpcompatibility-paragonie,vendor/phpcompatibility/phpcompatibility-wp,vendor/phpcsstandards/phpcsutils,vendor/phpcsstandards/phpcsextra"/>
+
+    <rule ref="PHPCompatibilityWP"/>
+
+    <rule ref="WordPress.Security"/>
+    <rule ref="WordPress.DB"/>
+    <rule ref="WordPress.WP.I18n"/>
+
+
+    <rule ref="WordPress.Security.EscapeOutput">
+        <!--
+            These build an HTML attribute string and escape every name and
+            value with esc_attr() before returning it. Each was read and
+            confirmed to do so; the sniff cannot follow a return value out of
+            the method, so it reports the echo at the call site instead.
+        -->
+        <properties>
+            <property name="customAutoEscapedFunctions" type="array">
+                <element value="build_input_attrs"/>
+            </property>
+        </properties>
+    </rule>
+
+    <rule ref="WordPress.Security.NonceVerification">
+        <!--
+            Both read a query arg to decide what to draw: which settings tab is
+            open, and whether to show the "settings saved" notice that
+            options.php itself appended to the redirect. Nothing is written and
+            nothing changes state, and a GET navigation carries no nonce to
+            check — core's own settings screens read the same args the same way.
+        -->
+        <exclude-pattern>src/SettingFields.php</exclude-pattern>
+        <exclude-pattern>src/Traits/TabManager.php</exclude-pattern>
+    </rule>
+
+</ruleset>

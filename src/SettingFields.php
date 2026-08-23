@@ -98,20 +98,20 @@ class SettingFields {
      * @var array
      */
     protected array $defaults = [
-            'page_title'    => 'Settings',
-            'menu_title'    => 'Settings',
-            'menu_slug'     => '',
-            'capability'    => 'manage_options',
-            'parent_slug'   => '',
-            'icon'          => 'dashicons-admin-generic',
-            'body_class'    => '',
-            'position'      => null,
-            'option_name'   => '',
-            'option_group'  => '',
-            'tabs'          => [],
-            'sections'      => [],
-            'fields'        => [],
-            'submit_button' => true,
+		'page_title'    => 'Settings',
+		'menu_title'    => 'Settings',
+		'menu_slug'     => '',
+		'capability'    => 'manage_options',
+		'parent_slug'   => '',
+		'icon'          => 'dashicons-admin-generic',
+		'body_class'    => '',
+		'position'      => null,
+		'option_name'   => '',
+		'option_group'  => '',
+		'tabs'          => [],
+		'sections'      => [],
+		'fields'        => [],
+		'submit_button' => true,
 
         // Reset button
             'reset_button'  => false,
@@ -121,19 +121,19 @@ class SettingFields {
 
         // Branded header options
             'logo'          => '',
-            'header_title'  => '',
-            'header_badge'  => '',
-            'header_class'  => '',
+		'header_title'  => '',
+		'header_badge'  => '',
+		'header_class'  => '',
 
         // Help screen options
             'help_tabs'     => [],
-            'help_sidebar'  => '',
+		'help_sidebar'  => '',
 
         // Encryption options
             'encryption'    => [
-                    'enabled' => null,
-                    'key'     => null,
-                    'prefix'  => '',
+				'enabled' => null,
+				'key'     => null,
+				'prefix'  => '',
             ],
     ];
 
@@ -329,11 +329,11 @@ class SettingFields {
         if ( ! empty( $this->config['help_tabs'] ) ) {
             foreach ( $this->config['help_tabs'] as $tab_id => $tab ) {
                 $screen->add_help_tab( [
-                        'id'       => $this->id . '_' . $tab_id,
-                        'title'    => $tab['title'] ?? $tab_id,
-                        'content'  => $tab['content'] ?? '',
-                        'callback' => $tab['callback'] ?? null,
-                        'priority' => $tab['priority'] ?? 10,
+					'id'       => $this->id . '_' . $tab_id,
+					'title'    => $tab['title'] ?? $tab_id,
+					'content'  => $tab['content'] ?? '',
+					'callback' => $tab['callback'] ?? null,
+					'priority' => $tab['priority'] ?? 10,
                 ] );
             }
         }
@@ -438,6 +438,7 @@ class SettingFields {
 
         if ( $has_reset ) {
             $reset_label = ! empty( $this->tabs )
+                    /* translators: %s: label of the settings tab being reset */
                     ? sprintf( __( 'Reset %s', 'setting-fields' ), $this->tabs[ $current_tab ]['label'] ?? __( 'Tab', 'setting-fields' ) )
                     : __( 'Reset to Defaults', 'setting-fields' );
             ?>
@@ -459,10 +460,10 @@ class SettingFields {
 
             <div class="setting-fields-import-wrap">
                 <input type="file"
-                       accept=".json"
-                       class="setting-fields-import-file"
-                       id="<?php echo esc_attr( $this->id ); ?>_import_file"
-                       style="display:none;"/>
+                        accept=".json"
+                        class="setting-fields-import-file"
+                        id="<?php echo esc_attr( $this->id ); ?>_import_file"
+                        style="display:none;"/>
                 <button type="button" class="button setting-fields-import-btn">
                     <span class="dashicons dashicons-upload"></span>
                     <?php esc_html_e( 'Import Settings', 'setting-fields' ); ?>
@@ -558,6 +559,8 @@ class SettingFields {
      */
     private static function render_header_badge( $badge ): void {
         if ( is_callable( $badge ) ) {
+            // Returns markup this library assembled and escaped as it built it.
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
             echo call_user_func( $badge );
 
             return;
@@ -772,12 +775,16 @@ class SettingFields {
                     '<a href="%s" class="%s" target="_blank" rel="noopener noreferrer">%s</a>',
                     esc_url( $url ),
                     esc_attr( $badge_class ),
+                    // Returns markup this library assembled and escaped as it built it.
+                    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
                     $inner
             );
         } else {
             printf(
                     '<span class="%s">%s</span>',
                     esc_attr( $badge_class ),
+                    // Returns markup this library assembled and escaped as it built it.
+                    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
                     $inner
             );
         }
@@ -823,7 +830,7 @@ class SettingFields {
         // Message, HTML, separator, heading fields get full-width rendering
         if ( in_array( $type, [ 'message', 'html', 'separator', 'heading' ], true ) ) {
             ?>
-            <tr<?php echo $row_attrs; ?> class="setting-fields-row-fullwidth">
+            <tr<?php echo esc_attr( $row_attrs ); ?> class="setting-fields-row-fullwidth">
                 <td colspan="2">
                     <?php $this->render_field( $field_key, $field, $field_name, $field_id, $value ); ?>
                 </td>
@@ -833,7 +840,7 @@ class SettingFields {
         }
 
         ?>
-        <tr<?php echo $row_attrs; ?>>
+        <tr<?php echo esc_attr( $row_attrs ); ?>>
             <th scope="row">
                 <?php if ( ! empty( $field['label'] ) ) : ?>
                     <label for="<?php echo esc_attr( $field_id ); ?>">
@@ -865,6 +872,8 @@ class SettingFields {
 
                 // Show encryption status for encrypted fields
                 if ( $this->is_encrypted_field( $field ) ) {
+                    // Returns markup this library assembled and escaped as it built it.
+                    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
                     echo $this->get_encryption_status( $field_key );
                 }
 
@@ -890,12 +899,12 @@ class SettingFields {
      * Get a specific config value.
      *
      * @param string $key     Config key.
-     * @param mixed  $default Default value.
+     * @param mixed  $fallback Default value.
      *
      * @return mixed
      */
-    public function get_config( string $key, $default = null ) {
-        return $this->config[ $key ] ?? $default;
+    public function get_config( string $key, $fallback = null ) {
+        return $this->config[ $key ] ?? $fallback;
     }
 
     /**
@@ -935,15 +944,15 @@ class SettingFields {
      * Get a specific field value (with decryption applied).
      *
      * @param string $field_key Field key.
-     * @param mixed  $default   Default value.
+     * @param mixed  $fallback   Default value.
      *
      * @return mixed
      */
-    public function get_value( string $field_key, $default = null ) {
+    public function get_value( string $field_key, $fallback = null ) {
         $field = $this->fields[ $field_key ] ?? null;
 
         if ( ! $field ) {
-            return $default;
+            return $fallback;
         }
 
         // Check constant first for encrypted fields
@@ -961,7 +970,7 @@ class SettingFields {
             return $this->maybe_decrypt_field_value( $field_key, $field, $raw_values[ $field_key ] );
         }
 
-        return $field['default'] ?? $default;
+        return $field['default'] ?? $fallback;
     }
 
     /**
@@ -997,5 +1006,4 @@ class SettingFields {
 
         return $this->fields[ $field_key ] ?? null;
     }
-
 }

@@ -53,13 +53,13 @@ trait ComplexFields {
         <div class="setting-fields-clipboard" data-field-id="<?php echo esc_attr( $id ); ?>">
             <?php if ( $display === 'input' ) : ?>
                 <input type="text"
-                       id="<?php echo esc_attr( $id ); ?>"
-                       value="<?php echo esc_attr( $clipboard_value ); ?>"
-                       class="regular-text setting-fields-clipboard-value"
-                       readonly />
+                        id="<?php echo esc_attr( $id ); ?>"
+                        value="<?php echo esc_attr( $clipboard_value ); ?>"
+                        class="regular-text setting-fields-clipboard-value"
+                        readonly />
             <?php else : ?>
                 <code class="setting-fields-clipboard-value setting-fields-clipboard-code"
-                      id="<?php echo esc_attr( $id ); ?>"><?php echo $display_value; ?></code>
+                        id="<?php echo esc_attr( $id ); ?>"><?php echo esc_attr( $display_value ); ?></code>
             <?php endif; ?>
 
             <button type="button"
@@ -119,19 +119,22 @@ trait ComplexFields {
         $btn_class = 'button ' . ( $button_class ?: 'button-secondary' ) . ' setting-fields-action-btn';
         ?>
         <div class="setting-fields-action-button"
-             data-field-id="<?php echo esc_attr( $id ); ?>"
-             data-field-key="<?php echo esc_attr( $field_key ); ?>"
-             data-success-icon="<?php echo esc_attr( $success_icon ); ?>"
-             data-error-icon="<?php echo esc_attr( $error_icon ); ?>"
-             <?php if ( $confirm ) : ?>data-confirm="<?php echo esc_attr( $confirm ); ?>"<?php endif; ?>>
+            data-field-id="<?php echo esc_attr( $id ); ?>"
+            data-field-key="<?php echo esc_attr( $field_key ); ?>"
+            data-success-icon="<?php echo esc_attr( $success_icon ); ?>"
+            data-error-icon="<?php echo esc_attr( $error_icon ); ?>"
+            <?php
+            if ( $confirm ) :
+?>
+data-confirm="<?php echo esc_attr( $confirm ); ?>"<?php endif; ?>>
 
             <?php if ( $show_input ) : ?>
                 <input type="<?php echo esc_attr( $input_type ); ?>"
-                       class="regular-text setting-fields-action-input"
-                       id="<?php echo esc_attr( $id ); ?>_input"
-                       name="<?php echo esc_attr( $name ); ?>"
-                       value="<?php echo esc_attr( $value ); ?>"
-                       placeholder="<?php echo esc_attr( $input_placeholder ); ?>" />
+                        class="regular-text setting-fields-action-input"
+                        id="<?php echo esc_attr( $id ); ?>_input"
+                        name="<?php echo esc_attr( $name ); ?>"
+                        value="<?php echo esc_attr( $value ); ?>"
+                        placeholder="<?php echo esc_attr( $input_placeholder ); ?>" />
             <?php endif; ?>
 
             <button type="button"
@@ -162,9 +165,9 @@ trait ComplexFields {
      */
     protected function render_link( array $field, string $name, string $id, $value ): void {
         $value = wp_parse_args( (array) $value, [
-                'url'    => '',
-                'text'   => '',
-                'target' => '_self',
+			'url'    => '',
+			'text'   => '',
+			'target' => '_self',
         ] );
 
         ?>
@@ -172,27 +175,27 @@ trait ComplexFields {
             <div class="setting-fields-link-row">
                 <label for="<?php echo esc_attr( $id ); ?>_url"><?php esc_html_e( 'URL', 'setting-fields' ); ?></label>
                 <input type="url"
-                       name="<?php echo esc_attr( $name ); ?>[url]"
-                       id="<?php echo esc_attr( $id ); ?>_url"
-                       value="<?php echo esc_url( $value['url'] ); ?>"
-                       class="regular-text"
-                       placeholder="https://"/>
+                        name="<?php echo esc_attr( $name ); ?>[url]"
+                        id="<?php echo esc_attr( $id ); ?>_url"
+                        value="<?php echo esc_url( $value['url'] ); ?>"
+                        class="regular-text"
+                        placeholder="https://"/>
             </div>
 
             <div class="setting-fields-link-row">
                 <label for="<?php echo esc_attr( $id ); ?>_text"><?php esc_html_e( 'Link Text', 'setting-fields' ); ?></label>
                 <input type="text"
-                       name="<?php echo esc_attr( $name ); ?>[text]"
-                       id="<?php echo esc_attr( $id ); ?>_text"
-                       value="<?php echo esc_attr( $value['text'] ); ?>"
-                       class="regular-text"/>
+                        name="<?php echo esc_attr( $name ); ?>[text]"
+                        id="<?php echo esc_attr( $id ); ?>_text"
+                        value="<?php echo esc_attr( $value['text'] ); ?>"
+                        class="regular-text"/>
             </div>
 
             <div class="setting-fields-link-row">
                 <label>
                     <input type="checkbox"
-                           name="<?php echo esc_attr( $name ); ?>[target]"
-                           value="_blank"
+                            name="<?php echo esc_attr( $name ); ?>[target]"
+                            value="_blank"
                             <?php checked( $value['target'], '_blank' ); ?> />
                     <?php esc_html_e( 'Open in new tab', 'setting-fields' ); ?>
                 </label>
@@ -213,11 +216,11 @@ trait ComplexFields {
      */
     protected function render_dimensions( array $field, string $name, string $id, $value ): void {
         $value = wp_parse_args( (array) $value, [
-                'top'    => '',
-                'right'  => '',
-                'bottom' => '',
-                'left'   => '',
-                'unit'   => $field['default_unit'] ?? 'px',
+			'top'    => '',
+			'right'  => '',
+			'bottom' => '',
+			'left'   => '',
+			'unit'   => $field['default_unit'] ?? 'px',
         ] );
 
         $units      = $field['units'] ?? [ 'px', 'em', 'rem', '%' ];
@@ -225,10 +228,10 @@ trait ComplexFields {
         $linked     = $field['linked'] ?? false;
 
         $labels = [
-                'top'    => __( 'Top', 'setting-fields' ),
-                'right'  => __( 'Right', 'setting-fields' ),
-                'bottom' => __( 'Bottom', 'setting-fields' ),
-                'left'   => __( 'Left', 'setting-fields' ),
+			'top'    => __( 'Top', 'setting-fields' ),
+			'right'  => __( 'Right', 'setting-fields' ),
+			'bottom' => __( 'Bottom', 'setting-fields' ),
+			'left'   => __( 'Left', 'setting-fields' ),
         ];
 
         ?>
@@ -240,13 +243,19 @@ trait ComplexFields {
                             <?php echo esc_html( $labels[ $side ] ); ?>
                         </label>
                         <input type="number"
-                               name="<?php echo esc_attr( $name ); ?>[<?php echo esc_attr( $side ); ?>]"
-                               id="<?php echo esc_attr( $id ); ?>_<?php echo esc_attr( $side ); ?>"
-                               value="<?php echo esc_attr( $value[ $side ] ); ?>"
-                               class="small-text"
-                               step="<?php echo esc_attr( $field['step'] ?? 1 ); ?>"
-                               <?php if ( isset( $field['min'] ) ) : ?>min="<?php echo esc_attr( $field['min'] ); ?>"<?php endif; ?>
-                               <?php if ( isset( $field['max'] ) ) : ?>max="<?php echo esc_attr( $field['max'] ); ?>"<?php endif; ?>
+                                name="<?php echo esc_attr( $name ); ?>[<?php echo esc_attr( $side ); ?>]"
+                                id="<?php echo esc_attr( $id ); ?>_<?php echo esc_attr( $side ); ?>"
+                                value="<?php echo esc_attr( $value[ $side ] ); ?>"
+                                class="small-text"
+                                step="<?php echo esc_attr( $field['step'] ?? 1 ); ?>"
+                                <?php
+                                if ( isset( $field['min'] ) ) :
+?>
+min="<?php echo esc_attr( $field['min'] ); ?>"<?php endif; ?>
+                                <?php
+                                if ( isset( $field['max'] ) ) :
+?>
+max="<?php echo esc_attr( $field['max'] ); ?>"<?php endif; ?>
                         />
                     </div>
                 <?php endforeach; ?>
@@ -268,7 +277,7 @@ trait ComplexFields {
                     <div class="setting-fields-dimension-unit">
                         <label><?php esc_html_e( 'Unit', 'setting-fields' ); ?></label>
                         <input type="hidden" name="<?php echo esc_attr( $name ); ?>[unit]"
-                               value="<?php echo esc_attr( $units[0] ); ?>"/>
+                                value="<?php echo esc_attr( $units[0] ); ?>"/>
                         <span class="setting-fields-dimension-unit-static"><?php echo esc_html( $units[0] ); ?></span>
                     </div>
                 <?php endif; ?>
@@ -340,8 +349,8 @@ trait ComplexFields {
 
         ?>
         <div class="setting-fields-heading">
-        <<?php echo $level; ?>
-        class="setting-fields-heading-title"><?php echo esc_html( $title ); ?></<?php echo $level; ?>>
+        <<?php echo esc_attr( $level ); ?>
+        class="setting-fields-heading-title"><?php echo esc_html( $title ); ?></<?php echo esc_attr( $level ); ?>>
         <?php if ( ! empty( $description ) ) : ?>
             <p class="setting-fields-heading-description"><?php echo wp_kses_post( $description ); ?></p>
         <?php endif; ?>
@@ -411,12 +420,12 @@ trait ComplexFields {
         }
 
         $value = wp_parse_args( (array) $value, [
-                'enabled'   => $default_enabled,
-                'recipient' => $field['default_recipient'] ?? get_option( 'admin_email' ),
-                'subject'   => $default_subject,
-                'title'     => $default_title,
-                'subtitle'  => $default_subtitle,
-                'message'   => $default_body,
+			'enabled'   => $default_enabled,
+			'recipient' => $field['default_recipient'] ?? get_option( 'admin_email' ),
+			'subject'   => $default_subject,
+			'title'     => $default_title,
+			'subtitle'  => $default_subtitle,
+			'message'   => $default_body,
         ] );
 
         $show_enable    = $field['show_enable'] ?? false;
@@ -434,8 +443,8 @@ trait ComplexFields {
 
         // Build data attributes for JS
         $data_attrs = [
-                'field-id'  => $id,
-                'field-key' => $field['_key'] ?? '',
+			'field-id'  => $id,
+			'field-key' => $field['_key'] ?? '',
         ];
 
         if ( $has_email_lib ) {
@@ -469,7 +478,7 @@ trait ComplexFields {
         }
 
         ?>
-        <div class="<?php echo esc_attr( $wrapper_class ); ?>"<?php echo $data_string; ?>>
+        <div class="<?php echo esc_attr( $wrapper_class ); ?>"<?php echo esc_attr( $data_string ); ?>>
 
             <?php if ( $collapsible ) : ?>
                 <!-- Collapsible Header -->
@@ -489,13 +498,13 @@ trait ComplexFields {
                         </button>
                         <?php if ( $show_enable ) : ?>
                             <label class="setting-fields-toggle"
-                                   title="<?php esc_attr_e( 'Enable/Disable this email', 'setting-fields' ); ?>">
+                                    title="<?php esc_attr_e( 'Enable/Disable this email', 'setting-fields' ); ?>">
                                 <input type="hidden" name="<?php echo esc_attr( $name ); ?>[enabled]" value="0"/>
                                 <input type="checkbox"
-                                       name="<?php echo esc_attr( $name ); ?>[enabled]"
-                                       id="<?php echo esc_attr( $id ); ?>_enabled"
-                                       value="1"
-                                       class="setting-fields-toggle-input setting-fields-email-enable-checkbox"
+                                        name="<?php echo esc_attr( $name ); ?>[enabled]"
+                                        id="<?php echo esc_attr( $id ); ?>_enabled"
+                                        value="1"
+                                        class="setting-fields-toggle-input setting-fields-email-enable-checkbox"
                                         <?php checked( $value['enabled'], true ); ?> />
                                 <span class="setting-fields-toggle-slider"></span>
                             </label>
@@ -511,10 +520,10 @@ trait ComplexFields {
                         <label class="setting-fields-toggle">
                             <input type="hidden" name="<?php echo esc_attr( $name ); ?>[enabled]" value="0"/>
                             <input type="checkbox"
-                                   name="<?php echo esc_attr( $name ); ?>[enabled]"
-                                   id="<?php echo esc_attr( $id ); ?>_enabled"
-                                   value="1"
-                                   class="setting-fields-toggle-input setting-fields-email-enable-checkbox"
+                                    name="<?php echo esc_attr( $name ); ?>[enabled]"
+                                    id="<?php echo esc_attr( $id ); ?>_enabled"
+                                    value="1"
+                                    class="setting-fields-toggle-input setting-fields-email-enable-checkbox"
                                     <?php checked( $value['enabled'], true ); ?> />
                             <span class="setting-fields-toggle-slider"></span>
                         </label>
@@ -531,11 +540,11 @@ trait ComplexFields {
                                 <?php esc_html_e( 'Recipient', 'setting-fields' ); ?>
                             </label>
                             <input type="email"
-                                   name="<?php echo esc_attr( $name ); ?>[recipient]"
-                                   id="<?php echo esc_attr( $id ); ?>_recipient"
-                                   value="<?php echo esc_attr( $value['recipient'] ); ?>"
-                                   class="regular-text setting-fields-email-recipient-input"
-                                   placeholder="<?php echo esc_attr( get_option( 'admin_email' ) ); ?>"/>
+                                    name="<?php echo esc_attr( $name ); ?>[recipient]"
+                                    id="<?php echo esc_attr( $id ); ?>_recipient"
+                                    value="<?php echo esc_attr( $value['recipient'] ); ?>"
+                                    class="regular-text setting-fields-email-recipient-input"
+                                    placeholder="<?php echo esc_attr( get_option( 'admin_email' ) ); ?>"/>
                             <p class="description"><?php esc_html_e( 'Email address where this notification is sent.', 'setting-fields' ); ?></p>
                         </div>
                     <?php endif; ?>
@@ -547,10 +556,10 @@ trait ComplexFields {
                         </label>
                         <div class="setting-fields-email-subject-wrap">
                             <input type="text"
-                                   name="<?php echo esc_attr( $name ); ?>[subject]"
-                                   id="<?php echo esc_attr( $id ); ?>_subject"
-                                   value="<?php echo esc_attr( $value['subject'] ); ?>"
-                                   class="large-text setting-fields-email-subject-input"/>
+                                    name="<?php echo esc_attr( $name ); ?>[subject]"
+                                    id="<?php echo esc_attr( $id ); ?>_subject"
+                                    value="<?php echo esc_attr( $value['subject'] ); ?>"
+                                    class="large-text setting-fields-email-subject-input"/>
                             <?php if ( ! empty( $merge_tags ) ) : ?>
                                 <button type="button" class="button setting-fields-insert-tag-btn" data-target="subject"
                                         title="<?php esc_attr_e( 'Insert merge tag', 'setting-fields' ); ?>">
@@ -568,10 +577,10 @@ trait ComplexFields {
                             </label>
                             <div class="setting-fields-email-title-wrap">
                                 <input type="text"
-                                       name="<?php echo esc_attr( $name ); ?>[title]"
-                                       id="<?php echo esc_attr( $id ); ?>_title"
-                                       value="<?php echo esc_attr( $value['title'] ); ?>"
-                                       class="large-text setting-fields-email-title-input"/>
+                                        name="<?php echo esc_attr( $name ); ?>[title]"
+                                        id="<?php echo esc_attr( $id ); ?>_title"
+                                        value="<?php echo esc_attr( $value['title'] ); ?>"
+                                        class="large-text setting-fields-email-title-input"/>
                                 <?php if ( ! empty( $merge_tags ) ) : ?>
                                     <button type="button" class="button setting-fields-insert-tag-btn"
                                             data-target="title"
@@ -592,10 +601,10 @@ trait ComplexFields {
                             </label>
                             <div class="setting-fields-email-subtitle-wrap">
                                 <input type="text"
-                                       name="<?php echo esc_attr( $name ); ?>[subtitle]"
-                                       id="<?php echo esc_attr( $id ); ?>_subtitle"
-                                       value="<?php echo esc_attr( $value['subtitle'] ); ?>"
-                                       class="large-text setting-fields-email-subtitle-input"/>
+                                        name="<?php echo esc_attr( $name ); ?>[subtitle]"
+                                        id="<?php echo esc_attr( $id ); ?>_subtitle"
+                                        value="<?php echo esc_attr( $value['subtitle'] ); ?>"
+                                        class="large-text setting-fields-email-subtitle-input"/>
                                 <?php if ( ! empty( $merge_tags ) ) : ?>
                                     <button type="button" class="button setting-fields-insert-tag-btn"
                                             data-target="subtitle"
@@ -630,11 +639,11 @@ trait ComplexFields {
                         }
 
                         wp_editor( $value['message'], $editor_id, [
-                                'textarea_name' => $name . '[message]',
-                                'textarea_rows' => $field['rows'] ?? 15,
-                                'media_buttons' => true,
-                                'teeny'         => false,
-                                'quicktags'     => true,
+							'textarea_name' => $name . '[message]',
+							'textarea_rows' => $field['rows'] ?? 15,
+							'media_buttons' => true,
+							'teeny'         => false,
+							'quicktags'     => true,
                         ] );
                         ?>
                     </div>
@@ -651,9 +660,9 @@ trait ComplexFields {
                             <?php if ( $show_send_test ) : ?>
                                 <div class="setting-fields-email-test-wrap">
                                     <input type="email"
-                                           class="setting-fields-email-test-input"
-                                           placeholder="<?php esc_attr_e( 'test@example.com', 'setting-fields' ); ?>"
-                                           value="<?php echo esc_attr( wp_get_current_user()->user_email ); ?>"/>
+                                            class="setting-fields-email-test-input"
+                                            placeholder="<?php esc_attr_e( 'test@example.com', 'setting-fields' ); ?>"
+                                            value="<?php echo esc_attr( wp_get_current_user()->user_email ); ?>"/>
                                     <button type="button" class="button setting-fields-email-send-test">
                                         <span class="dashicons dashicons-email"></span>
                                         <?php esc_html_e( 'Send Test', 'setting-fields' ); ?>
@@ -676,11 +685,12 @@ trait ComplexFields {
                             </div>
                             <div class="setting-fields-modal-search">
                                 <input type="text" class="setting-fields-tag-search"
-                                       placeholder="<?php esc_attr_e( 'Search tags...', 'setting-fields' ); ?>"/>
+                                        placeholder="<?php esc_attr_e( 'Search tags...', 'setting-fields' ); ?>"/>
                             </div>
                             <div class="setting-fields-modal-body">
                                 <div class="setting-fields-tags-grid">
-                                    <?php foreach ( $merge_tags as $tag => $tag_config ) :
+                                    <?php
+                                    foreach ( $merge_tags as $tag => $tag_config ) :
                                         $tag_label = is_array( $tag_config ) ? ( $tag_config['label'] ?? $tag ) : $tag_config;
                                         $tag_description = is_array( $tag_config ) ? ( $tag_config['description'] ?? '' ) : '';
                                         $tag_value = is_array( $tag_config ) ? ( $tag_config['tag'] ?? $tag ) : $tag;
@@ -689,7 +699,10 @@ trait ComplexFields {
                                                 class="setting-fields-tag-item"
                                                 data-tag="<?php echo esc_attr( $tag_value ); ?>"
                                                 data-label="<?php echo esc_attr( $tag_label ); ?>"
-                                                <?php if ( $tag_description ) : ?>title="<?php echo esc_attr( $tag_description ); ?>"<?php endif; ?>>
+                                                <?php
+                                                if ( $tag_description ) :
+?>
+title="<?php echo esc_attr( $tag_description ); ?>"<?php endif; ?>>
                                             <span class="setting-fields-tag-code"><?php echo esc_html( $tag_value ); ?></span>
                                             <span class="setting-fields-tag-label"><?php echo esc_html( $tag_label ); ?></span>
                                             <?php if ( $tag_description ) : ?>
@@ -721,8 +734,8 @@ trait ComplexFields {
             $tag_key = '{' . ( $tag['name'] ?? '' ) . '}';
 
             $merge_tags[ $tag_key ] = [
-                    'label'       => $tag['label'] ?? $tag['name'] ?? '',
-                    'description' => $tag['description'] ?? '',
+				'label'       => $tag['label'] ?? $tag['name'] ?? '',
+				'description' => $tag['description'] ?? '',
             ];
         }
 
@@ -796,7 +809,8 @@ trait ComplexFields {
         ?>
         <div class="setting-fields-sortable" data-field-id="<?php echo esc_attr( $id ); ?>">
             <ul class="setting-fields-sortable-list">
-                <?php foreach ( $all_items as $item ) :
+                <?php
+                foreach ( $all_items as $item ) :
                     $label = $options[ $item ] ?? $item;
                     $is_active = in_array( $item, $value, true );
                     ?>
@@ -805,8 +819,8 @@ trait ComplexFields {
                         <span class="setting-fields-sortable-handle dashicons dashicons-menu"></span>
                         <span class="setting-fields-sortable-label"><?php echo esc_html( $label ); ?></span>
                         <input type="hidden"
-                               name="<?php echo esc_attr( $name ); ?>[]"
-                               value="<?php echo esc_attr( $item ); ?>"
+                                name="<?php echo esc_attr( $name ); ?>[]"
+                                value="<?php echo esc_attr( $item ); ?>"
                                 <?php echo $is_active ? '' : 'disabled'; ?> />
                         <button type="button" class="setting-fields-sortable-toggle"
                                 title="<?php echo $is_active ? esc_attr__( 'Disable', 'setting-fields' ) : esc_attr__( 'Enable', 'setting-fields' ); ?>">
@@ -863,9 +877,9 @@ trait ComplexFields {
      */
     protected function render_license( array $field, string $name, string $id, $value ): void {
         $value = wp_parse_args( (array) $value, [
-                'key'    => '',
-                'status' => 'inactive',
-                'expiry' => '',
+			'key'    => '',
+			'status' => 'inactive',
+			'expiry' => '',
         ] );
 
         $key                = $value['key'];
@@ -884,44 +898,44 @@ trait ComplexFields {
         $show_url   = ! empty( $url ) && in_array( $status, [ 'expired', 'invalid' ], true );
 
         $status_labels = [
-                'inactive' => __( 'Inactive', 'arraypress' ),
-                'active'   => __( 'Active', 'arraypress' ),
-                'expired'  => __( 'Expired', 'arraypress' ),
-                'invalid'  => __( 'Invalid', 'arraypress' ),
+			'inactive' => __( 'Inactive', 'arraypress' ),
+			'active'   => __( 'Active', 'arraypress' ),
+			'expired'  => __( 'Expired', 'arraypress' ),
+			'invalid'  => __( 'Invalid', 'arraypress' ),
         ];
 
         $status_label = $status_labels[ $status ] ?? $status_labels['inactive'];
 
         ?>
         <div class="setting-fields-license"
-             data-field-id="<?php echo esc_attr( $id ); ?>"
-             data-field-key="<?php echo esc_attr( $field_key ); ?>"
-             data-status="<?php echo esc_attr( $status ); ?>"
-             data-activate-label="<?php echo esc_attr( $activate_label ); ?>"
-             data-deactivate-label="<?php echo esc_attr( $deactivate_label ); ?>"
-             data-activate-loading="<?php echo esc_attr( $activate_loading ); ?>"
-             data-deactivate-loading="<?php echo esc_attr( $deactivate_loading ); ?>"
-             data-url="<?php echo esc_attr( $url ); ?>"
-             data-url-label="<?php echo esc_attr( $url_label ); ?>">
+            data-field-id="<?php echo esc_attr( $id ); ?>"
+            data-field-key="<?php echo esc_attr( $field_key ); ?>"
+            data-status="<?php echo esc_attr( $status ); ?>"
+            data-activate-label="<?php echo esc_attr( $activate_label ); ?>"
+            data-deactivate-label="<?php echo esc_attr( $deactivate_label ); ?>"
+            data-activate-loading="<?php echo esc_attr( $activate_loading ); ?>"
+            data-deactivate-loading="<?php echo esc_attr( $deactivate_loading ); ?>"
+            data-url="<?php echo esc_attr( $url ); ?>"
+            data-url-label="<?php echo esc_attr( $url_label ); ?>">
 
             <div class="setting-fields-license-input-row">
                 <input type="password"
-                       name="<?php echo esc_attr( $name ); ?>[key]"
-                       id="<?php echo esc_attr( $id ); ?>"
-                       value="<?php echo esc_attr( $key ); ?>"
-                       class="regular-text setting-fields-license-key"
-                       placeholder="<?php echo esc_attr( $placeholder ); ?>"
+                        name="<?php echo esc_attr( $name ); ?>[key]"
+                        id="<?php echo esc_attr( $id ); ?>"
+                        value="<?php echo esc_attr( $key ); ?>"
+                        class="regular-text setting-fields-license-key"
+                        placeholder="<?php echo esc_attr( $placeholder ); ?>"
                         <?php echo $is_active ? 'readonly' : ''; ?> />
 
                 <input type="hidden"
-                       name="<?php echo esc_attr( $name ); ?>[status]"
-                       class="setting-fields-license-status-input"
-                       value="<?php echo esc_attr( $status ); ?>" />
+                        name="<?php echo esc_attr( $name ); ?>[status]"
+                        class="setting-fields-license-status-input"
+                        value="<?php echo esc_attr( $status ); ?>" />
 
                 <input type="hidden"
-                       name="<?php echo esc_attr( $name ); ?>[expiry]"
-                       class="setting-fields-license-expiry-input"
-                       value="<?php echo esc_attr( $expiry ); ?>" />
+                        name="<?php echo esc_attr( $name ); ?>[expiry]"
+                        class="setting-fields-license-expiry-input"
+                        value="<?php echo esc_attr( $expiry ); ?>" />
 
                 <?php if ( $is_active ) : ?>
                     <button type="button"
@@ -962,9 +976,9 @@ trait ComplexFields {
 
                 <?php if ( $show_url ) : ?>
                     <a href="<?php echo esc_url( $url ); ?>"
-                       class="setting-fields-license-url"
-                       target="_blank"
-                       rel="noopener noreferrer">
+                        class="setting-fields-license-url"
+                        target="_blank"
+                        rel="noopener noreferrer">
                         <?php echo esc_html( $url_label ); ?>
                         <span class="dashicons dashicons-external"></span>
                     </a>
@@ -978,5 +992,4 @@ trait ComplexFields {
         </div>
         <?php
     }
-
 }

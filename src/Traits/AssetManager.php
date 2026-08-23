@@ -12,6 +12,8 @@ declare( strict_types=1 );
 
 namespace ArrayPress\RegisterSettingFields\Traits;
 
+use ArrayPress\RegisterSettingFields\Utils\Runtime;
+
 use ArrayPress\RegisterSettingFields\RestApi;
 
 /**
@@ -20,6 +22,17 @@ use ArrayPress\RegisterSettingFields\RestApi;
  * Handles enqueueing of scripts and styles.
  */
 trait AssetManager {
+
+	/**
+	 * Handle for the bundled Select2 build.
+	 *
+	 * Deliberately *not* derived per build. Every registration of it is guarded
+	 * by wp_script_is(), so the first plugin to register wins and the rest reuse
+	 * it — one copy of a third-party library on the page is the goal, and is the
+	 * inverse of the per-build derivation applied to everything this library
+	 * owns. The cost is version skew if two builds ship different Select2s.
+	 */
+	private const SELECT2_HANDLE = 'arraypress-select2';
 
 	/**
 	 * Maybe enqueue assets on the settings page.
@@ -54,7 +67,7 @@ trait AssetManager {
 	 */
 	protected function enqueue_core_assets(): void {
 		wp_enqueue_composer_style(
-			'arraypress-setting-fields',
+			Runtime::handle(),
 			__FILE__,
 			'css/setting-fields.css'
 		);
@@ -73,9 +86,9 @@ trait AssetManager {
 			'page',
 			'taxonomy',
 			'user',
-			'ajax'
+			'ajax',
 		], $types_used ) ) {
-			$script_deps[] = 'arraypress-select2';
+			$script_deps[] = self::SELECT2_HANDLE;
 		}
 
 		// Add color picker dependency
@@ -89,7 +102,7 @@ trait AssetManager {
 		}
 
 		wp_enqueue_composer_script(
-			'arraypress-setting-fields',
+			Runtime::handle(),
 			__FILE__,
 			'js/setting-fields.js',
 			$script_deps
@@ -134,7 +147,7 @@ trait AssetManager {
 			'page',
 			'taxonomy',
 			'user',
-			'ajax'
+			'ajax',
 		], $types_used ) ) {
 			$this->enqueue_select2();
 		}
@@ -152,9 +165,9 @@ trait AssetManager {
 	 * @return void
 	 */
 	protected function enqueue_select2(): void {
-		if ( ! wp_script_is( 'arraypress-select2', 'registered' ) ) {
+		if ( ! wp_script_is( self::SELECT2_HANDLE, 'registered' ) ) {
 			wp_register_composer_script(
-				'arraypress-select2',
+				self::SELECT2_HANDLE,
 				__FILE__,
 				'js/select2.min.js',
 				[ 'jquery' ],
@@ -162,9 +175,9 @@ trait AssetManager {
 			);
 		}
 
-		if ( ! wp_style_is( 'arraypress-select2', 'registered' ) ) {
+		if ( ! wp_style_is( self::SELECT2_HANDLE, 'registered' ) ) {
 			wp_register_composer_style(
-				'arraypress-select2',
+				self::SELECT2_HANDLE,
 				__FILE__,
 				'css/select2.min.css',
 				[],
@@ -172,8 +185,8 @@ trait AssetManager {
 			);
 		}
 
-		wp_enqueue_script( 'arraypress-select2' );
-		wp_enqueue_style( 'arraypress-select2' );
+		wp_enqueue_script( self::SELECT2_HANDLE );
+		wp_enqueue_style( self::SELECT2_HANDLE );
 	}
 
 	/**
@@ -182,7 +195,7 @@ trait AssetManager {
 	 * @return void
 	 */
 	protected function localize_scripts(): void {
-		wp_localize_script( 'arraypress-setting-fields', 'settingFieldsData', [
+		$data = [
 			'restUrl'    => rest_url( RestApi::NAMESPACE . '/' ),
 			'restNonce'  => wp_create_nonce( 'wp_rest' ),
 			'settingsId' => $this->id,
@@ -220,7 +233,24 @@ trait AssetManager {
 				'importSuccess'      => __( 'Settings imported. Reloading…', 'setting-fields' ),
 				'importFailed'       => __( 'Import failed.', 'setting-fields' ),
 			],
-		] );
+		];
+
+		wp_localize_script( Runtime::handle(), Runtime::js_object( 'Data' ), $data );
+
+		// Also published into a registry keyed by script handle. Two
+		// Strauss-prefixed copies each enqueue their own script, and a bare
+		// global would leave whichever localized last owning it for both; the
+		// script resolves its own entry from the id WordPress stamps on its
+		// <script> element.
+		wp_add_inline_script(
+			Runtime::handle(),
+			sprintf(
+				'window.ArrayPressSettingFields=window.ArrayPressSettingFields||{};window.ArrayPressSettingFields[%s]=%s;',
+				wp_json_encode( Runtime::handle() ),
+				wp_json_encode( $data )
+			),
+			'before'
+		);
 	}
 
 	/**
@@ -244,5 +274,4 @@ trait AssetManager {
 
 		return array_unique( $types );
 	}
-
 }

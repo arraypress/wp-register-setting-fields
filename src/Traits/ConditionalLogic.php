@@ -198,5 +198,4 @@ trait ConditionalLogic {
 				return $current == $expected;
 		}
 	}
-
 }
