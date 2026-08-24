@@ -699,6 +699,29 @@ final class SettingFieldsTest extends TestCase {
 	}
 
 	/**
+	 * The screen carries the body class the header's rule keys on.
+	 *
+	 * Without it #wpcontent keeps its 20px left padding and the header sits
+	 * inset from the menu instead of spanning the screen.
+	 */
+	public function test_the_screen_carries_the_header_body_class(): void {
+		$page = $this->page();
+		$page->register_menu();
+
+		$GLOBALS['sf_screen'] = new \SF_Screen( $page->get_hook_suffix() );
+
+		$this->assertStringContainsString(
+			\ArrayPress\FieldKit\Support\PageHeader::body_class(),
+			$page->body_class( 'existing-class' )
+		);
+
+		// And another screen is left exactly as it was.
+		$GLOBALS['sf_screen'] = new \SF_Screen( 'edit-post' );
+
+		$this->assertSame( 'existing-class', $page->body_class( 'existing-class' ) );
+	}
+
+	/**
 	 * The tools are not in the header.
 	 *
 	 * A file input and three buttons across a centred page title looked

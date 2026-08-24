@@ -128,6 +128,7 @@ class SettingFields {
 		add_action( 'admin_menu', [ $this, 'register_menu' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue' ] );
 		add_filter( 'screen_settings', [ $this, 'render_screen_tools' ], 10, 2 );
+		add_filter( 'admin_body_class', [ $this, 'body_class' ] );
 		add_action( 'admin_post_' . $this->action_slug( 'export' ), [ $this, 'handle_export' ] );
 		add_action( 'admin_post_' . $this->action_slug( 'import' ), [ $this, 'handle_import' ] );
 		add_action( 'admin_post_' . $this->action_slug( 'reset' ), [ $this, 'handle_reset' ] );
@@ -241,6 +242,26 @@ class SettingFields {
 		if ( [] !== (array) $this->config['help_tabs'] || '' !== (string) $this->config['help_sidebar'] ) {
 			add_action( 'load-' . $this->hook_suffix, [ $this, 'register_help_tabs' ] );
 		}
+	}
+
+	/**
+	 * Mark the screen as one using the kit's page header.
+	 *
+	 * The header only spans the screen if `#wpcontent`'s left padding is
+	 * removed, and core does that with a body class rather than on the header
+	 * itself. The class name comes from the kit so the rule and the class
+	 * cannot drift apart.
+	 *
+	 * @param string $classes Existing body classes.
+	 *
+	 * @return string
+	 */
+	public function body_class( string $classes ): string {
+		if ( '' === $this->hook_suffix || get_current_screen()?->id !== $this->hook_suffix ) {
+			return $classes;
+		}
+
+		return trim( $classes . ' ' . PageHeader::body_class() );
 	}
 
 	/**
