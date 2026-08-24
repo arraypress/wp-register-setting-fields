@@ -70,7 +70,7 @@
     "lint": "phpcs",
     "format": "phpcbf --standard=phpcs-format.xml.dist",
     "format:check": "phpcs --standard=phpcs-format.xml.dist",
-    "docs:verify": "php vendor/arraypress/wp-field-kit/bin/verify-docs.php --calls=register_setting_fields,register_settings README.md $(find docs -name '*.md')"
+    "docs:verify": "php vendor/arraypress/wp-field-kit/bin/verify-docs.php --calls=register_setting_fields,register_settings README.md"
   },
   "repositories": [
     {
