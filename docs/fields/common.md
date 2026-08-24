@@ -21,7 +21,10 @@ All field types share these common options:
     'sanitize_callback' => null,             // Custom sanitization function
     'render_callback'   => null,             // Custom render function
     'data'              => [],               // Custom data-* attributes on the input
-    'encrypted'         => false,            // Enable encryption (see Encryption)
+    'encrypted'         => false,            // Encrypt at rest (see Encryption)
+    'show_in_rest'      => false,            // Expose the meta key in REST — off unless asked
+    'badge'             => '',               // Upsell pill; a visible one locks the field
+    'capability'        => '',               // Who may see and set it
 ],
 ```
 

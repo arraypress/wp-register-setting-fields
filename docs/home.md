@@ -1,20 +1,16 @@
 # WordPress Register Setting Fields
 
-A WordPress library for creating settings pages with tabs, sections, branded headers, and 30+ field types. Handles registration, rendering, sanitization, and the Settings API — you just define your fields.
+A WordPress library for creating tabbed settings pages. Registration, the menu, the Settings API wiring and export/import live here; every field is rendered, sanitized and made accessible by [wp-field-kit](https://github.com/arraypress/wp-field-kit), which the term, post, user and list-table libraries share.
 
 ## Features
 
-- **30+ field types** — text, number, select, AJAX search, toggles, color pickers, image/file/gallery, WYSIWYG, code editors, and more
-- **Relational fields** — post, page, taxonomy, and user selects with Select2 and AJAX search
-- **Complex fields** — repeaters, groups, email editors, license keys, action buttons, sortable lists
-- **Tabs & sections** — organize fields into tabbed pages with collapsible sections
-- **Branded header** — logo, title, badge, and integrated tab navigation
-- **Conditional fields** — show/hide fields based on other field values with 12 operators
-- **Encryption** — transparent AES-256-CBC encryption for sensitive fields with constant fallback
-- **Email editor** — full email template editor with merge tags, preview, and send test — integrates with `wp-register-emails`
-- **License field** — license key activation/deactivation with REST callbacks and status persistence
-- **Sanitization** — built-in sanitizers for every field type, extensible via callbacks and filters
-- **Hooks** — filters and actions at every stage of the lifecycle
+- **50+ field types** — text, number, select, searchable and creatable selects, AJAX search, toggles, colour pickers, image/file/gallery, WYSIWYG, code editors, repeaters (stacked or as a table), groups, email panels, licence keys, action buttons, sortable lists
+- **Core's own header** — the shape `options-privacy.php` uses, so it matches the admin and follows the user's colour scheme, with an optional logo and badge
+- **Tabs & sections** — saving one tab leaves the others alone, which is the bug a tabbed settings page has if nobody thinks about it
+- **Conditional fields** — show or hide based on other fields; a hidden field is deleted on save rather than keeping a stale value
+- **Encryption** — AES-256-GCM for any field type, keyed from the site's own salts, with a constant fallback
+- **Every write sanitized** — `update_option()` runs the registered callback before it compares, so a value written by a cron job, an importer or another plugin passes through its own field type exactly as a submitted one does
+- **Accessible by construction** — labels, descriptions, required state and grouping are the renderer's job, so no field type can forget them
 - **Helper functions** — `get_setting_field_value()`, `is_setting_on()`, `is_setting_field_license_active()`, and more
 
 ## Installation
@@ -25,7 +21,7 @@ composer require arraypress/wp-register-setting-fields
 
 ## Requirements
 
-- PHP 8.2+
+- PHP 8.3+
 - WordPress 5.8+
 
 ## License

@@ -28,8 +28,8 @@ visible, the field is automatically disabled — no need to set `disabled` separ
     'badge' => [
         'text'     => 'Business',
         'url'      => 'https://example.com/upgrade',
-        'class'    => 'setting-fields-badge--gold',
-        'icon'     => 'dashicons-lock',
+        'class'    => 'my-badge--gold',
+        'icon'     => 'lock',
         'disabled' => fn() => is_setting_field_license_active( 'my_plugin', 'license' ),
     ],
 ],
@@ -56,8 +56,23 @@ Add a `badge` to a section definition. When the badge is visible, all fields in 
 ],
 ```
 
-The section title and badge remain fully visible and clickable (for upgrade links) even when the section's fields are
-dimmed and disabled.
+The section title and badge stay visible and clickable — that is the point of an upgrade link — while the fields under them are disabled.
+
+## A locked field keeps its value
+
+A disabled control sends nothing, and a save path that iterates its field list rather than the submission reads "nothing" as "cleared". So a locked field is **skipped on save entirely**.
+
+Without that, an install whose licence lapsed would have its premium settings wiped by the next unrelated save, and get them back as blanks when the licence returned. The same applies to a field carrying `'disabled' => true` directly.
+
+## The condition reads backwards on purpose
+
+`disabled` **hides** the badge. It answers "does this install already have the feature?" — true means yes, so there is nothing to sell and nothing to lock:
+
+```php
+'disabled' => fn() => is_setting_field_license_active( 'my_plugin', 'license' ),
+```
+
+A callable is accepted so the answer can be a licence check made at render time rather than at registration.
 
 ## Badge Options
 
@@ -66,7 +81,7 @@ dimmed and disabled.
 | `text`     | string         | Yes      | —       | Badge label                                 |
 | `url`      | string         | No       | `''`    | Links badge to upgrade page (opens new tab) |
 | `class`    | string         | No       | `''`    | Additional CSS class for styling            |
-| `icon`     | string         | No       | `''`    | Dashicon class (e.g., `dashicons-lock`)     |
+| `icon`     | string         | No       | `''`    | Dashicon **suffix** — `lock`, not `dashicons-lock` |
 | `disabled` | bool\|callable | No       | `false` | When truthy, hides badge and unlocks field  |
 
 If `badge` is a string (e.g., `'Pro'`), it's treated as `['text' => 'Pro']`.
@@ -143,7 +158,7 @@ $license_check = fn() => is_setting_field_license_active( 'my_plugin', 'license'
             'text'     => 'Pro',
             'url'      => 'https://example.com/upgrade',
             'class'    => 'setting-fields-badge--pro',
-            'icon'     => 'dashicons-lock',
+            'icon'     => 'lock',
             'disabled' => $license_check,
         ],
     ],
@@ -155,7 +170,7 @@ $license_check = fn() => is_setting_field_license_active( 'my_plugin', 'license'
             'text'     => 'Pro',
             'url'      => 'https://example.com/upgrade',
             'class'    => 'setting-fields-badge--pro',
-            'icon'     => 'dashicons-lock',
+            'icon'     => 'lock',
             'disabled' => $license_check,
         ],
     ],

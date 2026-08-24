@@ -1,8 +1,12 @@
 # Reset & Export/Import
 
-## Reset Button
+These three live in the **Screen Options** panel, which opens next to Help. They are a screen's occasional controls, not something to read past on every visit — and Screen Options is a panel WordPress already provides rather than a row of buttons across the page title.
 
-Adds a "Reset to Defaults" button next to Submit. When tabs are present, only fields on the current tab are reset.
+Each is a form posting to `admin-post.php` with a nonce, not a link. They change state, and a link that changes state can be followed by a prefetch or a crawler.
+
+## Reset
+
+Restores every setting on the tab being viewed to its default.
 
 ```php
 register_setting_fields( 'my_plugin', [
@@ -28,9 +32,9 @@ register_setting_fields( 'my_plugin', [
 ] );
 ```
 
-When viewing the General tab, clicking reset restores only `site_name` to `'My Site'`. The Advanced tab's `cache_ttl` is untouched.
+When viewing the General tab, resetting restores only `site_name` to `'My Site'`. The Advanced tab's `cache_ttl` is untouched.
 
-A confirm dialog is shown before any reset occurs.
+A reset removes the stored keys rather than writing defaults over them: a field with no stored value renders its configured default, so removing the key *is* the reset. A confirmation is shown first.
 
 ## Export/Import
 
@@ -49,30 +53,26 @@ Clicking **Export Settings** downloads a JSON file named `{settings_id}-settings
 
 ```json
 {
-    "settings_id": "my_plugin",
+    "id": "my_plugin",
     "version": 1,
-    "exported_at": "2025-06-15 10:30:00",
-    "data": {
+    "values": {
         "site_name": "My Site",
-        "cache_ttl": 3600,
-        "api_key": "sk-live-abc123"
+        "cache_ttl": 3600
     }
 }
 ```
 
-Encrypted fields are exported **decrypted** so the file works across environments with different encryption keys.
-
-Fields skipped during export: layout fields (`message`, `html`, `separator`, `heading`), `hidden`, `action_button`, `clipboard`, and any field whose value comes from a PHP constant.
+**Encrypted fields are left out entirely.** The key is derived from the site's own salts, so an encrypted value cannot be read anywhere else — exporting it would put a credential in a file for no benefit at all. See [Encryption](advanced/encryption.md).
 
 ### Import
 
-Clicking **Import Settings** opens a file picker. After selecting a `.json` file, a confirm dialog is shown. On confirm:
+Core's own import form — a `.wp-upload-form` with a visible label, the upload limit beside it and a plain file input, the same shape `wp_import_upload_form()` produces on `import.php`.
 
-1. The `settings_id` in the file is validated against the current settings page
-2. Each value is run through the standard field sanitizer
-3. Encrypted fields are re-encrypted with the current environment's key
-4. Values are merged with existing options (fields not in the file are preserved)
-5. The page reloads
+On upload:
+
+1. The `id` in the file is checked against this settings page, and a file from another page is refused by name.
+2. The values are handed to `update_option()`, which means they pass through this page's registered sanitize callback like every other write — each value sanitized by its own field type.
+3. A key that is not a field on this page is dropped there rather than becoming part of the option. An uploaded file is untrusted input, and this is where that is enforced.
 
 ### Both Together
 
@@ -84,12 +84,6 @@ register_setting_fields( 'my_plugin', [
 ] );
 ```
 
-### REST Endpoints
+### Not REST
 
-| Method | Route                        | Description                  |
-|--------|------------------------------|------------------------------|
-| POST   | `/setting-fields/v1/reset`   | Reset fields to defaults     |
-| GET    | `/setting-fields/v1/export`  | Export settings as JSON      |
-| POST   | `/setting-fields/v1/import`  | Import settings from JSON    |
-
-All three require `manage_options` capability (or the filtered equivalent).
+These are forms posting to `admin-post.php`, not REST routes. An earlier version registered `/reset`, `/export` and `/import` endpoints; a state change driven from a page that already has a form and a nonce does not need one.

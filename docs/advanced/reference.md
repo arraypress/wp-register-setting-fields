@@ -118,31 +118,35 @@
 | `parent_slug`    | string | `''`         | Parent menu slug (empty = top-level)     |
 | `icon`           | string | `'dashicons-admin-generic'` | Top-level menu icon       |
 | `position`       | int    | `null`       | Top-level menu position                  |
-| `body_class`     | string | `''`         | Extra body class                         |
 | `option_name`    | string | Settings ID  | `wp_options` key                         |
 | `option_group`   | string | ID + `_group` | Settings API group                      |
 | `submit_button`  | bool   | `true`       | Show submit button                       |
 | `reset_button`   | bool   | `false`      | Show reset-to-defaults button            |
 | `export_import`  | bool   | `false`      | Show export/import panel                 |
 | `logo`           | string | `''`         | Header logo URL                          |
+| `badge`          | mixed  | `''`         | Header badge (string, array, or callable)|
+| `constant_prefix`| string | Option + `_` | Prefix for a derived constant name       |
+| `layout`         | string | `'stacked'`  | Reserved for future layouts              |
 | `header_title`   | string | `''`         | Header title override                    |
-| `header_badge`   | mixed  | `''`         | Header badge (string, array, or callable)|
 | `tabs`           | array  | `[]`         | Tab definitions                          |
 | `sections`       | array  | `[]`         | Section definitions                      |
 | `fields`         | array  | `[]`         | Field definitions                        |
 | `help_tabs`      | array  | `[]`         | Help screen tabs                         |
 | `help_sidebar`   | string | `''`         | Help screen sidebar HTML                 |
-| `encryption`     | array  | Auto         | Encryption settings                      |
 
 ## REST Endpoints
 
-| Method | Route                              | Used By            |
-|--------|------------------------------------|--------------------|
-| GET    | `/setting-fields/v1/ajax`          | `ajax`, `post`, `page`, `taxonomy`, `user` |
-| POST   | `/setting-fields/v1/action`        | `action_button`    |
-| POST   | `/setting-fields/v1/license`       | `license`          |
-| POST   | `/setting-fields/v1/email/preview` | `email_editor`     |
-| POST   | `/setting-fields/v1/email/send-test` | `email_editor`   |
-| POST   | `/setting-fields/v1/reset`         | `reset_button`     |
-| GET    | `/setting-fields/v1/export`        | `export_import`    |
-| POST   | `/setting-fields/v1/import`        | `export_import`    |
+This library registers none. Its interactive field types talk to
+[wp-field-kit](https://github.com/arraypress/wp-field-kit)'s endpoints, and
+its own reset, export and import are forms posting to `admin-post.php`.
+
+| Method | Route     | Used By                                              |
+|--------|-----------|------------------------------------------------------|
+| GET    | `/search` | `ajax`, `post`, `page`, `taxonomy`, `user`           |
+| POST   | `/action` | `action_button`, `license`, `email_editor`            |
+
+The namespace is derived from the kit's own — `field-kit/v1` on a plain
+install, `{prefix}-field-kit/v1` in a Strauss-prefixed build — so two plugins
+shipping the same library do not answer each other's requests. Do not
+hardcode it: read it from the field's own markup, which carries the resolved
+URL. See [REST API](rest-api.md).
