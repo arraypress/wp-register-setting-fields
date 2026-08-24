@@ -108,6 +108,8 @@ class SettingFields {
 	 * @param array<string, mixed> $config Page configuration.
 	 */
 	public function __construct( string $id, array $config ) {
+		self::declare_config_keys();
+
 		$this->id       = $id;
 		$this->config   = $this->defaults( $config );
 		$this->fields   = (array) ( $config['fields'] ?? [] );
@@ -1184,5 +1186,25 @@ class SettingFields {
 	 */
 	public function get_field( string $field_key ): ?array {
 		return $this->fields[ $field_key ] ?? null;
+	}
+
+	/**
+	 * Tell the kit which configuration this library reads.
+	 *
+	 * Which tab and which section of this page a field belongs to. Both are about the page's layout rather than the field, so they are read here. Without this the kit reports each one as configuration
+	 * nothing reads, which is exactly the warning it exists to give.
+	 *
+	 * @return void
+	 */
+	private static function declare_config_keys(): void {
+		static $declared = false;
+
+		if ( $declared ) {
+			return;
+		}
+
+		$declared = true;
+
+		Field::allow_config_keys( [ 'section', 'tab' ] );
 	}
 }
