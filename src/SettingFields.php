@@ -1191,8 +1191,11 @@ class SettingFields {
 	/**
 	 * Tell the kit which configuration this library reads.
 	 *
-	 * Which tab and which section of this page a field belongs to. Both are about the page's layout rather than the field, so they are read here. Without this the kit reports each one as configuration
-	 * nothing reads, which is exactly the warning it exists to give.
+	 * Which tab and which section of this page a field belongs to. Both are
+	 * about the page's layout rather than the field, so they are read here.
+	 * Without this the kit would report each of them as configuration
+	 * nothing reads — which is the warning it exists to give, aimed at the
+	 * wrong thing.
 	 *
 	 * @return void
 	 */

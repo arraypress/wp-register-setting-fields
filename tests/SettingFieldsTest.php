@@ -1041,4 +1041,37 @@ final class SettingFieldsTest extends TestCase {
 			unset( $redirect );
 		}
 	}
+
+	/**
+	 * The type helpers read through the page and answer through the kit.
+	 *
+	 * They used to hold their own idea of what "on" means. Four libraries
+	 * were on their way to four of those, so the answer moved to the kit and
+	 * these became the reading half — which is the half that is about
+	 * settings.
+	 */
+	public function test_the_type_helpers_delegate(): void {
+		$page = $this->page(
+			[
+				'fields' => [
+					'flag'     => [ 'type' => 'toggle' ],
+					'features' => [
+						'type'    => 'checkbox_group',
+						'options' => [ 'a' => 'A', 'b' => 'B' ],
+					],
+				],
+			]
+		);
+
+		update_option( $page->get_option_name(), [ 'flag' => '1', 'features' => [ 'a' ] ] );
+
+		$this->assertTrue( is_setting_on( $page->get_id(), 'flag' ) );
+		$this->assertTrue( is_setting_enabled( $page->get_id(), 'features', 'a' ) );
+		$this->assertFalse( is_setting_enabled( $page->get_id(), 'features', 'b' ) );
+
+		// The case a plain (bool) cast gets backwards.
+		update_option( $page->get_option_name(), [ 'flag' => '0' ] );
+		$this->assertFalse( is_setting_on( $page->get_id(), 'flag' ) );
+	}
+
 }
