@@ -573,6 +573,38 @@ final class SettingFieldsTest extends TestCase {
 	}
 
 	/**
+	 * A logo and a badge reach the header.
+	 *
+	 * The port to core's header dropped both, which is a real loss for a
+	 * commercial plugin and exactly the kind of thing a rewrite loses
+	 * silently.
+	 */
+	public function test_the_header_carries_the_branding(): void {
+		$html = $this->render(
+			$this->page(
+				[
+					'header_title' => 'My Plugin',
+					'logo'         => 'https://example.test/logo.svg',
+					'badge'        => 'v2.1.0',
+				]
+			)
+		);
+
+		$this->assertStringContainsString( '<h1>My Plugin</h1>', $html );
+		$this->assertStringContainsString( 'https://example.test/logo.svg', $html );
+		$this->assertStringContainsString( '>v2.1.0</span>', $html );
+	}
+
+	/**
+	 * With no header title, the page title is used.
+	 */
+	public function test_the_header_falls_back_to_the_page_title(): void {
+		$html = $this->render( $this->page( [ 'page_title' => 'Fallback Title' ] ) );
+
+		$this->assertStringContainsString( '<h1>Fallback Title</h1>', $html );
+	}
+
+	/**
 	 * The submitted tab travels with the form.
 	 *
 	 * Without it the sanitize pass cannot tell a one-tab submission from a
@@ -645,6 +677,154 @@ final class SettingFieldsTest extends TestCase {
 
 		$this->assertStringContainsString( '<td colspan="2">', $html );
 		$this->assertStringNotContainsString( '<th scope="row">', $html );
+	}
+
+	/**
+	 * The header renders outside .wrap.
+	 *
+	 * Inside it, .wrap's own margins inset the header and it stops looking
+	 * like core's — which is the entire reason for using core's markup.
+	 * options-privacy.php renders it at the top level, before any wrapper.
+	 */
+	public function test_the_header_renders_outside_the_wrap(): void {
+		$html = $this->render( $this->page() );
+
+		$header = strpos( $html, 'privacy-settings-header' );
+		$wrap   = strpos( $html, 'class="wrap' );
+
+		$this->assertIsInt( $header );
+		$this->assertIsInt( $wrap );
+		$this->assertLessThan( $wrap, $header, 'The header must come before .wrap opens.' );
+		$this->assertLessThan( $wrap, strpos( $html, 'wp-header-end' ) );
+	}
+
+	/**
+	 * The tools are not in the header.
+	 *
+	 * A file input and three buttons across a centred page title looked
+	 * exactly as bad as it sounds.
+	 */
+	public function test_the_header_carries_no_action_buttons(): void {
+		$html = $this->render(
+			$this->page(
+				[
+					'export_import' => true,
+					'reset_button'  => true,
+				]
+			)
+		);
+
+		$this->assertStringNotContainsString( 'field-kit__page-actions', $html );
+		$this->assertStringNotContainsString( 'admin-post.php', $html );
+	}
+
+	/**
+	 * The tools render into the Screen Options panel.
+	 */
+	public function test_the_tools_render_into_screen_options(): void {
+		$page = $this->page(
+			[
+				'export_import' => true,
+				'reset_button'  => true,
+			]
+		);
+
+		$page->register_menu();
+
+		$panel = $page->render_screen_tools( '', new \SF_Screen( $page->get_hook_suffix() ) );
+
+		$this->assertStringContainsString( 'field-kit__screen-tools', $panel );
+		$this->assertStringContainsString( 'sf_demo_export', $panel );
+		$this->assertStringContainsString( 'sf_demo_import', $panel );
+		$this->assertStringContainsString( 'sf_demo_reset', $panel );
+		$this->assertStringContainsString( 'type="file"', $panel );
+
+		// A form, not a link: these change state, and a link that changes
+		// state can be followed by a prefetch or a crawler.
+		$this->assertStringContainsString( '<form method="post"', $panel );
+		$this->assertStringContainsString( 'name="_wpnonce"', $panel );
+	}
+
+	/**
+	 * Another screen's Screen Options panel is left alone.
+	 */
+	public function test_the_tools_do_not_leak_onto_other_screens(): void {
+		$page = $this->page( [ 'export_import' => true ] );
+
+		$page->register_menu();
+
+		$this->assertSame( 'existing', $page->render_screen_tools( 'existing', new \SF_Screen( 'edit-post' ) ) );
+	}
+
+	/**
+	 * With neither tool enabled, nothing is added to the panel.
+	 */
+	public function test_no_tools_means_no_panel(): void {
+		$page = $this->page();
+
+		$page->register_menu();
+
+		$this->assertSame( '', $page->render_screen_tools( '', new \SF_Screen( $page->get_hook_suffix() ) ) );
+	}
+
+	/**
+	 * Help tabs and the help sidebar reach the screen.
+	 */
+	public function test_help_tabs_are_registered(): void {
+		$page = $this->page(
+			[
+				'help_tabs'    => [
+					'overview' => [
+						'title'   => 'Overview',
+						'content' => '<p>What this page does.</p>',
+					],
+					'fields'   => [
+						'title'   => 'Fields',
+						'content' => '<p>What each field means.</p>',
+					],
+				],
+				'help_sidebar' => '<p>More help.</p>',
+			]
+		);
+
+		$GLOBALS['sf_screen'] = new \SF_Screen( 'settings_page_sf-demo' );
+
+		$page->register_help_tabs();
+
+		$this->assertCount( 2, $GLOBALS['sf_screen']->help_tabs );
+		$this->assertSame( 'overview', $GLOBALS['sf_screen']->help_tabs[0]['id'] );
+		$this->assertSame( 'Fields', $GLOBALS['sf_screen']->help_tabs[1]['title'] );
+		$this->assertSame( '<p>More help.</p>', $GLOBALS['sf_screen']->help_sidebar );
+	}
+
+	/**
+	 * Help tabs are only hooked when there are some.
+	 */
+	public function test_no_help_tabs_means_no_hook(): void {
+		$plain = $this->page();
+		$plain->register_menu();
+
+		$hook = 'load-' . $plain->get_hook_suffix();
+
+		$this->assertArrayNotHasKey( $hook, $GLOBALS['fk_actions'] );
+
+		$helped = $this->page( [ 'help_tabs' => [ 'a' => [ 'title' => 'A' ] ] ] );
+		$helped->register_menu();
+
+		$this->assertArrayHasKey( 'load-' . $helped->get_hook_suffix(), $GLOBALS['fk_actions'] );
+	}
+
+	/**
+	 * Registering help tabs with no screen does nothing rather than fataling.
+	 */
+	public function test_help_tabs_without_a_screen_are_skipped(): void {
+		unset( $GLOBALS['sf_screen'] );
+
+		$page = $this->page( [ 'help_tabs' => [ 'a' => [ 'title' => 'A' ] ] ] );
+
+		$page->register_help_tabs();
+
+		$this->assertTrue( true );
 	}
 
 	/**

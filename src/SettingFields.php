@@ -127,6 +127,7 @@ class SettingFields {
 
 		add_action( 'admin_menu', [ $this, 'register_menu' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue' ] );
+		add_filter( 'screen_settings', [ $this, 'render_screen_tools' ], 10, 2 );
 		add_action( 'admin_post_' . $this->action_slug( 'export' ), [ $this, 'handle_export' ] );
 		add_action( 'admin_post_' . $this->action_slug( 'import' ), [ $this, 'handle_import' ] );
 		add_action( 'admin_post_' . $this->action_slug( 'reset' ), [ $this, 'handle_reset' ] );
@@ -168,6 +169,8 @@ class SettingFields {
 				'option_group'    => $this->id . '_group',
 				'constant_prefix' => '',
 				'header_title'    => '',
+				'logo'            => '',
+				'badge'           => '',
 				'icon'            => 'dashicons-admin-generic',
 				'position'        => null,
 				'submit_button'   => true,
@@ -500,18 +503,25 @@ class SettingFields {
 
 		$tab = $this->current_tab();
 
-		echo '<div class="wrap field-kit__settings">';
-
-		// Core's own tabbed-settings header. It ends in the
-		// <hr class="wp-header-end"> that common.js moves admin notices to.
+		// Outside .wrap, exactly as options-privacy.php renders it. Inside,
+		// .wrap's own margins inset the header and it stops looking like
+		// core's — which is the whole point of using core's markup.
+		//
+		// It ends in the <hr class="wp-header-end"> that common.js moves
+		// admin notices to.
 		$header = PageHeader::render(
-			(string) ( '' !== (string) $this->config['header_title'] ? $this->config['header_title'] : $this->config['page_title'] ),
-			$this->tab_links(),
-			$tab,
-			$this->page_actions()
+			[
+				'title'   => (string) ( '' !== (string) $this->config['header_title'] ? $this->config['header_title'] : $this->config['page_title'] ),
+				'logo'    => (string) $this->config['logo'],
+				'badge'   => $this->config['badge'],
+				'tabs'    => $this->tab_links(),
+				'current' => $tab,
+			]
 		);
 
 		echo $header; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it is built.
+
+		echo '<div class="wrap field-kit__settings">';
 
 		// No argument: core adds its own "Settings saved." under the `general`
 		// slug, and asking for this page's slug alone would hide it.
@@ -663,28 +673,80 @@ class SettingFields {
 	}
 
 	/**
-	 * The export, import and reset controls.
+	 * Render the export, import and reset controls into Screen Options.
+	 *
+	 * They used to sit in the header, where a file input and three buttons
+	 * across a centred title looked exactly as bad as it sounds. Screen
+	 * Options is a panel WordPress already provides, it opens next to Help,
+	 * and it is where a screen's occasional controls belong — not beside its
+	 * title, which is read on every visit.
+	 *
+	 * Hooked on `screen_settings` rather than printed: that filter is also
+	 * what makes the toggle appear at all, since core only shows Screen
+	 * Options when something has put content in it.
+	 *
+	 * @param string    $settings Existing panel markup.
+	 * @param \WP_Screen $screen   The current screen.
 	 *
 	 * @return string
 	 */
-	private function page_actions(): string {
-		$actions = '';
-
-		if ( $this->config['export_import'] ) {
-			$actions .= $this->action_form( 'export', __( 'Export', 'arraypress' ), 'button' );
-			$actions .= $this->import_form();
+	public function render_screen_tools( string $settings, $screen ): string {
+		if ( '' === $this->hook_suffix || ! is_object( $screen ) || $this->hook_suffix !== ( $screen->id ?? '' ) ) {
+			return $settings;
 		}
 
-		if ( $this->config['reset_button'] ) {
-			$actions .= $this->action_form(
-				'reset',
-				__( 'Reset', 'arraypress' ),
-				'button button-link-delete',
-				__( 'Reset every setting on this tab to its default? This cannot be undone.', 'arraypress' )
+		$tools = '';
+
+		if ( $this->config['export_import'] ) {
+			$tools .= $this->tool(
+				__( 'Settings file', 'arraypress' ),
+				__( 'Download this page\'s settings, or read a file back. Encrypted values are not exported — they cannot be read on another site.', 'arraypress' ),
+				$this->action_form( 'export', __( 'Export', 'arraypress' ), 'button' ) . $this->import_form()
 			);
 		}
 
-		return $actions;
+		if ( $this->config['reset_button'] ) {
+			$tools .= $this->tool(
+				__( 'Reset', 'arraypress' ),
+				__( 'Restore every setting on this tab to its default.', 'arraypress' ),
+				$this->action_form(
+					'reset',
+					__( 'Reset this tab', 'arraypress' ),
+					'button button-link-delete',
+					__( 'Reset every setting on this tab to its default? This cannot be undone.', 'arraypress' )
+				)
+			);
+		}
+
+		return '' === $tools
+			? $settings
+			: $settings . sprintf( '<div class="field-kit__screen-tools">%s</div>', $tools );
+	}
+
+	/**
+	 * One labelled group inside the Screen Options panel.
+	 *
+	 * @param string $title       Group heading.
+	 * @param string $description What it does.
+	 * @param string $controls    The controls themselves.
+	 *
+	 * @return string
+	 */
+	private function tool( string $title, string $description, string $controls ): string {
+		// A fieldset with a legend, because these are groups of controls and
+		// a legend is the only heading a group gets announced by. The legend
+		// has to be the fieldset's first child, so the description goes after
+		// it rather than wrapping it.
+		return sprintf(
+			'<fieldset class="field-kit__screen-tool">' .
+			'<legend class="field-kit__screen-tool-title">%s</legend>' .
+			'<p class="description">%s</p>' .
+			'<div class="field-kit__screen-tool-controls">%s</div>' .
+			'</fieldset>',
+			esc_html( $title ),
+			esc_html( $description ),
+			$controls
+		);
 	}
 
 	/**
@@ -952,6 +1014,20 @@ class SettingFields {
 	 */
 	public function get_config( string $key, mixed $fallback = null ): mixed {
 		return $this->config[ $key ] ?? $fallback;
+	}
+
+	/**
+	 * Get the screen's hook suffix, once the menu has been registered.
+	 *
+	 * Empty before `admin_menu` has run. Public because a consumer hooking
+	 * this screen — `load-{$hook}`, `admin_footer-{$hook}` — has no other way
+	 * to name it, and guessing the form WordPress builds is how a hook ends
+	 * up silently attached to nothing.
+	 *
+	 * @return string
+	 */
+	public function get_hook_suffix(): string {
+		return $this->hook_suffix;
 	}
 
 	/**

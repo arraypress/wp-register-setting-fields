@@ -1,79 +1,48 @@
 # REST API
 
-The library automatically registers REST API routes when fields require them. Routes are registered under the `setting-fields/v1` namespace.
+The interactive field types talk to `wp-field-kit`'s own endpoints. This library registers no routes of its own, and the field set boots the controllers itself — a field emits an endpoint URL whether or not anyone remembered to register the route, and a button posting to a 404 looks exactly like a button that does nothing.
 
 ## Endpoints
 
-| Method | Route                              | Used By            | Description                  |
-|--------|------------------------------------|--------------------|------------------------------|
-| GET    | `/setting-fields/v1/ajax`          | `ajax`, `post`, `page`, `taxonomy`, `user` | Search and hydration |
-| POST   | `/setting-fields/v1/action`        | `action_button`    | Execute server-side callback |
-| POST   | `/setting-fields/v1/license`       | `license`          | Activate/deactivate license  |
-| POST   | `/setting-fields/v1/email/preview` | `email_editor`     | Generate email preview HTML  |
-| POST   | `/setting-fields/v1/email/send-test` | `email_editor`   | Send test email              |
-| POST   | `/setting-fields/v1/reset`         | `reset_button`     | Reset fields to defaults     |
-| GET    | `/setting-fields/v1/export`        | `export_import`    | Export settings as JSON      |
-| POST   | `/setting-fields/v1/import`        | `export_import`    | Import settings from JSON    |
+| Method | Route            | Used By                                              | Description                          |
+|--------|------------------|------------------------------------------------------|--------------------------------------|
+| GET    | `/search`        | `ajax`, `post`, `page`, `taxonomy`, `user`           | Search a registered source           |
+| GET    | `/labels`        | the same types                                       | Resolve stored ids back to labels    |
+| POST   | `/action`        | `action_button`, `license`, `email_editor`            | Run a registered handler             |
+
+## The Namespace Is Derived, Not Fixed
+
+The namespace is `{prefix}/v1`, where the prefix comes from the root segment of the kit's own namespace. On a plain Composer install that is `field-kit/v1`. In a Strauss-prefixed build it becomes `{your-prefix}-field-kit/v1`.
+
+This is not cosmetic. `WP_REST_Server::register_route()` merges same-path registrations onto one handler list and dispatches the first whose methods match, so two plugins shipping the same library under one namespace means whichever registered first answers the other's requests — under its own capability check, against its own registry. Deriving the namespace from the one thing Strauss rewrites is what keeps them apart.
+
+The practical consequence: **do not hardcode the route in your own JavaScript.** Read it from the field's own markup, which carries the resolved URL.
 
 ## Authentication
 
-All endpoints require the `manage_options` capability by default. Override with:
+There is no single blanket capability. Each registered search source and each registered action declares its own, checked per request:
+
+- A callback-backed search source defaults to `edit_posts`; set `search_capability` on the field to change it.
+- An action defaults to `manage_options`; set `action_capability` on the field to change it.
 
 ```php
-add_filter( 'setting_fields_rest_capability', function () {
-    return 'edit_posts';
-} );
+'export_users' => [
+    'type'               => 'action_button',
+    'label'              => 'Export users',
+    'action_callback'    => 'my_plugin_export_users',
+    'action_capability'  => 'list_users',
+],
+
+'pick_a_thing' => [
+    'type'              => 'ajax',
+    'label'             => 'Thing',
+    'search_callback'   => 'my_plugin_search_things',
+    'search_capability' => 'edit_posts',
+],
 ```
 
-## Reset Endpoint
+The built-in relational sources (post, page, user, taxonomy) carry the capability appropriate to what they search rather than taking one from config.
 
-```
-POST /setting-fields/v1/reset
-```
+## Reset, Export and Import Are Not REST
 
-| Parameter     | Type   | Required | Description                                    |
-|---------------|--------|----------|------------------------------------------------|
-| `settings_id` | string | Yes      | The registered settings ID                     |
-| `tab`         | string | No       | Tab key to scope the reset (empty = all fields)|
-
-Returns the number of fields reset. Fields with no stored data (layout types, action buttons, clipboard) are skipped.
-
-## Export Endpoint
-
-```
-GET /setting-fields/v1/export?settings_id=my_plugin
-```
-
-Returns a JSON object containing all exportable field values with metadata. Encrypted fields are returned decrypted. Layout fields, constant-sourced fields, and non-data fields are excluded.
-
-## Import Endpoint
-
-```
-POST /setting-fields/v1/import
-Content-Type: application/json
-```
-
-```json
-{
-    "settings_id": "my_plugin",
-    "data": {
-        "settings_id": "my_plugin",
-        "version": 1,
-        "exported_at": "2025-06-15 10:30:00",
-        "data": {
-            "site_name": "My Site",
-            "cache_ttl": 3600
-        }
-    }
-}
-```
-
-The `settings_id` in the payload is validated against the target. Each value is sanitized through the standard field sanitizer before saving. Values are merged with existing options.
-
-## Nested Field Paths
-
-For fields inside groups, the REST API uses dot notation for `field_key` parameters (e.g. `stripe.secret_key`). Dot-separated keys are sanitized segment by segment.
-
-## Auto-Registration
-
-REST routes are only registered if the settings page contains field types that need them (`ajax`, `post`, `page`, `taxonomy`, `user`, `email_editor`, `action_button`, `license`) or has `reset_button` or `export_import` enabled. Sub-fields inside groups and repeaters are checked too.
+They post to `admin-post.php` as forms with a nonce. They change state, and a link that changes state can be followed by a prefetch or a crawler. See [Reset & Export/Import](../reset-export-import.md).

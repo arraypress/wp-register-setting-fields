@@ -313,3 +313,61 @@ if ( ! function_exists( 'wp_unslash' ) ) {
 		return is_string( $value ) ? stripslashes( $value ) : $value;
 	}
 }
+
+/**
+ * The parts of WP_Screen a settings page touches.
+ */
+class SF_Screen {
+
+	/**
+	 * The screen id.
+	 *
+	 * @var string
+	 */
+	public string $id;
+
+	/**
+	 * Help tabs added to it.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	public array $help_tabs = [];
+
+	/**
+	 * The help sidebar, if one was set.
+	 *
+	 * @var string
+	 */
+	public string $help_sidebar = '';
+
+	/**
+	 * Construct.
+	 *
+	 * @param string $id Screen id.
+	 */
+	public function __construct( string $id ) {
+		$this->id = $id;
+	}
+
+	/**
+	 * Record a help tab.
+	 *
+	 * @param array<string, mixed> $tab The tab.
+	 *
+	 * @return void
+	 */
+	public function add_help_tab( array $tab ): void {
+		$this->help_tabs[] = $tab;
+	}
+
+	/**
+	 * Record the help sidebar.
+	 *
+	 * @param string $content Sidebar content.
+	 *
+	 * @return void
+	 */
+	public function set_help_sidebar( string $content ): void {
+		$this->help_sidebar = $content;
+	}
+}
