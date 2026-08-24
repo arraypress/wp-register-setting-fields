@@ -1,6 +1,6 @@
 {
   "name": "arraypress/wp-register-setting-fields",
-  "description": "Lightweight library for registering WordPress settings pages with fields using the Settings API, featuring tabs, conditional field visibility, repeaters, and REST API integration.",
+  "description": "Registers a tabbed WordPress settings page from a field configuration, rendered by wp-field-kit.",
   "homepage": "https://github.com/arraypress/wp-register-setting-fields/",
   "type": "library",
   "license": "GPL-2.0-or-later",
@@ -12,7 +12,7 @@
   ],
   "require": {
     "php": ">=8.3",
-    "arraypress/wp-composer-assets": "dev-main"
+    "arraypress/wp-field-kit": "dev-main"
   },
   "autoload": {
     "psr-4": {
@@ -21,9 +21,9 @@
     "files": [
       "src/Utilities/Core.php",
       "src/Utilities/Email.php",
+      "src/Utilities/License.php",
       "src/Utilities/Page.php",
-      "src/Utilities/TypeCheck.php",
-      "src/Utilities/License.php"
+      "src/Utilities/TypeCheck.php"
     ]
   },
   "config": {
@@ -70,5 +70,11 @@
     "lint": "phpcs",
     "format": "phpcbf --standard=phpcs-format.xml.dist",
     "format:check": "phpcs --standard=phpcs-format.xml.dist"
-  }
+  },
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/arraypress/wp-field-kit.git"
+    }
+  ]
 }

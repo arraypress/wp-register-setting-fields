@@ -28,6 +28,12 @@ jobs:
           tools: composer:v2
 
       - name: Install dependencies
+        # wp-field-kit is a private repository, so the checkout token is not
+        # enough — GITHUB_TOKEN is scoped to this repository alone. Set a PAT
+        # with repo:read as the COMPOSER_TOKEN secret, or make the kit public
+        # and drop this env block.
+        env:
+          COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ secrets.COMPOSER_TOKEN }}"}}'
         run: composer install --prefer-dist --no-progress --no-interaction
 
       - name: Lint

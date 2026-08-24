@@ -14,14 +14,30 @@ use PHPUnit\Framework\TestCase;
 /**
  * Strauss rewrites namespaces but not string literals, so any runtime string
  * written as a literal in this library is shared by every plugin that bundles
- * it. This scans the source for the literal forms and requires them to go
- * through {@see \ArrayPress\RegisterSettingFields\Utils\Runtime} instead.
+ * it. This scans the source for the literal forms and fails on any that is
+ * not one WordPress itself owns.
+ *
+ * Since the port onto wp-field-kit this library registers no scripts, no
+ * routes and no AJAX actions of its own — the kit does, and derives its own
+ * keys. These stay because the guard is against reintroducing one, and a
+ * check that is deleted the moment it goes green is not a guard.
  *
  * It reads source rather than exercising behaviour on purpose: the failure it
  * guards against is invisible with one plugin installed and only appears on a
  * site running two, which no unit test of this library can set up.
  */
 final class NoSharedRuntimeKeysTest extends TestCase {
+
+	/**
+	 * Transients WordPress itself owns.
+	 *
+	 * @var string[]
+	 */
+	private const CORE_TRANSIENTS = [
+		// core's own, set by options.php and read by settings_errors().
+		// Sharing this one with core is the point of setting it.
+		'settings_errors',
+	];
 
 	/**
 	 * Handles WordPress itself ships, which are meant to be named literally.
@@ -100,7 +116,7 @@ final class NoSharedRuntimeKeysTest extends TestCase {
 			[],
 			$found,
 			sprintf(
-				"%s must be derived from Runtime, not written as a literal —\nevery plugin bundling this library would register the same one.\n\n%s",
+				"%s must be derived from the namespace, not written as a literal —\nevery plugin bundling this library would register the same one.\n\n%s",
 				$label,
 				implode( "\n", $found )
 			)
@@ -150,7 +166,8 @@ final class NoSharedRuntimeKeysTest extends TestCase {
 	public function test_transient_keys_are_not_literals(): void {
 		$this->assertNoLiteral(
 			"/(?:get|set|delete)_transient\(\s*'([^']+)'/",
-			'Transient keys'
+			'Transient keys',
+			self::CORE_TRANSIENTS
 		);
 	}
 

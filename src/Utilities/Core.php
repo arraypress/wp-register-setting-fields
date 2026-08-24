@@ -76,7 +76,11 @@ if ( ! function_exists( 'update_setting_field_value' ) ) {
 	 * Update a single setting value.
 	 *
 	 * Use this instead of update_option() for registered settings.
-	 * Note: Bypasses encryption - use settings form for encrypted fields.
+	 *
+	 * It writes through update_option() rather than around it, so the value
+	 * passes the page's registered sanitize callback: it is sanitized by its
+	 * own field type, and encrypted if the field asked to be. A key that is
+	 * not a field on this page is dropped there rather than stored.
 	 *
 	 * @param string $settings_id Settings ID.
 	 * @param string $field_key   Field key.

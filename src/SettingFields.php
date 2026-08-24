@@ -1,9 +1,9 @@
 <?php
 /**
- * Setting Fields Main Class
+ * Setting Fields
  *
  * @package     ArrayPress\RegisterSettingFields
- * @copyright   Copyright (c) 2025, ArrayPress Limited
+ * @copyright   Copyright (c) 2026, ArrayPress Limited
  * @license     GPL2+
  * @since       1.0.0
  */
@@ -12,998 +12,1006 @@ declare( strict_types=1 );
 
 namespace ArrayPress\RegisterSettingFields;
 
-use ArrayPress\RegisterSettingFields\Traits\AssetManager;
-use ArrayPress\RegisterSettingFields\Traits\ConfigParser;
-use ArrayPress\RegisterSettingFields\Traits\Encryption;
-use ArrayPress\RegisterSettingFields\Traits\FieldRenderer;
-use ArrayPress\RegisterSettingFields\Traits\FieldSanitizer;
-use ArrayPress\RegisterSettingFields\Traits\SettingsRegistration;
-use ArrayPress\RegisterSettingFields\Traits\TabManager;
-use ArrayPress\RegisterSettingFields\Traits\ConditionalLogic;
-use ArrayPress\RegisterSettingFields\Traits\SettingsActions;
-use ArrayPress\RegisterSettingFields\Traits\EmailActions;
-use ArrayPress\RegisterSettingFields\Traits\DataPortability;
+use ArrayPress\FieldKit\Assets;
+use ArrayPress\FieldKit\Context\ArrayContext;
+use ArrayPress\FieldKit\Context\ConstantContext;
+use ArrayPress\FieldKit\Context\EncryptedContext;
+use ArrayPress\FieldKit\Context\OptionContext;
+use ArrayPress\FieldKit\Contracts\Context;
+use ArrayPress\FieldKit\Field;
+use ArrayPress\FieldKit\FieldSet;
+use ArrayPress\FieldKit\Support\PageHeader;
 
 /**
- * Class SettingFields
+ * Registers a tabbed settings page backed by a single option.
  *
- * Main class for registering WordPress settings pages with fields.
+ * Rendering, sanitizing, conditional logic, accessibility, the search
+ * endpoint and the action endpoint all come from wp-field-kit. What is left
+ * here is what is genuinely about a settings *page*: the menu entry, the
+ * tabs, WordPress's Settings API wiring, and export, import and reset.
+ *
+ * Every write funnels through `sanitize()`, because that is what
+ * `update_option()` calls. Import and reset therefore do not sanitize
+ * anything themselves — they hand `update_option()` the array they want and
+ * the registered callback does the rest.
  */
 class SettingFields {
 
-    use AssetManager;
-    use ConfigParser;
-    use Encryption;
-    use FieldRenderer;
-    use FieldSanitizer;
-    use SettingsRegistration;
-    use TabManager;
-    use ConditionalLogic;
-    use SettingsActions;
-    use EmailActions;
-    use DataPortability;
-
-    /**
-     * Unique identifier for this settings group.
-     *
-     * @var string
-     */
-    protected string $id;
-
-    /**
-     * Configuration array.
-     *
-     * @var array
-     */
-    protected array $config;
-
-    /**
-     * Parsed fields array.
-     *
-     * @var array
-     */
-    protected array $fields = [];
-
-    /**
-     * Parsed tabs array.
-     *
-     * @var array
-     */
-    protected array $tabs = [];
-
-    /**
-     * Parsed sections array.
-     *
-     * @var array
-     */
-    protected array $sections = [];
-
-    /**
-     * Current option values.
-     *
-     * @var array
-     */
-    protected array $values = [];
-
-    /**
-     * Settings page hook suffix.
-     *
-     * @var string
-     */
-    protected string $hook_suffix = '';
-
-    /**
-     * Default configuration values.
-     *
-     * @var array
-     */
-    protected array $defaults = [
-		'page_title'    => 'Settings',
-		'menu_title'    => 'Settings',
-		'menu_slug'     => '',
-		'capability'    => 'manage_options',
-		'parent_slug'   => '',
-		'icon'          => 'dashicons-admin-generic',
-		'body_class'    => '',
-		'position'      => null,
-		'option_name'   => '',
-		'option_group'  => '',
-		'tabs'          => [],
-		'sections'      => [],
-		'fields'        => [],
-		'submit_button' => true,
-
-        // Reset button
-            'reset_button'  => false,
-
-        // Export/Import
-            'export_import' => false,
-
-        // Branded header options
-            'logo'          => '',
-		'header_title'  => '',
-		'header_badge'  => '',
-		'header_class'  => '',
-
-        // Help screen options
-            'help_tabs'     => [],
-		'help_sidebar'  => '',
-
-        // Encryption options
-            'encryption'    => [
-				'enabled' => null,
-				'key'     => null,
-				'prefix'  => '',
-            ],
-    ];
-
-    /**
-     * Constructor.
-     *
-     * @param string $id     Unique identifier for this settings group.
-     * @param array  $config Configuration array.
-     */
-    public function __construct( string $id, array $config ) {
-        $this->id     = sanitize_key( $id );
-        $this->config = wp_parse_args( $config, $this->defaults );
-
-        // Set defaults based on ID if not provided
-        if ( empty( $this->config['menu_slug'] ) ) {
-            $this->config['menu_slug'] = $this->id;
-        }
-        if ( empty( $this->config['option_name'] ) ) {
-            $this->config['option_name'] = $this->id;
-        }
-        if ( empty( $this->config['option_group'] ) ) {
-            $this->config['option_group'] = $this->id . '_group';
-        }
-
-        $this->parse_config();
-
-        // Initialize encryption after fields are parsed
-        $this->init_encryption( $this->config );
-
-        // Register with the central registry
-        Registry::register( $this->id, $this );
-
-        // Register REST API if we have fields that need it
-        if ( $this->has_rest_fields() || $this->config['reset_button'] || $this->config['export_import'] ) {
-            RestApi::register();
-        }
-
-        $this->init_hooks();
-    }
-
-    /**
-     * Check if any fields require REST API endpoints.
-     *
-     * Includes relational fields (post, page, taxonomy, user) which use AJAX,
-     * email_editor fields which use preview/send-test endpoints,
-     * and action_button fields which use the action endpoint.
-     *
-     * @return bool
-     */
-    protected function has_rest_fields(): bool {
-        $rest_types = [ 'ajax', 'post', 'page', 'taxonomy', 'user', 'email_editor', 'action_button', 'license' ];
-
-        foreach ( $this->fields as $field ) {
-            if ( in_array( $field['type'] ?? '', $rest_types, true ) ) {
-                return true;
-            }
-
-            // Check nested fields
-            if ( ! empty( $field['sub_fields'] ) ) {
-                foreach ( $field['sub_fields'] as $sub_field ) {
-                    if ( in_array( $sub_field['type'] ?? '', $rest_types, true ) ) {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Initialize WordPress hooks.
-     *
-     * @return void
-     */
-    protected function init_hooks(): void {
-        add_action( 'admin_menu', [ $this, 'register_menu' ] );
-        add_action( 'admin_init', [ $this, 'register_settings' ] );
-        add_action( 'admin_enqueue_scripts', [ $this, 'maybe_enqueue_assets' ] );
-
-        // Add body class for styling
-        add_filter( 'admin_body_class', [ $this, 'add_body_class' ] );
-
-        // Fix menu highlight for submenu pages
-        if ( ! empty( $this->config['parent_slug'] ) ) {
-            add_filter( 'parent_file', [ $this, 'fix_parent_menu_highlight' ] );
-            add_filter( 'submenu_file', [ $this, 'fix_submenu_highlight' ] );
-        }
-    }
-
-    /**
-     * Add custom body class to the reports page.
-     *
-     * @param string $classes Space-separated list of body classes.
-     *
-     * @return string
-     */
-    public function add_body_class( string $classes ): string {
-        $screen = get_current_screen();
-
-        if ( ! $screen || $screen->id !== $this->hook_suffix ) {
-            return $classes;
-        }
-
-        $classes .= ' settings';
-        $classes .= ' settings-' . $this->id;
-
-        if ( ! empty( $this->config['body_class'] ) ) {
-            $classes .= ' ' . sanitize_html_class( $this->config['body_class'] );
-        }
-
-        return $classes;
-    }
-
-    /**
-     * Fix parent menu highlight for settings pages.
-     *
-     * @param string $parent_file The parent file.
-     *
-     * @return string
-     */
-    public function fix_parent_menu_highlight( string $parent_file ): string {
-        global $plugin_page;
-
-        if ( $plugin_page === $this->config['menu_slug'] ) {
-            return $this->config['parent_slug'];
-        }
-
-        return $parent_file;
-    }
-
-    /**
-     * Fix submenu highlight for settings pages.
-     *
-     * @param string|null $submenu_file The submenu file.
-     *
-     * @return string|null
-     */
-    public function fix_submenu_highlight( ?string $submenu_file ): ?string {
-        global $plugin_page;
-
-        if ( $plugin_page === $this->config['menu_slug'] ) {
-            return $this->config['menu_slug'];
-        }
-
-        return $submenu_file;
-    }
-
-    /**
-     * Register the admin menu page.
-     *
-     * @return void
-     */
-    public function register_menu(): void {
-        if ( ! empty( $this->config['parent_slug'] ) ) {
-            $this->hook_suffix = add_submenu_page(
-                    $this->config['parent_slug'],
-                    $this->config['page_title'],
-                    $this->config['menu_title'],
-                    $this->config['capability'],
-                    $this->config['menu_slug'],
-                    [ $this, 'render_page' ]
-            );
-        } else {
-            $this->hook_suffix = add_menu_page(
-                    $this->config['page_title'],
-                    $this->config['menu_title'],
-                    $this->config['capability'],
-                    $this->config['menu_slug'],
-                    [ $this, 'render_page' ],
-                    $this->config['icon'],
-                    $this->config['position']
-            );
-        }
-
-        if ( ! empty( $this->config['help_tabs'] ) || ! empty( $this->config['help_sidebar'] ) ) {
-            add_action( 'load-' . $this->hook_suffix, [ $this, 'register_help_tabs' ] );
-        }
-    }
-
-    /**
-     * Register help tabs for the settings screen.
-     *
-     * @return void
-     */
-    public function register_help_tabs(): void {
-        $screen = get_current_screen();
-
-        if ( ! $screen ) {
-            return;
-        }
-
-        if ( ! empty( $this->config['help_tabs'] ) ) {
-            foreach ( $this->config['help_tabs'] as $tab_id => $tab ) {
-                $screen->add_help_tab( [
-					'id'       => $this->id . '_' . $tab_id,
-					'title'    => $tab['title'] ?? $tab_id,
-					'content'  => $tab['content'] ?? '',
-					'callback' => $tab['callback'] ?? null,
-					'priority' => $tab['priority'] ?? 10,
-                ] );
-            }
-        }
-
-        if ( ! empty( $this->config['help_sidebar'] ) ) {
-            $screen->set_help_sidebar( $this->config['help_sidebar'] );
-        }
-    }
-
-    /**
-     * Render the settings page.
-     *
-     * @return void
-     */
-    public function render_page(): void {
-        if ( ! current_user_can( $this->config['capability'] ) ) {
-            return;
-        }
-
-        // Load current values (with decryption)
-        $this->values = $this->get_values();
-
-        // Get current tab
-        $current_tab = $this->get_current_tab();
-
-        // Render header outside .wrap (matches RegisterTables pattern)
-        $this->render_header( $current_tab );
-
-        ?>
-        <div class="wrap setting-fields-wrap" data-setting-id="<?php echo esc_attr( $this->id ); ?>">
-
-            <div class="setting-fields-notices">
-                <?php
-                // For pages not under Settings, WordPress doesn't auto-display
-                // the "Settings saved" notice after options.php redirect.
-                // Manually add it when settings-updated is present.
-                if ( isset( $_GET['settings-updated'] ) && $_GET['settings-updated'] === 'true' ) {
-                    add_settings_error(
-                            $this->config['option_group'],
-                            'settings_updated',
-                            __( 'Settings saved.', 'setting-fields' ),
-                            'updated'
-                    );
-                }
-                settings_errors( $this->config['option_group'] );
-                ?>
-            </div>
-
-            <form method="post" action="options.php" class="setting-fields-form">
-                <?php
-                settings_fields( $this->config['option_group'] );
-
-                $this->render_fields_for_tab( $current_tab );
-
-                $this->render_footer_actions();
-                ?>
-            </form>
-
-            <?php if ( $this->config['export_import'] ) : ?>
-                <div class="setting-fields-export-import-result" style="display: none;">
-                    <span class="dashicons setting-fields-export-import-icon"></span>
-                    <span class="setting-fields-export-import-message"></span>
-                </div>
-            <?php endif; ?>
-        </div>
-        <?php
-    }
-
-    /**
-     * Render footer action buttons (submit only).
-     *
-     * Reset and export/import actions are rendered in the header.
-     *
-     * @return void
-     */
-    protected function render_footer_actions(): void {
-        if ( ! $this->config['submit_button'] ) {
-            return;
-        }
-
-        submit_button();
-    }
-
-    /**
-     * Render header action buttons (reset, export, import).
-     *
-     * Displayed in the header branding row, right-aligned.
-     *
-     * @param string $current_tab Current active tab.
-     *
-     * @return void
-     */
-    protected function render_header_actions( string $current_tab ): void {
-        $has_reset  = $this->config['reset_button'];
-        $has_export = $this->config['export_import'];
-
-        if ( ! $has_reset && ! $has_export ) {
-            return;
-        }
-
-        echo '<div class="setting-fields-header__actions">';
-
-        if ( $has_reset ) {
-            $reset_label = ! empty( $this->tabs )
-                    /* translators: %s: label of the settings tab being reset */
-                    ? sprintf( __( 'Reset %s', 'setting-fields' ), $this->tabs[ $current_tab ]['label'] ?? __( 'Tab', 'setting-fields' ) )
-                    : __( 'Reset to Defaults', 'setting-fields' );
-            ?>
-            <button type="button"
-                    class="button setting-fields-reset-btn"
-                    data-tab="<?php echo esc_attr( $current_tab ); ?>"
-                    data-confirm="<?php echo esc_attr( __( 'Are you sure you want to reset these settings to their defaults? This cannot be undone.', 'setting-fields' ) ); ?>">
-                <?php echo esc_html( $reset_label ); ?>
-            </button>
-            <?php
-        }
-
-        if ( $has_export ) {
-            ?>
-            <button type="button" class="button setting-fields-export-btn">
-                <span class="dashicons dashicons-download"></span>
-                <?php esc_html_e( 'Export Settings', 'setting-fields' ); ?>
-            </button>
-
-            <div class="setting-fields-import-wrap">
-                <input type="file"
-                        accept=".json"
-                        class="setting-fields-import-file"
-                        id="<?php echo esc_attr( $this->id ); ?>_import_file"
-                        style="display:none;"/>
-                <button type="button" class="button setting-fields-import-btn">
-                    <span class="dashicons dashicons-upload"></span>
-                    <?php esc_html_e( 'Import Settings', 'setting-fields' ); ?>
-                </button>
-            </div>
-            <?php
-        }
-
-        echo '</div>';
-    }
-
-    /**
-     * Render the modern header with optional logo and integrated tabs.
-     *
-     * Rendered outside .wrap to match RegisterTables/EDD pattern.
-     *
-     * @param string $current_tab Current active tab.
-     *
-     * @return void
-     */
-    protected function render_header( string $current_tab ): void {
-        $logo_url     = $this->config['logo'] ?? '';
-        $header_title = ! empty( $this->config['header_title'] )
-                ? $this->config['header_title']
-                : $this->config['page_title'];
-        $header_badge = $this->config['header_badge'] ?? '';
-
-        $has_title = ! empty( $header_title );
-        $has_tabs  = ! empty( $this->tabs );
-
-        if ( ! $logo_url && ! $has_title && ! $has_tabs ) {
-            echo '<hr class="wp-header-end">';
-
-            return;
-        }
-
-        ?>
-        <div class="setting-fields-header">
-            <div class="setting-fields-header__inner">
-                <div class="setting-fields-header__branding">
-                    <?php if ( $logo_url ) : ?>
-                        <img src="<?php echo esc_url( $logo_url ); ?>" alt="" class="setting-fields-header__logo">
-                        <?php if ( $has_title ) : ?>
-                            <span class="setting-fields-header__separator">/</span>
-                        <?php endif; ?>
-                    <?php endif; ?>
-                    <?php if ( $has_title ) : ?>
-                        <h1 class="setting-fields-header__title"><?php echo esc_html( $header_title ); ?></h1>
-                    <?php endif; ?>
-                    <?php if ( ! empty( $header_badge ) ) : ?>
-                        <?php self::render_header_badge( $header_badge ); ?>
-                    <?php endif; ?>
-
-                    <?php $this->render_header_actions( $current_tab ); ?>
-                </div>
-            </div>
-
-            <?php if ( $has_tabs ) : ?>
-                <div class="setting-fields-header__tabs">
-                    <button type="button" class="setting-fields-tabs-toggle">
-                        <span class="setting-fields-tabs-current">
-                            <?php
-                            $current_label = $this->tabs[ $current_tab ]['label'] ?? '';
-                            $current_icon  = $this->tabs[ $current_tab ]['icon'] ?? '';
-                            if ( $current_icon ) {
-                                echo '<span class="dashicons ' . esc_attr( $current_icon ) . '"></span> ';
-                            }
-                            echo esc_html( $current_label );
-                            ?>
-                        </span>
-                        <span class="dashicons dashicons-arrow-down-alt2"></span>
-                    </button>
-                    <?php $this->render_tabs( $current_tab ); ?>
-                </div>
-            <?php endif; ?>
-        </div>
-        <hr class="wp-header-end">
-        <?php
-    }
-
-    /**
-     * Render the header badge.
-     *
-     * Outputs an inline badge next to the header title. Supports:
-     * 1. String — rendered with default styling
-     * 2. Array — with 'text' and optional 'class' keys
-     * 3. Callable — full control over output
-     *
-     * @param string|array|callable $badge Badge configuration.
-     *
-     * @return void
-     * @since 2.0.0
-     */
-    private static function render_header_badge( $badge ): void {
-        if ( is_callable( $badge ) ) {
-            // Returns markup this library assembled and escaped as it built it.
-            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-            echo call_user_func( $badge );
-
-            return;
-        }
-
-        if ( is_array( $badge ) ) {
-            $text  = $badge['text'] ?? '';
-            $class = $badge['class'] ?? '';
-
-            if ( empty( $text ) ) {
-                return;
-            }
-
-            printf(
-                    '<span class="setting-fields-header__badge %s">%s</span>',
-                    esc_attr( $class ),
-                    esc_html( $text )
-            );
-
-            return;
-        }
-
-        if ( is_string( $badge ) && ! empty( $badge ) ) {
-            printf(
-                    '<span class="setting-fields-header__badge">%s</span>',
-                    esc_html( $badge )
-            );
-        }
-    }
-
-    /**
-     * Render fields for a specific tab.
-     *
-     * @param string $tab Tab key.
-     *
-     * @return void
-     */
-    protected function render_fields_for_tab( string $tab ): void {
-        $tab_fields = $this->get_fields_for_tab( $tab );
-
-        if ( empty( $tab_fields ) ) {
-            return;
-        }
-
-        $sections = $this->get_sections_for_tab( $tab );
-
-        if ( ! empty( $sections ) ) {
-            foreach ( $sections as $section_key => $section ) {
-                $section_fields = array_filter( $tab_fields, function ( $field ) use ( $section_key ) {
-                    return isset( $field['section'] ) && $field['section'] === $section_key;
-                } );
-
-                if ( ! empty( $section_fields ) ) {
-                    $this->render_section( $section_key, $section, $section_fields );
-                }
-            }
-
-            $unsectioned_fields = array_filter( $tab_fields, function ( $field ) {
-                return empty( $field['section'] );
-            } );
-
-            if ( ! empty( $unsectioned_fields ) ) {
-                echo '<table class="form-table" role="presentation">';
-                foreach ( $unsectioned_fields as $field_key => $field ) {
-                    $this->render_field_row( $field_key, $field );
-                }
-                echo '</table>';
-            }
-        } else {
-            echo '<table class="form-table" role="presentation">';
-            foreach ( $tab_fields as $field_key => $field ) {
-                $this->render_field_row( $field_key, $field );
-            }
-            echo '</table>';
-        }
-    }
-
-    /**
-     * Render a section with its fields.
-     *
-     * Wraps the entire section (title, description, table) in a container
-     * div with a data-section attribute. This allows the conditional logic
-     * JS to hide entire sections when all their fields are hidden.
-     *
-     * If the section has a badge with an active (non-disabled) state, or
-     * has 'disabled' => true, all child fields inherit the disabled state
-     * automatically.
-     *
-     * @param string $section_key Section key.
-     * @param array  $section     Section config.
-     * @param array  $fields      Fields in this section.
-     *
-     * @return void
-     */
-    protected function render_section( string $section_key, array $section, array $fields ): void {
-        // Resolve badge (returns null if badge is disabled/hidden)
-        $badge = isset( $section['badge'] ) ? self::resolve_badge( $section['badge'] ) : null;
-
-        // Section is disabled if explicitly set OR if badge is active (visible)
-        $is_disabled = ! empty( $section['disabled'] ) || $badge !== null;
-
-        $classes = 'setting-fields-section';
-        if ( $is_disabled ) {
-            $classes .= ' setting-fields-section--disabled';
-        }
-
-        echo '<div class="' . esc_attr( $classes ) . '" data-section="' . esc_attr( $section_key ) . '">';
-
-        if ( ! empty( $section['title'] ) || $badge !== null ) {
-            echo '<div class="setting-fields-section-header">';
-
-            if ( ! empty( $section['title'] ) ) {
-                echo '<h2 class="setting-fields-section-title">' . esc_html( $section['title'] ) . '</h2>';
-            }
-
-            if ( $badge !== null ) {
-                self::render_badge( $badge );
-            }
-
-            echo '</div>';
-        }
-
-        if ( ! empty( $section['description'] ) ) {
-            echo '<p class="setting-fields-section-description">' . esc_html( $section['description'] ) . '</p>';
-        }
-
-        echo '<table class="form-table" role="presentation">';
-        foreach ( $fields as $field_key => $field ) {
-            // Cascade disabled state from section to fields
-            if ( $is_disabled ) {
-                $field['disabled'] = true;
-            }
-
-            $this->render_field_row( $field_key, $field );
-        }
-        echo '</table>';
-
-        echo '</div>';
-    }
-
-    /**
-     * Resolve a badge configuration and check if it should render.
-     *
-     * Normalizes string shorthand to array, resolves callable 'disabled'
-     * values, and returns null if the badge is disabled. When the badge
-     * has a 'disabled' key that resolves truthy, the badge is hidden
-     * and the associated field/section should become editable.
-     *
-     * @param string|array $badge Badge configuration.
-     *
-     * @return array|null Normalized badge config, or null if disabled.
-     */
-    private static function resolve_badge( $badge ): ?array {
-        // Normalize string shorthand to array
-        if ( is_string( $badge ) ) {
-            $badge = [ 'text' => $badge ];
-        }
-
-        if ( ! is_array( $badge ) || empty( $badge['text'] ) ) {
-            return null;
-        }
-
-        // Resolve the disabled condition
-        $disabled = $badge['disabled'] ?? false;
-        if ( is_callable( $disabled ) ) {
-            $disabled = (bool) call_user_func( $disabled );
-        }
-
-        // If disabled resolves truthy, badge should not render
-        if ( $disabled ) {
-            return null;
-        }
-
-        return $badge;
-    }
-
-    /**
-     * Render an inline badge.
-     *
-     * Outputs a small pill badge next to a field label or section title.
-     * Supports a simple string or a full config array with text, url,
-     * class, and icon options.
-     *
-     * Use resolve_badge() first to check if the badge should render
-     * and to normalize the configuration.
-     *
-     * @param array $badge Normalized badge configuration.
-     *
-     * @return void
-     */
-    private static function render_badge( array $badge ): void {
-        $text  = $badge['text'];
-        $url   = $badge['url'] ?? '';
-        $class = $badge['class'] ?? '';
-        $icon  = $badge['icon'] ?? '';
-
-        $badge_class = 'setting-fields-badge';
-        if ( ! empty( $class ) ) {
-            $badge_class .= ' ' . $class;
-        }
-
-        $inner = '';
-
-        if ( ! empty( $icon ) ) {
-            $inner .= '<span class="dashicons ' . esc_attr( $icon ) . '"></span> ';
-        }
-
-        $inner .= esc_html( $text );
-
-        if ( ! empty( $url ) ) {
-            printf(
-                    '<a href="%s" class="%s" target="_blank" rel="noopener noreferrer">%s</a>',
-                    esc_url( $url ),
-                    esc_attr( $badge_class ),
-                    // Returns markup this library assembled and escaped as it built it.
-                    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-                    $inner
-            );
-        } else {
-            printf(
-                    '<span class="%s">%s</span>',
-                    esc_attr( $badge_class ),
-                    // Returns markup this library assembled and escaped as it built it.
-                    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-                    $inner
-            );
-        }
-    }
-
-    /**
-     * Render a single field row.
-     *
-     * @param string $field_key Field key.
-     * @param array  $field     Field config.
-     *
-     * @return void
-     */
-    protected function render_field_row( string $field_key, array $field ): void {
-        $field_name = $this->config['option_name'] . '[' . $field_key . ']';
-        $field_id   = $this->config['option_name'] . '_' . $field_key;
-        $value      = $this->values[ $field_key ] ?? ( $field['default'] ?? '' );
-
-        // Add the field key to the field config
-        $field['_key'] = $field_key;
-
-        // Resolve badge (returns null if badge is disabled/hidden)
-        $badge = isset( $field['badge'] ) ? self::resolve_badge( $field['badge'] ) : null;
-
-        // When badge is active (visible), disable the field
-        if ( $badge !== null ) {
-            $field['disabled'] = true;
-        }
-
-        // Build conditional logic data attributes
-        $row_attrs = $this->get_conditional_attributes( $field );
-
-        // Check if field is disabled due to constant
-        $is_from_constant = $this->is_encrypted_field( $field ) && $this->has_field_constant( $field_key, $field );
-
-        // Hidden fields render only the input, no table row
-        $type = $field['type'] ?? 'text';
-        if ( $type === 'hidden' ) {
-            $this->render_field( $field_key, $field, $field_name, $field_id, $value );
-            return;
-        }
-
-        // Message, HTML, separator, heading fields get full-width rendering
-        if ( in_array( $type, [ 'message', 'html', 'separator', 'heading' ], true ) ) {
-            ?>
-            <tr<?php echo $row_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already a complete, escaped attribute string; esc_attr() here would render it as text and break the JSON payload. ?> class="setting-fields-row-fullwidth">
-                <td colspan="2">
-                    <?php $this->render_field( $field_key, $field, $field_name, $field_id, $value ); ?>
-                </td>
-            </tr>
-            <?php
-            return;
-        }
-
-        ?>
-        <tr<?php echo $row_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already a complete, escaped attribute string; esc_attr() here would render it as text and break the JSON payload. ?>>
-            <th scope="row">
-                <?php if ( ! empty( $field['label'] ) ) : ?>
-                    <label for="<?php echo esc_attr( $field_id ); ?>">
-                        <?php echo esc_html( $field['label'] ); ?>
-                        <?php if ( ! empty( $field['required'] ) ) : ?>
-                            <span class="required">*</span>
-                        <?php endif; ?>
-                        <?php if ( $badge !== null ) : ?>
-                            <?php self::render_badge( $badge ); ?>
-                        <?php endif; ?>
-                        <?php if ( ! empty( $field['tooltip'] ) ) : ?>
-                            <span class="setting-fields-tooltip">
-                                <span class="dashicons dashicons-info"></span>
-                                <span class="setting-fields-tooltip-content"><?php echo esc_html( $field['tooltip'] ); ?></span>
-                            </span>
-                        <?php endif; ?>
-                    </label>
-                <?php endif; ?>
-            </th>
-            <td>
-                <?php
-                // Render the field (potentially disabled if from constant)
-                if ( $is_from_constant ) {
-                    $field['readonly'] = true;
-                    $field['disabled'] = true;
-                }
-
-                $this->render_field( $field_key, $field, $field_name, $field_id, $value );
-
-                // Show encryption status for encrypted fields
-                if ( $this->is_encrypted_field( $field ) ) {
-                    // Returns markup this library assembled and escaped as it built it.
-                    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-                    echo $this->get_encryption_status( $field_key );
-                }
-
-                if ( ! empty( $field['description'] ) ) {
-                    echo '<p class="description">' . wp_kses_post( $field['description'] ) . '</p>';
-                }
-                ?>
-            </td>
-        </tr>
-        <?php
-    }
-
-    /**
-     * Get the settings ID.
-     *
-     * @return string
-     */
-    public function get_id(): string {
-        return $this->id;
-    }
-
-    /**
-     * Get a specific config value.
-     *
-     * @param string $key     Config key.
-     * @param mixed  $fallback Default value.
-     *
-     * @return mixed
-     */
-    public function get_config( string $key, $fallback = null ) {
-        return $this->config[ $key ] ?? $fallback;
-    }
-
-    /**
-     * Get the option name.
-     *
-     * @return string
-     */
-    public function get_option_name(): string {
-        return $this->config['option_name'];
-    }
-
-    /**
-     * Get all current values (with decryption applied).
-     *
-     * @return array
-     */
-    public function get_values(): array {
-        $raw_values = get_option( $this->config['option_name'], [] );
-
-        if ( ! is_array( $raw_values ) ) {
-            $raw_values = [];
-        }
-
-        // Apply decryption to encrypted fields
-        $decrypted_values = [];
-        foreach ( $this->fields as $field_key => $field ) {
-            $raw_value                      = $raw_values[ $field_key ] ?? ( $field['default'] ?? '' );
-            $decrypted_values[ $field_key ] = $this->maybe_decrypt_field_value( $field_key, $field, $raw_value );
-        }
-
-        $this->values = $decrypted_values;
-
-        return $this->values;
-    }
-
-    /**
-     * Get a specific field value (with decryption applied).
-     *
-     * @param string $field_key Field key.
-     * @param mixed  $fallback   Default value.
-     *
-     * @return mixed
-     */
-    public function get_value( string $field_key, $fallback = null ) {
-        $field = $this->fields[ $field_key ] ?? null;
-
-        if ( ! $field ) {
-            return $fallback;
-        }
-
-        // Check constant first for encrypted fields
-        if ( $this->is_encrypted_field( $field ) ) {
-            $constant_value = $this->get_field_constant_value( $field_key, $field );
-            if ( $constant_value !== null ) {
-                return $constant_value;
-            }
-        }
-
-        // Get from database
-        $raw_values = get_option( $this->config['option_name'], [] );
-
-        if ( isset( $raw_values[ $field_key ] ) ) {
-            return $this->maybe_decrypt_field_value( $field_key, $field, $raw_values[ $field_key ] );
-        }
-
-        return $field['default'] ?? $fallback;
-    }
-
-    /**
-     * Get all field configurations.
-     *
-     * @return array
-     */
-    public function get_fields(): array {
-        return $this->fields;
-    }
-
-    /**
-     * Get a specific field configuration.
-     *
-     * Supports dot notation for nested field paths (e.g., 'parent.child'
-     * to access a sub_field within a repeater or group field).
-     *
-     * @param string $field_key Field key, optionally with dot notation.
-     *
-     * @return array|null
-     */
-    public function get_field( string $field_key ): ?array {
-        if ( str_contains( $field_key, '.' ) ) {
-            $parts  = explode( '.', $field_key, 2 );
-            $parent = $this->fields[ $parts[0] ] ?? null;
-
-            if ( ! $parent || ! isset( $parent['sub_fields'] ) ) {
-                return null;
-            }
-
-            return $parent['sub_fields'][ $parts[1] ] ?? null;
-        }
-
-        return $this->fields[ $field_key ] ?? null;
-    }
+	/**
+	 * This settings page's identifier.
+	 *
+	 * @var string
+	 */
+	private string $id;
+
+	/**
+	 * Page configuration.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private array $config;
+
+	/**
+	 * Field configuration, keyed by field key.
+	 *
+	 * @var array<string, array<string, mixed>>
+	 */
+	private array $fields;
+
+	/**
+	 * Tabs, keyed by slug.
+	 *
+	 * @var array<string, array<string, mixed>>
+	 */
+	private array $tabs;
+
+	/**
+	 * Sections, keyed by slug.
+	 *
+	 * @var array<string, array<string, mixed>>
+	 */
+	private array $sections;
+
+	/**
+	 * Where values are read from, for rendering and for get_value().
+	 *
+	 * @var Context
+	 */
+	private Context $context;
+
+	/**
+	 * The option underneath the decorators.
+	 *
+	 * @var OptionContext
+	 */
+	private OptionContext $options;
+
+	/**
+	 * Field sets, keyed by tab.
+	 *
+	 * @var array<string, FieldSet>
+	 */
+	private array $sets = [];
+
+	/**
+	 * The screen's hook suffix, once the menu is registered.
+	 *
+	 * @var string
+	 */
+	private string $hook_suffix = '';
+
+	/**
+	 * Construct.
+	 *
+	 * @param string               $id     Settings page identifier.
+	 * @param array<string, mixed> $config Page configuration.
+	 */
+	public function __construct( string $id, array $config ) {
+		$this->id       = $id;
+		$this->config   = $this->defaults( $config );
+		$this->fields   = (array) ( $config['fields'] ?? [] );
+		$this->tabs     = $this->parse_tabs( (array) ( $config['tabs'] ?? [] ) );
+		$this->sections = (array) ( $config['sections'] ?? [] );
+
+		$this->options = new OptionContext( (string) $this->config['option_name'] );
+		$this->context = $this->decorate( $this->options );
+
+		Registry::register( $id, $this );
+
+		// Not deferred to admin_init, as core's own convention would have it.
+		// The sanitize callback registered here is the gate every write to
+		// this option passes through, including one made from cron or from a
+		// webhook, and a gate that is only in place on admin screens is not
+		// one. Nothing in register_setting() needs the admin to be loaded.
+		$this->register_settings();
+
+		add_action( 'admin_menu', [ $this, 'register_menu' ] );
+		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue' ] );
+		add_action( 'admin_post_' . $this->action_slug( 'export' ), [ $this, 'handle_export' ] );
+		add_action( 'admin_post_' . $this->action_slug( 'import' ), [ $this, 'handle_import' ] );
+		add_action( 'admin_post_' . $this->action_slug( 'reset' ), [ $this, 'handle_reset' ] );
+	}
+
+	/**
+	 * Wrap a store in this page's decorators.
+	 *
+	 * Order matters: a constant stands in for a value that would otherwise be
+	 * decrypted on the way out, so it has to sit above encryption.
+	 *
+	 * @param Context $store The store to wrap.
+	 *
+	 * @return Context
+	 */
+	private function decorate( Context $store ): Context {
+		return new ConstantContext(
+			new EncryptedContext( $store ),
+			(string) $this->config['constant_prefix']
+		);
+	}
+
+	/**
+	 * Merge the page configuration with its defaults.
+	 *
+	 * @param array<string, mixed> $config Supplied configuration.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function defaults( array $config ): array {
+		$config = array_merge(
+			[
+				'page_title'      => $this->id,
+				'menu_title'      => $this->id,
+				'menu_slug'       => $this->id,
+				'parent_slug'     => '',
+				'capability'      => 'manage_options',
+				'option_name'     => $this->id,
+				'option_group'    => $this->id . '_group',
+				'constant_prefix' => '',
+				'header_title'    => '',
+				'icon'            => 'dashicons-admin-generic',
+				'position'        => null,
+				'submit_button'   => true,
+				'reset_button'    => false,
+				'export_import'   => false,
+				'help_tabs'       => [],
+				'help_sidebar'    => '',
+			],
+			$config
+		);
+
+		if ( '' === (string) $config['constant_prefix'] ) {
+			$config['constant_prefix'] = $config['option_name'] . '_';
+		}
+
+		return $config;
+	}
+
+	/**
+	 * Normalize the tab configuration.
+	 *
+	 * Accepts both `'slug' => 'Label'` and the full array form, because both
+	 * appear in existing configuration.
+	 *
+	 * @param array<string, mixed> $tabs Raw tabs.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function parse_tabs( array $tabs ): array {
+		$parsed = [];
+
+		foreach ( $tabs as $slug => $tab ) {
+			$parsed[ (string) $slug ] = is_string( $tab )
+				? [ 'label' => $tab ]
+				: array_merge( [ 'label' => ucfirst( (string) $slug ) ], (array) $tab );
+		}
+
+		return $parsed;
+	}
+
+	/**
+	 * Register the menu entry.
+	 *
+	 * @return void
+	 */
+	public function register_menu(): void {
+		$this->hook_suffix = (string) (
+			'' !== (string) $this->config['parent_slug']
+				? add_submenu_page(
+					(string) $this->config['parent_slug'],
+					(string) $this->config['page_title'],
+					(string) $this->config['menu_title'],
+					(string) $this->config['capability'],
+					(string) $this->config['menu_slug'],
+					[ $this, 'render_page' ]
+				)
+				: add_menu_page(
+					(string) $this->config['page_title'],
+					(string) $this->config['menu_title'],
+					(string) $this->config['capability'],
+					(string) $this->config['menu_slug'],
+					[ $this, 'render_page' ],
+					(string) $this->config['icon'],
+					$this->config['position']
+				)
+		);
+
+		if ( [] !== (array) $this->config['help_tabs'] || '' !== (string) $this->config['help_sidebar'] ) {
+			add_action( 'load-' . $this->hook_suffix, [ $this, 'register_help_tabs' ] );
+		}
+	}
+
+	/**
+	 * Register the help tabs.
+	 *
+	 * @return void
+	 */
+	public function register_help_tabs(): void {
+		$screen = get_current_screen();
+
+		if ( ! $screen ) {
+			return;
+		}
+
+		foreach ( (array) $this->config['help_tabs'] as $tab_id => $tab ) {
+			$screen->add_help_tab(
+				[
+					'id'      => (string) $tab_id,
+					'title'   => (string) ( $tab['title'] ?? $tab_id ),
+					'content' => (string) ( $tab['content'] ?? '' ),
+				]
+			);
+		}
+
+		if ( '' !== (string) $this->config['help_sidebar'] ) {
+			$screen->set_help_sidebar( (string) $this->config['help_sidebar'] );
+		}
+	}
+
+	/**
+	 * Register the option with WordPress's Settings API.
+	 *
+	 * @return void
+	 */
+	public function register_settings(): void {
+		register_setting(
+			(string) $this->config['option_group'],
+			(string) $this->config['option_name'],
+			[
+				'type'              => 'array',
+				'sanitize_callback' => [ $this, 'sanitize' ],
+				'default'           => [],
+			]
+		);
+	}
+
+	/**
+	 * Produce the array to store from a submitted or supplied one.
+	 *
+	 * `update_option()` runs `sanitize_option()` before it compares values, so
+	 * this is the single gate every write passes through — the form's, an
+	 * import's, a reset's, and any that consuming code makes itself. Two
+	 * consequences shape it.
+	 *
+	 * It must not write anything. A `update_option()` call from in here would
+	 * re-enter this method from inside itself, so the values are collected in
+	 * an array rather than staged in the option's own context.
+	 *
+	 * And it must be safe to run twice on its own output, because a caller is
+	 * free to hand back what it just read. That is why an already-encrypted
+	 * value passes through the encrypting context untouched.
+	 *
+	 * @param mixed $input Values to sanitize.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function sanitize( mixed $input ): array {
+		$input = is_array( $input ) ? $input : [];
+
+		// A submission carries one tab, so the fields it does not carry must
+		// be left alone rather than read as cleared. Anything else — an
+		// import, a reset, a direct update_option() — is a write of the whole
+		// value and is sanitized against every field.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- options.php verifies the nonce before the option is sanitized.
+		$tab = isset( $_POST[ $this->tab_input() ] ) ? sanitize_key( wp_unslash( $_POST[ $this->tab_input() ] ) ) : '';
+		$tab = isset( $this->tabs[ $tab ] ) ? $tab : '';
+
+		$collector = new ArrayContext( $this->seed( $tab ) );
+
+		$set = new FieldSet(
+			$this->fields_governed_by( $tab, $input ),
+			$this->decorate( $collector ),
+			(string) $this->config['option_name']
+		);
+
+		// Re-slashed because the Settings API unslashes before it gets here
+		// and the field set unslashes at its own boundary. Without this the
+		// values are unslashed twice and every backslash a user typed is
+		// eaten by the save that stores it.
+		$set->save( wp_slash( $input ) );
+
+		return $this->ordered_like_stored( $collector->values() );
+	}
+
+	/**
+	 * Put a sanitized array back into the order the option is stored in.
+	 *
+	 * Cosmetic in the database and not cosmetic above it. `update_option()`
+	 * compares the new value with the old before deciding to write, and an
+	 * array comparison is order-sensitive, so a pass that reordered the keys
+	 * reported a change on every save that changed nothing — a write, a cache
+	 * invalidation and an `updated_option` firing each time anything touched
+	 * the option.
+	 *
+	 * @param array<string, mixed> $values Sanitized values.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function ordered_like_stored( array $values ): array {
+		$ordered = [];
+
+		foreach ( array_keys( $this->options->values() ) as $key ) {
+			if ( array_key_exists( $key, $values ) ) {
+				$ordered[ $key ] = $values[ $key ];
+			}
+		}
+
+		// Anything the store did not already hold keeps the order it was
+		// collected in, which is the order the fields are configured in.
+		return $ordered + $values;
+	}
+
+	/**
+	 * Which fields a sanitize pass governs.
+	 *
+	 * A form submission governs every field on the tab it came from, present
+	 * or not: an unticked checkbox and an emptied select are both absent from
+	 * a submission, and reading absence as "leave it alone" is how unticking
+	 * a box never saves.
+	 *
+	 * A write that is not a submission governs only the keys it carries. The
+	 * same reasoning inverted: nothing about `update_option( $option, [ 'a'
+	 * => 1 ] )` says the caller has an opinion on the other forty fields, and
+	 * treating absence as "off" there wrote a 0 for every checkbox and number
+	 * field on the page on any write from a cron job or a helper.
+	 *
+	 * @param string               $tab   The tab being saved, or empty for a
+	 *                                    whole-value write.
+	 * @param array<string, mixed> $input The values being sanitized.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function fields_governed_by( string $tab, array $input ): array {
+		if ( '' !== $tab ) {
+			return $this->fields_for_tab( $tab );
+		}
+
+		return array_intersect_key( $this->fields, $input );
+	}
+
+	/**
+	 * The values a sanitize pass starts from.
+	 *
+	 * @param string $tab The tab being saved, or empty for a whole-value write.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function seed( string $tab ): array {
+		$stored = $this->options->values();
+
+		if ( '' !== $tab ) {
+			return $stored;
+		}
+
+		// A whole-value write governs every field, so no field carries over.
+		// Keys the option holds that are not fields do: another plugin's
+		// filter may have put them there and this is not the place to drop
+		// them.
+		return array_diff_key( $stored, $this->fields );
+	}
+
+	/**
+	 * The field set for one tab.
+	 *
+	 * @param string $tab Restrict to one tab, or empty for every field.
+	 *
+	 * @return FieldSet
+	 */
+	private function set( string $tab = '' ): FieldSet {
+		return $this->sets[ $tab ] ??= new FieldSet(
+			'' === $tab ? $this->fields : $this->fields_for_tab( $tab ),
+			$this->context,
+			(string) $this->config['option_name']
+		);
+	}
+
+	/**
+	 * The fields belonging to one tab.
+	 *
+	 * A field with no tab of its own belongs to the first, so a page that
+	 * grows tabs later does not lose the fields it already had.
+	 *
+	 * @param string $tab Tab slug.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function fields_for_tab( string $tab ): array {
+		if ( [] === $this->tabs ) {
+			return $this->fields;
+		}
+
+		$first = (string) array_key_first( $this->tabs );
+
+		return array_filter(
+			$this->fields,
+			static fn( $field ) => (string) ( $field['tab'] ?? $first ) === $tab
+		);
+	}
+
+	/**
+	 * The tab currently being viewed.
+	 *
+	 * @return string
+	 */
+	private function current_tab(): string {
+		// A tab is a view: it changes nothing and carries no nonce, exactly
+		// as core's own tabbed screens read theirs.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$requested = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
+
+		return isset( $this->tabs[ $requested ] ) ? $requested : (string) array_key_first( $this->tabs );
+	}
+
+	/**
+	 * The name of the hidden input carrying the submitted tab.
+	 *
+	 * Deliberately outside the option's own array: it is a fact about the
+	 * submission, not a value to store.
+	 *
+	 * @return string
+	 */
+	private function tab_input(): string {
+		return sanitize_key( $this->id . '_tab' );
+	}
+
+	/**
+	 * Enqueue the kit, on this settings screen only.
+	 *
+	 * @param string $hook_suffix The current screen's hook.
+	 *
+	 * @return void
+	 */
+	public function enqueue( string $hook_suffix ): void {
+		if ( '' === $this->hook_suffix || $hook_suffix !== $this->hook_suffix ) {
+			return;
+		}
+
+		( new Assets() )->enqueue( $this->set( $this->current_tab() )->dependencies() );
+	}
+
+	/**
+	 * Render the settings page.
+	 *
+	 * @return void
+	 */
+	public function render_page(): void {
+		if ( ! current_user_can( (string) $this->config['capability'] ) ) {
+			wp_die( esc_html__( 'You are not allowed to view this page.', 'arraypress' ) );
+		}
+
+		$tab = $this->current_tab();
+
+		echo '<div class="wrap field-kit__settings">';
+
+		// Core's own tabbed-settings header. It ends in the
+		// <hr class="wp-header-end"> that common.js moves admin notices to.
+		$header = PageHeader::render(
+			(string) ( '' !== (string) $this->config['header_title'] ? $this->config['header_title'] : $this->config['page_title'] ),
+			$this->tab_links(),
+			$tab,
+			$this->page_actions()
+		);
+
+		echo $header; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it is built.
+
+		// No argument: core adds its own "Settings saved." under the `general`
+		// slug, and asking for this page's slug alone would hide it.
+		settings_errors();
+
+		printf( '<form method="post" action="%s">', esc_url( admin_url( 'options.php' ) ) );
+
+		// Emits option_page, action and the nonce — and, through
+		// wp_nonce_field(), the _wp_http_referer that sends the redirect back
+		// to this tab rather than to the first one.
+		settings_fields( (string) $this->config['option_group'] );
+
+		printf(
+			'<input type="hidden" name="%s" value="%s" />',
+			esc_attr( $this->tab_input() ),
+			esc_attr( $tab )
+		);
+
+		$this->render_sections( $tab );
+
+		if ( $this->config['submit_button'] ) {
+			submit_button();
+		}
+
+		echo '</form></div>';
+	}
+
+	/**
+	 * Render one tab's sections and fields.
+	 *
+	 * @param string $tab Tab slug.
+	 *
+	 * @return void
+	 */
+	private function render_sections( string $tab ): void {
+		$set    = $this->set( $tab );
+		$fields = $set->fields();
+		$shown  = [];
+
+		foreach ( $this->sections as $slug => $section ) {
+			$in_section = array_filter(
+				$fields,
+				static fn( Field $field ) => (string) $field->get( 'section', '' ) === (string) $slug
+			);
+
+			if ( [] === $in_section ) {
+				continue;
+			}
+
+			$shown = array_merge( $shown, array_keys( $in_section ) );
+
+			printf( '<h2 class="title">%s</h2>', esc_html( (string) ( $section['title'] ?? $slug ) ) );
+
+			if ( '' !== (string) ( $section['description'] ?? '' ) ) {
+				printf( '<p class="description">%s</p>', wp_kses_post( (string) $section['description'] ) );
+			}
+
+			$this->render_table( $set, $in_section );
+		}
+
+		// A field no section claimed still has to appear, or a typo in a
+		// section name silently removes it from the page.
+		$loose = array_diff_key( $fields, array_flip( $shown ) );
+
+		if ( [] !== $loose ) {
+			$this->render_table( $set, $loose );
+		}
+	}
+
+	/**
+	 * Render a set of fields as a settings table.
+	 *
+	 * @param FieldSet $set    The field set.
+	 * @param Field[]  $fields The fields to render.
+	 *
+	 * @return void
+	 */
+	private function render_table( FieldSet $set, array $fields ): void {
+		echo '<table class="form-table" role="presentation"><tbody>';
+
+		foreach ( $fields as $field ) {
+			$type = $field->type();
+
+			// A heading, a notice or a separator is not a control: giving it
+			// a header cell would indent it as though it labelled one.
+			if ( ! $type->stores_value() ) {
+				printf(
+					'<tr class="field-kit__settings-row"><td colspan="2">%s</td></tr>',
+					$set->render_field( $field, '', false ) // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the kit escapes as it builds.
+				);
+
+				continue;
+			}
+
+			// A self-labelling control already carries its own <label for>,
+			// and a group of controls has no single element to point at, so
+			// both get plain text rather than a second label.
+			$header = $type->is_self_labelling() || $type->is_grouped()
+				? sprintf( '<span class="field-kit__row-label">%s</span>', esc_html( $field->label() ) )
+				: sprintf(
+					'<label for="%s">%s</label>',
+					esc_attr( $field->input_id() ),
+					esc_html( $field->label() )
+				);
+
+			printf(
+				'<tr class="field-kit__settings-row"><th scope="row">%s</th><td>%s</td></tr>',
+				$header, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from esc_html/esc_attr above.
+				// The header cell is the visible heading here, so the kit
+				// draws none: a group keeps its legend, hidden, so the
+				// grouping is still announced without appearing twice.
+				$set->render_field( $field, '', false ) // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the kit escapes as it builds.
+			);
+		}
+
+		echo '</tbody></table>';
+	}
+
+	/**
+	 * The tab links for the header.
+	 *
+	 * @return array<string, array{label: string, url: string}>
+	 */
+	private function tab_links(): array {
+		$links = [];
+
+		foreach ( $this->tabs as $slug => $tab ) {
+			$links[ $slug ] = [
+				'label' => (string) $tab['label'],
+				'url'   => $this->page_url( [ 'tab' => $slug ] ),
+			];
+		}
+
+		return $links;
+	}
+
+	/**
+	 * This page's URL.
+	 *
+	 * @param array<string, string> $args Extra query arguments.
+	 *
+	 * @return string
+	 */
+	private function page_url( array $args = [] ): string {
+		return add_query_arg(
+			array_merge( [ 'page' => (string) $this->config['menu_slug'] ], array_filter( $args ) ),
+			admin_url( '' !== (string) $this->config['parent_slug'] ? (string) $this->config['parent_slug'] : 'admin.php' )
+		);
+	}
+
+	/**
+	 * The export, import and reset controls.
+	 *
+	 * @return string
+	 */
+	private function page_actions(): string {
+		$actions = '';
+
+		if ( $this->config['export_import'] ) {
+			$actions .= $this->action_form( 'export', __( 'Export', 'arraypress' ), 'button' );
+			$actions .= $this->import_form();
+		}
+
+		if ( $this->config['reset_button'] ) {
+			$actions .= $this->action_form(
+				'reset',
+				__( 'Reset', 'arraypress' ),
+				'button button-link-delete',
+				__( 'Reset every setting on this tab to its default? This cannot be undone.', 'arraypress' )
+			);
+		}
+
+		return $actions;
+	}
+
+	/**
+	 * A single-button form posting to admin-post.
+	 *
+	 * A form rather than a link, because these change state and a link that
+	 * changes state can be followed by a prefetch or a crawler.
+	 *
+	 * @param string $action  Action slug.
+	 * @param string $label   Button label.
+	 * @param string $classes Button classes.
+	 * @param string $confirm Optional confirmation prompt.
+	 *
+	 * @return string
+	 */
+	private function action_form( string $action, string $label, string $classes, string $confirm = '' ): string {
+		return sprintf(
+			'<form method="post" action="%s"%s>%s' .
+			'<input type="hidden" name="action" value="%s" />' .
+			'<input type="hidden" name="tab" value="%s" />' .
+			'<button type="submit" class="%s">%s</button></form>',
+			esc_url( admin_url( 'admin-post.php' ) ),
+			'' === $confirm ? '' : sprintf( ' onsubmit="return confirm(%s)"', esc_attr( (string) wp_json_encode( $confirm ) ) ),
+			wp_nonce_field( $this->action_slug( $action ), '_wpnonce', false, false ),
+			esc_attr( $this->action_slug( $action ) ),
+			esc_attr( $this->current_tab() ),
+			esc_attr( $classes ),
+			esc_html( $label )
+		);
+	}
+
+	/**
+	 * The import form, which needs a file input.
+	 *
+	 * @return string
+	 */
+	private function import_form(): string {
+		// Numbered throughout: the id appears twice, and mixing numbered
+		// with unnumbered placeholders advances two separate counters.
+		return sprintf(
+			'<form method="post" enctype="multipart/form-data" action="%1$s">%2$s' .
+			'<input type="hidden" name="action" value="%3$s" />' .
+			'<label class="screen-reader-text" for="%4$s-import">%5$s</label>' .
+			'<input type="file" id="%4$s-import" name="import" accept="application/json,.json" required />' .
+			'<button type="submit" class="button">%6$s</button></form>',
+			esc_url( admin_url( 'admin-post.php' ) ),
+			wp_nonce_field( $this->action_slug( 'import' ), '_wpnonce', false, false ),
+			esc_attr( $this->action_slug( 'import' ) ),
+			esc_attr( $this->id ),
+			esc_html__( 'Settings file to import', 'arraypress' ),
+			esc_html__( 'Import', 'arraypress' )
+		);
+	}
+
+	/**
+	 * The admin-post action name for one operation.
+	 *
+	 * @param string $action Operation name.
+	 *
+	 * @return string
+	 */
+	private function action_slug( string $action ): string {
+		return sanitize_key( $this->id . '_' . $action );
+	}
+
+	/**
+	 * Send the settings as a JSON download.
+	 *
+	 * @return void
+	 */
+	public function handle_export(): void {
+		$this->authorize( 'export' );
+
+		$payload = (string) wp_json_encode( $this->export_payload(), JSON_PRETTY_PRINT );
+
+		nocache_headers();
+		header( 'Content-Type: application/json; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="' . sanitize_file_name( $this->id . '-' . gmdate( 'Y-m-d' ) . '.json' ) . '"' );
+		header( 'Content-Length: ' . strlen( $payload ) );
+
+		echo $payload; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON, which escaping would corrupt.
+
+		exit;
+	}
+
+	/**
+	 * What an export writes.
+	 *
+	 * Separate from sending it because a method that ends in exit() cannot
+	 * be asserted on, and what is left out of this is the part worth
+	 * asserting on.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function export_payload(): array {
+		$values = $this->options->values();
+
+		// Encrypted values are left out rather than exported. The key comes
+		// from this site's salts, so they cannot be read anywhere else — and
+		// exporting them would put a credential in a file for no benefit.
+		foreach ( $this->fields as $key => $field ) {
+			if ( ! empty( $field['encrypted'] ) ) {
+				unset( $values[ (string) $key ] );
+			}
+		}
+
+		return [
+			'id'      => $this->id,
+			'version' => 1,
+			'values'  => $values,
+		];
+	}
+
+	/**
+	 * Read settings back from an uploaded file.
+	 *
+	 * @return void
+	 */
+	public function handle_import(): void {
+		$this->authorize( 'import' );
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in authorize().
+		$file = isset( $_FILES['import'] ) ? array_map( 'sanitize_text_field', wp_unslash( (array) $_FILES['import'] ) ) : [];
+
+		// is_uploaded_file() as well as the error code: it is what makes the
+		// path PHP wrote the only one that can be read here.
+		if ( UPLOAD_ERR_OK !== (int) ( $file['error'] ?? UPLOAD_ERR_NO_FILE ) || ! is_uploaded_file( (string) ( $file['tmp_name'] ?? '' ) ) ) {
+			$this->redirect_with_notice( 'import_failed', __( 'No file was uploaded.', 'arraypress' ), 'error' );
+		}
+
+		$this->apply_import(
+			json_decode( (string) file_get_contents( (string) $file['tmp_name'] ), true ) // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a local upload, not a remote request.
+		);
+	}
+
+	/**
+	 * Apply a decoded import and redirect.
+	 *
+	 * Separate from reading the upload so the decisions can be exercised
+	 * without a real one — `is_uploaded_file()` is true of nothing a test can
+	 * create, and weakening that check to make the test easier would trade a
+	 * security property for a convenience.
+	 *
+	 * @param mixed $decoded The decoded file contents.
+	 *
+	 * @return void
+	 */
+	public function apply_import( mixed $decoded ): void {
+		if ( ! is_array( $decoded ) || ! isset( $decoded['values'] ) || ! is_array( $decoded['values'] ) ) {
+			$this->redirect_with_notice( 'import_failed', __( 'That file is not a settings export.', 'arraypress' ), 'error' );
+		}
+
+		if ( (string) ( $decoded['id'] ?? '' ) !== $this->id ) {
+			$this->redirect_with_notice(
+				'import_failed',
+				sprintf(
+					/* translators: 1: the page the file was exported from, 2: this page */
+					__( 'That file is for "%1$s", not "%2$s".', 'arraypress' ),
+					(string) ( $decoded['id'] ?? '' ),
+					$this->id
+				),
+				'error'
+			);
+		}
+
+		// Not written straight to the option: an uploaded file is untrusted,
+		// and the registered sanitize callback is what makes every value pass
+		// through its own field type. A key that is not a field is dropped
+		// there rather than becoming part of the option.
+		update_option( (string) $this->config['option_name'], $decoded['values'] );
+
+		$this->redirect_with_notice( 'imported', __( 'Settings imported.', 'arraypress' ), 'success' );
+	}
+
+	/**
+	 * Reset a tab's settings to their defaults.
+	 *
+	 * @return void
+	 */
+	public function handle_reset(): void {
+		$this->authorize( 'reset' );
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in authorize().
+		$tab = isset( $_POST['tab'] ) ? sanitize_key( wp_unslash( $_POST['tab'] ) ) : '';
+		$tab = isset( $this->tabs[ $tab ] ) ? $tab : '';
+
+		$values = $this->options->values();
+
+		foreach ( array_keys( '' === $tab ? $this->fields : $this->fields_for_tab( $tab ) ) as $key ) {
+			unset( $values[ (string) $key ] );
+		}
+
+		// A field with no stored value renders its configured default, so
+		// removing the keys is the reset. This runs through sanitize() like
+		// every other write, and survives it because an already-encrypted
+		// value is not encrypted again.
+		update_option( (string) $this->config['option_name'], $values );
+
+		$this->redirect_with_notice( 'reset', __( 'Settings reset.', 'arraypress' ), 'success' );
+	}
+
+	/**
+	 * Verify the nonce and capability for an admin-post action.
+	 *
+	 * @param string $action Operation name.
+	 *
+	 * @return void
+	 */
+	private function authorize( string $action ): void {
+		check_admin_referer( $this->action_slug( $action ) );
+
+		if ( ! current_user_can( (string) $this->config['capability'] ) ) {
+			wp_die( esc_html__( 'You are not allowed to do that.', 'arraypress' ) );
+		}
+	}
+
+	/**
+	 * Record a notice and go back to the settings page.
+	 *
+	 * @param string $code    Notice code.
+	 * @param string $message Notice message.
+	 * @param string $type    Notice type.
+	 *
+	 * @return void
+	 */
+	private function redirect_with_notice( string $code, string $message, string $type ): void {
+		add_settings_error( (string) $this->config['option_name'], $code, $message, $type );
+
+		// Where get_settings_errors() looks after a redirect, and the reason
+		// the URL below carries settings-updated: without it the transient is
+		// never read and the notice is silently dropped.
+		set_transient( 'settings_errors', get_settings_errors(), 30 );
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in authorize().
+		$tab = isset( $_POST['tab'] ) ? sanitize_key( wp_unslash( $_POST['tab'] ) ) : '';
+
+		wp_safe_redirect(
+			$this->page_url(
+				[
+					'tab'              => $tab,
+					'settings-updated' => 'true',
+				]
+			)
+		);
+
+		exit;
+	}
+
+	/**
+	 * Get this page's identifier.
+	 *
+	 * @return string
+	 */
+	public function get_id(): string {
+		return $this->id;
+	}
+
+	/**
+	 * Read a page configuration value.
+	 *
+	 * @param string $key      Configuration key.
+	 * @param mixed  $fallback Returned when absent.
+	 *
+	 * @return mixed
+	 */
+	public function get_config( string $key, mixed $fallback = null ): mixed {
+		return $this->config[ $key ] ?? $fallback;
+	}
+
+	/**
+	 * Get the option name these settings live under.
+	 *
+	 * @return string
+	 */
+	public function get_option_name(): string {
+		return (string) $this->config['option_name'];
+	}
+
+	/**
+	 * Get every stored value, as stored.
+	 *
+	 * Encrypted values are ciphertext here. Read those through get_value(),
+	 * which goes through the decorators.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function get_values(): array {
+		return $this->options->values();
+	}
+
+	/**
+	 * Get one field's value, decrypted, or the constant standing in for it.
+	 *
+	 * @param string $field_key Field key.
+	 * @param mixed  $fallback  Returned when the field has no value and no default.
+	 *
+	 * @return mixed
+	 */
+	public function get_value( string $field_key, mixed $fallback = null ): mixed {
+		$field = $this->set()->field( $field_key );
+
+		if ( null === $field ) {
+			return $fallback;
+		}
+
+		$value = $field->value();
+
+		return null === $value || '' === $value ? $fallback : $value;
+	}
+
+	/**
+	 * Get the field configuration.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	public function get_fields(): array {
+		return $this->fields;
+	}
+
+	/**
+	 * Get one field's configuration.
+	 *
+	 * @param string $field_key Field key.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	public function get_field( string $field_key ): ?array {
+		return $this->fields[ $field_key ] ?? null;
+	}
 }
