@@ -620,6 +620,112 @@ final class SettingFieldsTest extends TestCase {
 	}
 
 	/**
+	 * A badged section badges and locks every field in it.
+	 *
+	 * Locking a section only visually would be worse than not locking it: a
+	 * disabled control sends nothing, so the next save would read every field
+	 * in the section as cleared and wipe values the install had configured
+	 * while it still had the feature.
+	 */
+	public function test_a_badged_section_locks_its_fields(): void {
+		$page = $this->page(
+			[
+				'sections' => [
+					'premium' => [
+						'title' => 'Premium',
+						'tab'   => 'one',
+						'badge' => 'Pro',
+					],
+				],
+				'fields'   => [
+					'locked' => [
+						'type'    => 'text',
+						'tab'     => 'one',
+						'section' => 'premium',
+					],
+					'free'   => [
+						'type' => 'text',
+						'tab'  => 'one',
+					],
+				],
+			]
+		);
+
+		$html = $this->render( $page );
+
+		// Once in the section heading, once on the field it locked.
+		$this->assertSame( 2, substr_count( $html, 'field-kit__badge' ) );
+		$this->assertStringContainsString( 'field-kit__field--locked', $html );
+
+		// And its stored value survives a save that cannot include it.
+		$GLOBALS['fk_options']['sf_demo'] = [ 'locked' => 'set-while-licensed' ];
+
+		$this->submit( $page, 'one', [ 'free' => 'y' ] );
+
+		$this->assertSame( 'set-while-licensed', $page->get_value( 'locked' ) );
+		$this->assertSame( 'y', $page->get_value( 'free' ) );
+	}
+
+	/**
+	 * A field's own badge wins over its section's.
+	 */
+	public function test_a_field_badge_beats_its_sections(): void {
+		$page = $this->page(
+			[
+				'sections' => [
+					'premium' => [
+						'title' => 'Premium',
+						'tab'   => 'one',
+						'badge' => 'Pro',
+					],
+				],
+				'fields'   => [
+					'specific' => [
+						'type'    => 'text',
+						'tab'     => 'one',
+						'section' => 'premium',
+						'badge'   => 'Business',
+					],
+				],
+			]
+		);
+
+		$this->assertStringContainsString( '>Business<', $this->render( $page ) );
+	}
+
+	/**
+	 * A suppressed section badge locks nothing.
+	 */
+	public function test_a_suppressed_section_badge_locks_nothing(): void {
+		$page = $this->page(
+			[
+				'sections' => [
+					'premium' => [
+						'title' => 'Premium',
+						'tab'   => 'one',
+						'badge' => [
+							'text'     => 'Pro',
+							'disabled' => true,
+						],
+					],
+				],
+				'fields'   => [
+					'field' => [
+						'type'    => 'text',
+						'tab'     => 'one',
+						'section' => 'premium',
+					],
+				],
+			]
+		);
+
+		$html = $this->render( $page );
+
+		$this->assertStringNotContainsString( 'field-kit__badge', $html );
+		$this->assertStringNotContainsString( 'field-kit__field--locked', $html );
+	}
+
+	/**
 	 * A field with no section still appears.
 	 */
 	public function test_a_field_no_section_claimed_still_renders(): void {

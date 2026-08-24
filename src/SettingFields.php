@@ -20,6 +20,7 @@ use ArrayPress\FieldKit\Context\OptionContext;
 use ArrayPress\FieldKit\Contracts\Context;
 use ArrayPress\FieldKit\Field;
 use ArrayPress\FieldKit\FieldSet;
+use ArrayPress\FieldKit\Support\Badge;
 use ArrayPress\FieldKit\Support\PageHeader;
 
 /**
@@ -112,6 +113,7 @@ class SettingFields {
 		$this->fields   = (array) ( $config['fields'] ?? [] );
 		$this->tabs     = $this->parse_tabs( (array) ( $config['tabs'] ?? [] ) );
 		$this->sections = (array) ( $config['sections'] ?? [] );
+		$this->fields   = $this->apply_section_badges( $this->fields );
 
 		$this->options = new OptionContext( (string) $this->config['option_name'] );
 		$this->context = $this->decorate( $this->options );
@@ -132,6 +134,40 @@ class SettingFields {
 		add_action( 'admin_post_' . $this->action_slug( 'export' ), [ $this, 'handle_export' ] );
 		add_action( 'admin_post_' . $this->action_slug( 'import' ), [ $this, 'handle_import' ] );
 		add_action( 'admin_post_' . $this->action_slug( 'reset' ), [ $this, 'handle_reset' ] );
+	}
+
+	/**
+	 * Copy a badged section's badge onto each of its fields.
+	 *
+	 * A section badge locks the whole section. Resolving it here rather than
+	 * at render time means every path downstream — rendering, sanitizing,
+	 * saving — sees an ordinary badged field and needs no special case. In
+	 * particular the save path skips a locked field, and a section that
+	 * locked only visually would have had its values cleared by the next save
+	 * because a disabled control sends nothing.
+	 *
+	 * A field's own badge wins: it is the more specific statement.
+	 *
+	 * @param array<string, array<string, mixed>> $fields Field configuration.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function apply_section_badges( array $fields ): array {
+		foreach ( $this->sections as $slug => $section ) {
+			if ( null === Badge::resolve( $section['badge'] ?? null ) ) {
+				continue;
+			}
+
+			foreach ( $fields as $key => $field ) {
+				if ( (string) ( $field['section'] ?? '' ) !== (string) $slug || isset( $field['badge'] ) ) {
+					continue;
+				}
+
+				$fields[ $key ]['badge'] = $section['badge'];
+			}
+		}
+
+		return $fields;
 	}
 
 	/**
@@ -594,7 +630,14 @@ class SettingFields {
 
 			$shown = array_merge( $shown, array_keys( $in_section ) );
 
-			printf( '<h2 class="title">%s</h2>', esc_html( (string) ( $section['title'] ?? $slug ) ) );
+			$badge = Badge::resolve( $section['badge'] ?? null );
+
+			printf(
+				'<h2 class="title">%s%s</h2>',
+				esc_html( (string) ( $section['title'] ?? $slug ) ),
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it is built.
+				null === $badge ? '' : Badge::render( $badge )
+			);
 
 			if ( '' !== (string) ( $section['description'] ?? '' ) ) {
 				printf( '<p class="description">%s</p>', wp_kses_post( (string) $section['description'] ) );
