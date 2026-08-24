@@ -669,9 +669,10 @@ class SettingFields {
 		foreach ( $fields as $field ) {
 			$type = $field->type();
 
-			// A heading, a notice or a separator is not a control: giving it
-			// a header cell would indent it as though it labelled one.
-			if ( ! $type->stores_value() ) {
+			// A heading, a notice or a separator is not a control, and an
+			// email editor is a panel — neither belongs in a cell built for
+			// one control beside one label.
+			if ( $type->spans_row() ) {
 				printf(
 					'<tr class="field-kit__settings-row"><td colspan="2">%s</td></tr>',
 					$set->render_field( $field, '', false ) // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the kit escapes as it builds.
