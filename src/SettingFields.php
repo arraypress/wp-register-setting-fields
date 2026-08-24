@@ -677,7 +677,7 @@ class SettingFields {
 			// one control beside one label.
 			if ( $type->spans_row() ) {
 				printf(
-					'<tr class="field-kit__settings-row"><td colspan="2">%s</td></tr>',
+					'<tr class="field-kit__settings-row field-kit__spans-row"><td colspan="2">%s</td></tr>',
 					$set->render_field( $field, '', false ) // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the kit escapes as it builds.
 				);
 
