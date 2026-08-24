@@ -772,16 +772,22 @@ class SettingFields {
 
 		if ( $this->config['export_import'] ) {
 			$tools .= $this->tool(
-				__( 'Settings file', 'arraypress' ),
-				__( 'Download this page\'s settings, or read a file back. Encrypted values are not exported — they cannot be read on another site.', 'arraypress' ),
-				$this->action_form( 'export', __( 'Export', 'arraypress' ), 'button' ) . $this->import_form()
+				__( 'Export', 'arraypress' ),
+				__( 'Download this page\'s settings as a JSON file. Encrypted values are left out — they cannot be read on another site.', 'arraypress' ),
+				$this->action_form( 'export', __( 'Export settings', 'arraypress' ), 'button' )
+			);
+
+			$tools .= $this->tool(
+				__( 'Import', 'arraypress' ),
+				__( 'Read a settings file back. Every value is sanitized by its own field, and anything that is not a field on this page is ignored.', 'arraypress' ),
+				$this->import_form()
 			);
 		}
 
 		if ( $this->config['reset_button'] ) {
 			$tools .= $this->tool(
 				__( 'Reset', 'arraypress' ),
-				__( 'Restore every setting on this tab to its default.', 'arraypress' ),
+				__( 'Restore every setting on the tab you are viewing to its default.', 'arraypress' ),
 				$this->action_form(
 					'reset',
 					__( 'Reset this tab', 'arraypress' ),
@@ -857,20 +863,35 @@ class SettingFields {
 	 * @return string
 	 */
 	private function import_form(): string {
-		// Numbered throughout: the id appears twice, and mixing numbered
-		// with unnumbered placeholders advances two separate counters.
+		// core's own import form, from wp_import_upload_form(): a
+		// .wp-upload-form, a *visible* label saying what to choose, the size
+		// limit beside it, and a plain file input. A file input is what core
+		// uses — hiding one behind a styled button is the part that would not
+		// be core-like.
+		//
+		// Numbered throughout: the id appears twice, and mixing numbered with
+		// unnumbered placeholders advances two separate counters.
+		$bytes = wp_max_upload_size();
+
 		return sprintf(
-			'<form method="post" enctype="multipart/form-data" action="%1$s">%2$s' .
+			'<form method="post" enctype="multipart/form-data" action="%1$s" class="wp-upload-form">%2$s' .
 			'<input type="hidden" name="action" value="%3$s" />' .
-			'<label class="screen-reader-text" for="%4$s-import">%5$s</label>' .
-			'<input type="file" id="%4$s-import" name="import" accept="application/json,.json" required />' .
-			'<button type="submit" class="button">%6$s</button></form>',
+			'<input type="hidden" name="max_file_size" value="%7$d" />' .
+			'<p><label for="%4$s-import">%5$s</label> <span class="description">(%8$s)</span></p>' .
+			'<p><input type="file" id="%4$s-import" name="import" accept="application/json,.json" required /></p>' .
+			'<p class="submit"><button type="submit" class="button">%6$s</button></p></form>',
 			esc_url( admin_url( 'admin-post.php' ) ),
 			wp_nonce_field( $this->action_slug( 'import' ), '_wpnonce', false, false ),
 			esc_attr( $this->action_slug( 'import' ) ),
 			esc_attr( $this->id ),
-			esc_html__( 'Settings file to import', 'arraypress' ),
-			esc_html__( 'Import', 'arraypress' )
+			esc_html__( 'Choose a settings file from your computer:', 'arraypress' ),
+			esc_html__( 'Import', 'arraypress' ),
+			(int) $bytes,
+			sprintf(
+				/* translators: %s: maximum allowed upload size */
+				esc_html__( 'Maximum size: %s', 'arraypress' ),
+				esc_html( size_format( $bytes ) )
+			)
 		);
 	}
 

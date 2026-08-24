@@ -371,3 +371,19 @@ class SF_Screen {
 		$this->help_sidebar = $content;
 	}
 }
+
+if ( ! function_exists( 'wp_max_upload_size' ) ) {
+	function wp_max_upload_size() {
+		return 8 * MB_IN_BYTES;
+	}
+}
+
+if ( ! function_exists( 'size_format' ) ) {
+	function size_format( $bytes, $decimals = 0 ) {
+		return round( (int) $bytes / MB_IN_BYTES, $decimals ) . ' MB';
+	}
+}
+
+if ( ! defined( 'MB_IN_BYTES' ) ) {
+	define( 'MB_IN_BYTES', 1024 * 1024 );
+}
