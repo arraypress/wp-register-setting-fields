@@ -21,6 +21,7 @@ use ArrayPress\FieldKit\Contracts\Context;
 use ArrayPress\FieldKit\Field;
 use ArrayPress\FieldKit\FieldSet;
 use ArrayPress\FieldKit\Support\Badge;
+use ArrayPress\FieldKit\Support\Tooltip;
 use ArrayPress\FieldKit\Support\PageHeader;
 
 /**
@@ -690,17 +691,20 @@ class SettingFields {
 			// the renderer is told to draw none, so it draws no badge either.
 			$badge = Badge::for_field( $field );
 
+			// Beside the heading, which this class draws rather than the kit.
+			$tooltip = Tooltip::for_field( $field );
+
 			$header = $type->is_self_labelling() || $type->is_grouped()
 				? sprintf(
 					'<span class="field-kit__row-label">%s%s</span>',
 					esc_html( $field->label() ),
-					$badge // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it is built.
+					$badge . $tooltip // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it is built.
 				)
 				: sprintf(
 					'<label for="%s">%s</label>%s',
 					esc_attr( $field->input_id() ),
 					esc_html( $field->label() ),
-					$badge // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it is built.
+					$badge . $tooltip // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it is built.
 				);
 
 			printf(
