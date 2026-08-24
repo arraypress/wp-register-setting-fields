@@ -130,6 +130,19 @@ class SettingFields {
 		// one. Nothing in register_setting() needs the admin to be loaded.
 		$this->register_settings();
 
+		// Built now, not when a tab renders. The set's constructor is what
+		// registers a field's search source and its action handlers, and the
+		// request that searches or presses a button is never the request that
+		// drew the control — so a set built lazily registers them only on the
+		// renders where nobody needs them. An action button on a settings
+		// page came back "Unknown action." every time it was pressed.
+		//
+		// The whole-page set rather than a tab's: the names are the option
+		// name and the field key, with no tab in them, so one set covers
+		// every tab. It stores configuration and registers callbacks; the
+		// fields themselves are still built on demand.
+		$this->set();
+
 		add_action( 'admin_menu', [ $this, 'register_menu' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue' ] );
 		add_filter( 'screen_settings', [ $this, 'render_screen_tools' ], 10, 2 );
