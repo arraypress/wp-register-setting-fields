@@ -653,9 +653,15 @@ final class SettingFieldsTest extends TestCase {
 
 		$html = $this->render( $page );
 
-		// Once in the section heading, once on the field it locked.
+		// Once in the section heading, once in the locked field's own header
+		// cell — and not against the side of the input, which is where it
+		// first went.
 		$this->assertSame( 2, substr_count( $html, 'field-kit__badge' ) );
 		$this->assertStringContainsString( 'field-kit__field--locked', $html );
+		$this->assertMatchesRegularExpression(
+			'/<th scope="row">.*field-kit__badge.*<\/th>/s',
+			$html
+		);
 
 		// And its stored value survives a save that cannot include it.
 		$GLOBALS['fk_options']['sf_demo'] = [ 'locked' => 'set-while-licensed' ];

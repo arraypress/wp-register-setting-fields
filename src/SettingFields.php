@@ -683,12 +683,21 @@ class SettingFields {
 			// A self-labelling control already carries its own <label for>,
 			// and a group of controls has no single element to point at, so
 			// both get plain text rather than a second label.
+			// The badge belongs beside the heading, and the heading is here —
+			// the renderer is told to draw none, so it draws no badge either.
+			$badge = Badge::for_field( $field );
+
 			$header = $type->is_self_labelling() || $type->is_grouped()
-				? sprintf( '<span class="field-kit__row-label">%s</span>', esc_html( $field->label() ) )
+				? sprintf(
+					'<span class="field-kit__row-label">%s%s</span>',
+					esc_html( $field->label() ),
+					$badge // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it is built.
+				)
 				: sprintf(
-					'<label for="%s">%s</label>',
+					'<label for="%s">%s</label>%s',
 					esc_attr( $field->input_id() ),
-					esc_html( $field->label() )
+					esc_html( $field->label() ),
+					$badge // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it is built.
 				);
 
 			printf(
