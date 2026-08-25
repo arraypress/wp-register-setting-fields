@@ -28,7 +28,12 @@ jobs:
           tools: composer:v2
 
       - name: Install dependencies
-        run: composer install --prefer-dist --no-progress --no-interaction
+        # No --prefer-dist: it overrides config.preferred-install, and the kit
+        # is installed from source here so its shared test fixtures
+        # (stubs.php, SelfReferences.php) are present. They are
+        # export-ignored, so a dist install does not carry them -- which
+        # is the point, since a dist install is what reaches a plugin.
+        run: composer install --no-progress --no-interaction
 
       - name: Lint
         run: find src tests -name '*.php' -print0 | xargs -0 -n1 -P4 php -l > /dev/null

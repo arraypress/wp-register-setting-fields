@@ -29,7 +29,10 @@
   "config": {
     "optimize-autoloader": true,
     "sort-packages": true,
-    "preferred-install": "dist",
+    "preferred-install": {
+      "arraypress/wp-field-kit": "source",
+      "*": "dist"
+    },
     "allow-plugins": {
       "dealerdirect/phpcodesniffer-composer-installer": true
     }
