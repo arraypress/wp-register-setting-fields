@@ -21,6 +21,7 @@ use ArrayPress\FieldKit\Contracts\Context;
 use ArrayPress\FieldKit\Field;
 use ArrayPress\FieldKit\FieldSet;
 use ArrayPress\FieldKit\Support\Badge;
+use ArrayPress\FieldKit\Support\Sections;
 use ArrayPress\FieldKit\Support\Tooltip;
 use ArrayPress\FieldKit\Support\PageHeader;
 
@@ -680,9 +681,49 @@ class SettingFields {
 	 * @return void
 	 */
 	private function render_table( FieldSet $set, array $fields ): void {
+		$layout = Sections::split( $fields );
+
+		if ( [] !== $layout ) {
+			$sections = Sections::render(
+				$layout,
+				function ( array $group ) use ( $set ): string {
+					if ( [] === $group ) {
+						return '';
+					}
+
+					ob_start();
+					$this->render_rows( $set, $group );
+
+					return (string) ob_get_clean();
+				},
+				$this->id . '-' . count( $fields )
+			);
+
+			echo $sections; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it is built.
+
+			return;
+		}
+
+		$this->render_rows( $set, $fields );
+	}
+
+	/**
+	 * A set of fields as one settings table.
+	 *
+	 * @param FieldSet $set    The field set.
+	 * @param Field[]  $fields The fields to render.
+	 *
+	 * @return void
+	 */
+	private function render_rows( FieldSet $set, array $fields ): void {
 		echo '<table class="form-table" role="presentation"><tbody>';
 
 		foreach ( $fields as $field ) {
+			// A marker draws nothing, so one left in emits an empty row.
+			if ( Sections::is_marker( $field ) ) {
+				continue;
+			}
+
 			$type = $field->type();
 
 			// A heading, a notice or a separator is not a control, and an
