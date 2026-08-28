@@ -44,6 +44,26 @@ if ( ! function_exists( 'get_setting_fields' ) ) {
 
 /** Value Access **************************************************************/
 
+if ( ! function_exists( 'set_setting_field_value' ) ) {
+	/**
+	 * Write one setting, through the decorators a form save uses.
+	 *
+	 * The only way to set an encrypted field from code. update_option()
+	 * stores plaintext where ciphertext is expected, and it reads back empty.
+	 *
+	 * @param string $settings_id Registered settings id.
+	 * @param string $field_key   The field.
+	 * @param mixed  $value       What to store.
+	 *
+	 * @return bool
+	 */
+	function set_setting_field_value( string $settings_id, string $field_key, mixed $value ): bool {
+		$settings = Registry::instance()->get( $settings_id );
+
+		return $settings ? $settings->set_value( $field_key, $value ) : false;
+	}
+}
+
 if ( ! function_exists( 'get_setting_field_value' ) ) {
 	/**
 	 * Get a setting value with automatic decryption and constant fallback.
