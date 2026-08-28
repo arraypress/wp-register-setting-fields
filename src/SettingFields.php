@@ -800,9 +800,22 @@ class SettingFields {
 	 * @return string
 	 */
 	private function page_url( array $args = [] ): string {
+		$parent = (string) $this->config['parent_slug'];
+
+		// A parent slug is only a filename when the page hangs off one of
+		// core's menus -- options-general.php, edit.php. A plugin with its
+		// own top-level menu passes that menu's slug instead, and its
+		// children live at admin.php?page=..., exactly as add_submenu_page()
+		// registers them a few methods up. Passing the slug to admin_url()
+		// builds /wp-admin/my-plugin?page=..., which is not an admin screen
+		// at all -- WordPress serves the front end from it.
+		$base = ( '' !== $parent && str_ends_with( $parent, '.php' ) )
+			? $parent
+			: 'admin.php';
+
 		return add_query_arg(
 			array_merge( [ 'page' => (string) $this->config['menu_slug'] ], array_filter( $args ) ),
-			admin_url( '' !== (string) $this->config['parent_slug'] ? (string) $this->config['parent_slug'] : 'admin.php' )
+			admin_url( $base )
 		);
 	}
 
