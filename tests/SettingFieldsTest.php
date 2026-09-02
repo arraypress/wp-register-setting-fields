@@ -1366,4 +1366,47 @@ final class SettingFieldsTest extends TestCase {
 		$this->assertFalse( is_setting_on( $page->get_id(), 'flag' ) );
 	}
 
+	/**
+	 * A required field says so in the heading this class draws.
+	 */
+	public function test_a_required_field_is_marked_in_its_heading(): void {
+		$page = $this->page(
+			[
+				'fields' => [
+					'store_name' => [ 'type' => 'text', 'label' => 'Store name', 'required' => true ],
+					'tagline'    => [ 'type' => 'text', 'label' => 'Tagline' ],
+				],
+			]
+		);
+
+		ob_start();
+		$page->render_page();
+		$html = (string) ob_get_clean();
+
+		$this->assertMatchesRegularExpression( '/<label for="[^"]*store_name[^"]*">Store name<span class="field-kit__required" aria-hidden="true">\*<\/span>/', $html );
+		$this->assertDoesNotMatchRegularExpression( '/Tagline<span class="field-kit__required"/', $html );
+	}
+
+	/**
+	 * Under the Settings menu core prints the notices; printing them here as
+	 * well said "Settings saved." twice.
+	 */
+	public function test_notices_are_not_printed_twice_under_the_settings_menu(): void {
+		$GLOBALS['sf_settings_errors_calls'] = 0;
+
+		$page = $this->page( [ 'parent_slug' => 'options-general.php' ] );
+		ob_start();
+		$page->render_page();
+		ob_end_clean();
+
+		$this->assertSame( 0, $GLOBALS['sf_settings_errors_calls'] );
+
+		$page = $this->page( [ 'parent_slug' => '' ] );
+		ob_start();
+		$page->render_page();
+		ob_end_clean();
+
+		$this->assertSame( 1, $GLOBALS['sf_settings_errors_calls'] );
+	}
+
 }

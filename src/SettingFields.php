@@ -21,9 +21,10 @@ use ArrayPress\FieldKit\Contracts\Context;
 use ArrayPress\FieldKit\Field;
 use ArrayPress\FieldKit\FieldSet;
 use ArrayPress\FieldKit\Support\Badge;
+use ArrayPress\FieldKit\Support\Markup;
+use ArrayPress\FieldKit\Support\PageHeader;
 use ArrayPress\FieldKit\Support\Sections;
 use ArrayPress\FieldKit\Support\Tooltip;
-use ArrayPress\FieldKit\Support\PageHeader;
 
 /**
  * Registers a tabbed settings page backed by a single option.
@@ -661,8 +662,13 @@ class SettingFields {
 		// No argument: core adds its own "Settings saved." under the `general`
 		// slug, and asking for this page's slug alone would hide it. A field
 		// the last save refused is printed here as well, and again under the
-		// field itself.
-		settings_errors();
+		// field itself. Not under the Settings menu, though: admin.php pulls
+		// in options-head.php for every child of options-general.php, and
+		// that prints them already -- so a page there said "Settings saved."
+		// twice.
+		if ( 'options-general.php' !== (string) $this->config['parent_slug'] ) {
+			settings_errors();
+		}
 
 		printf( '<form method="post" action="%s">', esc_url( admin_url( 'options.php' ) ) );
 
@@ -846,16 +852,22 @@ class SettingFields {
 			// Beside the heading, which this class draws rather than the kit.
 			$tooltip = Tooltip::for_field( $field );
 
+			// The kit marks a required field in the label it draws; this class
+			// draws the label, so it marks it here.
+			$required = Markup::required_marker( $field->is_required() );
+
 			$header = $type->is_self_labelling() || $type->is_grouped()
 				? sprintf(
-					'<span class="field-kit__row-label">%s%s</span>',
+					'<span class="field-kit__row-label">%s%s%s</span>',
 					esc_html( $field->label() ),
+					$required, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the kit escapes as it builds.
 					$badge . $tooltip // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it is built.
 				)
 				: sprintf(
-					'<label for="%s">%s</label>%s',
+					'<label for="%s">%s%s</label>%s',
 					esc_attr( $field->input_id() ),
 					esc_html( $field->label() ),
+					$required, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the kit escapes as it builds.
 					$badge . $tooltip // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it is built.
 				);
 

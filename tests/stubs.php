@@ -147,6 +147,7 @@ if ( ! function_exists( 'get_settings_errors' ) ) {
 
 if ( ! function_exists( 'settings_errors' ) ) {
 	function settings_errors( $setting = '', $sanitize = false, $hide_on_update = false ) {
+		$GLOBALS['sf_settings_errors_calls'] = ( $GLOBALS['sf_settings_errors_calls'] ?? 0 ) + 1;
 		foreach ( get_settings_errors( $setting ) as $error ) {
 			printf( '<div class="notice notice-%s"><p>%s</p></div>', esc_attr( $error['type'] ), esc_html( $error['message'] ) );
 		}
