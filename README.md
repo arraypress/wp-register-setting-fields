@@ -19,6 +19,7 @@ the per-type sanitising follow from it.
 * Group fields into tabs and sections, saving one tab without touching others
 * Read and write a value by name, without knowing how the option is shaped
 * Sanitise per field type, rather than writing a callback for each
+* Refuse a value that is missing or malformed, and say which field
 * Encrypt a field, so an API key is not stored in the clear
 * Export, import and reset from Screen Options
 * Show a field only when another is set
@@ -57,6 +58,22 @@ $name = get_setting_field_value( 'my_plugin', 'site_name' );
 
 Field types come from `arraypress/wp-field-kit`, so anything it renders can go
 in a settings page.
+
+## Validation
+
+Sanitising coerces; it does not refuse. A field that must hold something says
+`'required' => true`, and one that must hold a particular shape names a rule
+with `validate` — `email`, `url`, `numeric`, `integer`, `slug`, `alphanumeric`,
+or a callable returning `true`, a message or a `WP_Error`:
+
+```php
+'contact' => [ 'type' => 'text', 'label' => __( 'Contact', 'my-plugin' ), 'required' => true, 'validate' => 'email' ],
+```
+
+A value that fails is not stored. The field keeps what it held, every other
+field on the tab is saved, and after the redirect the message appears as an
+error notice at the top of the page — in place of "Settings saved." — and
+again under the field itself.
 
 ## Requirements
 

@@ -116,15 +116,38 @@ if ( ! function_exists( 'add_settings_error' ) ) {
 	}
 }
 
+/*
+ * Core's order, because a settings page's errors cross a redirect. options.php
+ * stores what was registered in a transient before it redirects, and the load
+ * that follows — the one carrying settings-updated — merges the transient in
+ * and deletes it, so a refresh does not show the same notice twice. A stub
+ * that only read the global would pass a page that shows its errors on the
+ * request that saved and never on the one the user actually sees.
+ */
 if ( ! function_exists( 'get_settings_errors' ) ) {
 	function get_settings_errors( $setting = '', $sanitize = false ) {
-		return $GLOBALS['sf_errors'];
+		if ( ! empty( $_GET['settings-updated'] ) && get_transient( 'settings_errors' ) ) {
+			$GLOBALS['sf_errors'] = array_merge( (array) $GLOBALS['sf_errors'], (array) get_transient( 'settings_errors' ) );
+
+			delete_transient( 'settings_errors' );
+		}
+
+		if ( '' === (string) $setting ) {
+			return $GLOBALS['sf_errors'];
+		}
+
+		return array_values(
+			array_filter(
+				$GLOBALS['sf_errors'],
+				static fn( array $error ): bool => $setting === $error['setting']
+			)
+		);
 	}
 }
 
 if ( ! function_exists( 'settings_errors' ) ) {
 	function settings_errors( $setting = '', $sanitize = false, $hide_on_update = false ) {
-		foreach ( $GLOBALS['sf_errors'] as $error ) {
+		foreach ( get_settings_errors( $setting ) as $error ) {
 			printf( '<div class="notice notice-%s"><p>%s</p></div>', esc_attr( $error['type'] ), esc_html( $error['message'] ) );
 		}
 	}
@@ -133,6 +156,20 @@ if ( ! function_exists( 'settings_errors' ) ) {
 if ( ! function_exists( 'set_transient' ) ) {
 	function set_transient( $key, $value, $expiration = 0 ) {
 		$GLOBALS['sf_transients'][ $key ] = $value;
+
+		return true;
+	}
+}
+
+if ( ! function_exists( 'get_transient' ) ) {
+	function get_transient( $key ) {
+		return $GLOBALS['sf_transients'][ $key ] ?? false;
+	}
+}
+
+if ( ! function_exists( 'delete_transient' ) ) {
+	function delete_transient( $key ) {
+		unset( $GLOBALS['sf_transients'][ $key ] );
 
 		return true;
 	}

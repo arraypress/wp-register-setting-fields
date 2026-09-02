@@ -426,7 +426,48 @@ class SettingFields {
 		// eaten by the save that stores it.
 		$set->save( wp_slash( $input ) );
 
-		return $this->ordered_like_stored( $collector->values() );
+		return $this->ordered_like_stored( $this->with_refused( $set, $collector->values() ) );
+	}
+
+	/**
+	 * Report each field the set refused, and keep what it held.
+	 *
+	 * The messages go to the Settings API under this page's option name,
+	 * which is where options.php looks once every option is updated: it adds
+	 * "Settings saved." only when nothing has been registered, carries
+	 * whatever has into the transient the next load reads, and
+	 * settings_errors() prints them at the top of the page. A refused email
+	 * address is therefore reported as such rather than announced as saved.
+	 * Guarded, because the Settings API is admin-only and this gate also
+	 * runs for a write from cron or a webhook, where there is no page to
+	 * report to.
+	 *
+	 * The stored value is put back by hand for the write that would
+	 * otherwise lose it. A form save seeds the collector with everything
+	 * stored and the set leaves a failing field alone, so it survives on its
+	 * own; a whole-value write seeds no field at all, and without this the
+	 * value would be dropped — which is the one thing the kit promises a
+	 * refused value is not.
+	 *
+	 * @param FieldSet             $set    The set that just saved.
+	 * @param array<string, mixed> $values What it collected.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function with_refused( FieldSet $set, array $values ): array {
+		$stored = $this->options->values();
+
+		foreach ( $set->errors() as $key => $message ) {
+			if ( array_key_exists( $key, $stored ) ) {
+				$values[ $key ] = $stored[ $key ];
+			}
+
+			if ( function_exists( 'add_settings_error' ) ) {
+				add_settings_error( (string) $this->config['option_name'], (string) $key, $message, 'error' );
+			}
+		}
+
+		return $values;
 	}
 
 	/**
@@ -618,7 +659,9 @@ class SettingFields {
 		echo '<div class="wrap field-kit__settings">';
 
 		// No argument: core adds its own "Settings saved." under the `general`
-		// slug, and asking for this page's slug alone would hide it.
+		// slug, and asking for this page's slug alone would hide it. A field
+		// the last save refused is printed here as well, and again under the
+		// field itself.
 		settings_errors();
 
 		printf( '<form method="post" action="%s">', esc_url( admin_url( 'options.php' ) ) );
@@ -634,7 +677,7 @@ class SettingFields {
 			esc_attr( $tab )
 		);
 
-		$this->render_sections( $tab );
+		$this->render_sections( $tab, $this->field_errors() );
 
 		if ( $this->config['submit_button'] ) {
 			submit_button();
@@ -644,13 +687,40 @@ class SettingFields {
 	}
 
 	/**
+	 * The messages the last save registered against this page's fields.
+	 *
+	 * Read back from the Settings API rather than from the set that saved,
+	 * because that set belonged to the previous request: options.php saves,
+	 * stores what was registered in a transient and redirects, and
+	 * get_settings_errors() is what reads that transient on the load that
+	 * follows. Only codes that name a field are kept — the import and reset
+	 * notices are registered under the same slug and are not about a field.
+	 *
+	 * @return array<string, string> Keyed by field.
+	 */
+	private function field_errors(): array {
+		$errors = [];
+
+		foreach ( (array) get_settings_errors( (string) $this->config['option_name'] ) as $error ) {
+			$code = (string) ( $error['code'] ?? '' );
+
+			if ( 'error' === (string) ( $error['type'] ?? '' ) && isset( $this->fields[ $code ] ) ) {
+				$errors[ $code ] = (string) ( $error['message'] ?? '' );
+			}
+		}
+
+		return $errors;
+	}
+
+	/**
 	 * Render one tab's sections and fields.
 	 *
-	 * @param string $tab Tab slug.
+	 * @param string                $tab    Tab slug.
+	 * @param array<string, string> $errors Messages from the last save, keyed by field.
 	 *
 	 * @return void
 	 */
-	private function render_sections( string $tab ): void {
+	private function render_sections( string $tab, array $errors ): void {
 		$set    = $this->set( $tab );
 		$fields = $set->fields();
 		$shown  = [];
@@ -680,7 +750,7 @@ class SettingFields {
 				printf( '<p class="description">%s</p>', wp_kses_post( (string) $section['description'] ) );
 			}
 
-			$this->render_table( $set, $in_section, (string) $slug );
+			$this->render_table( $set, $in_section, (string) $slug, $errors );
 		}
 
 		// A field no section claimed still has to appear, or a typo in a
@@ -688,7 +758,7 @@ class SettingFields {
 		$loose = array_diff_key( $fields, array_flip( $shown ) );
 
 		if ( [] !== $loose ) {
-			$this->render_table( $set, $loose, '' );
+			$this->render_table( $set, $loose, '', $errors );
 		}
 	}
 
@@ -699,10 +769,11 @@ class SettingFields {
 	 * @param Field[]  $fields The fields to render.
 	 * @param string   $scope  The section these belong to, or empty for the
 	 *                         fields no section claimed.
+	 * @param array<string, string> $errors Messages from the last save, keyed by field.
 	 *
 	 * @return void
 	 */
-	private function render_table( FieldSet $set, array $fields, string $scope ): void {
+	private function render_table( FieldSet $set, array $fields, string $scope, array $errors ): void {
 		$layout = Sections::split( $fields );
 
 		if ( [] !== $layout ) {
@@ -712,13 +783,13 @@ class SettingFields {
 			// first one's panels.
 			$sections = Sections::render(
 				$layout,
-				function ( array $group ) use ( $set ): string {
+				function ( array $group ) use ( $set, $errors ): string {
 					if ( [] === $group ) {
 						return '';
 					}
 
 					ob_start();
-					$this->render_rows( $set, $group );
+					$this->render_rows( $set, $group, $errors );
 
 					return (string) ob_get_clean();
 				},
@@ -730,18 +801,19 @@ class SettingFields {
 			return;
 		}
 
-		$this->render_rows( $set, $fields );
+		$this->render_rows( $set, $fields, $errors );
 	}
 
 	/**
 	 * A set of fields as one settings table.
 	 *
-	 * @param FieldSet $set    The field set.
-	 * @param Field[]  $fields The fields to render.
+	 * @param FieldSet              $set    The field set.
+	 * @param Field[]               $fields The fields to render.
+	 * @param array<string, string> $errors Messages from the last save, keyed by field.
 	 *
 	 * @return void
 	 */
-	private function render_rows( FieldSet $set, array $fields ): void {
+	private function render_rows( FieldSet $set, array $fields, array $errors ): void {
 		echo '<table class="form-table" role="presentation"><tbody>';
 
 		foreach ( $fields as $field ) {
@@ -793,7 +865,7 @@ class SettingFields {
 				// The header cell is the visible heading here, so the kit
 				// draws none: a group keeps its legend, hidden, so the
 				// grouping is still announced without appearing twice.
-				$set->render_field( $field, '', false ) // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the kit escapes as it builds.
+				$set->render_field( $field, $errors[ $field->key() ] ?? '', false ) // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the kit escapes as it builds.
 			);
 		}
 

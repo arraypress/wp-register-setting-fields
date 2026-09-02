@@ -1134,6 +1134,168 @@ final class SettingFieldsTest extends TestCase {
 	}
 
 	/**
+	 * A required field left empty is refused, and keeps what it held.
+	 *
+	 * `required` used to be an HTML attribute and nothing more: a crafted
+	 * request walked past it and the stored value was deleted. The set now
+	 * refuses it, and this library's part is to say so through the Settings
+	 * API — under the option name, keyed by the field — where options.php
+	 * will find it.
+	 */
+	public function test_a_required_field_left_empty_is_refused_and_kept(): void {
+		$page = $this->validated_page();
+
+		$this->submit( $page, 'one', [ 'first' => 'kept' ] );
+		$this->submit( $page, 'one', [ 'first' => '' ] );
+
+		$this->assertSame( 'kept', $page->get_value( 'first' ) );
+		$this->assertSame(
+			[
+				[
+					'setting' => 'sf_demo',
+					'code'    => 'first',
+					'message' => 'First is required.',
+					'type'    => 'error',
+				],
+			],
+			get_settings_errors( 'sf_demo' )
+		);
+	}
+
+	/**
+	 * After the redirect, the refused field is marked and explained.
+	 *
+	 * The set that refused it belonged to the request that saved.
+	 * options.php stored what was registered in a transient and redirected,
+	 * so the page has to read it back through the Settings API and hand the
+	 * message to the field — which is the difference between a notice at
+	 * the top and a field the user can find.
+	 */
+	public function test_the_page_marks_the_refused_field_after_the_redirect(): void {
+		$page = $this->validated_page();
+
+		$this->submit( $page, 'one', [ 'first' => '' ] );
+		$this->redirect_back();
+
+		$html = $this->render( $page );
+
+		// Once in the notice at the top, once under the field.
+		$this->assertSame( 2, substr_count( $html, 'First is required.' ) );
+		$this->assertStringContainsString( 'notice-error', $html );
+		$this->assertStringContainsString( 'field-kit__error', $html );
+		$this->assertStringContainsString( 'aria-invalid="true"', $html );
+
+		// And not announced as saved: core adds that only when nothing was
+		// registered, which is what registering the error is for.
+		$this->assertStringNotContainsString( 'Settings saved.', $html );
+	}
+
+	/**
+	 * A save that refuses nothing is still announced as saved.
+	 */
+	public function test_a_clean_save_is_announced_as_saved(): void {
+		$page = $this->validated_page();
+
+		$this->submit(
+			$page,
+			'one',
+			[
+				'first'   => 'fine',
+				'contact' => 'dev@example.test',
+			]
+		);
+		$this->redirect_back();
+
+		$html = $this->render( $page );
+
+		$this->assertStringContainsString( 'Settings saved.', $html );
+		$this->assertStringNotContainsString( 'field-kit__error', $html );
+	}
+
+	/**
+	 * A refused value in a write that is not a submission is kept too.
+	 *
+	 * A form save seeds the collector with everything stored, so the set
+	 * leaving a failing field alone is enough. A whole-value write seeds no
+	 * field at all, and the value has to be put back by hand — or a plugin
+	 * calling update_option() with one bad address would drop the good one.
+	 */
+	public function test_a_refused_value_survives_a_whole_value_write(): void {
+		$page = $this->validated_page();
+
+		$this->submit(
+			$page,
+			'one',
+			[
+				'first'   => 'kept',
+				'contact' => 'dev@example.test',
+			]
+		);
+
+		$_POST = [];
+
+		update_option(
+			'sf_demo',
+			[
+				'first'   => 'changed',
+				'contact' => 'not-an-address',
+			]
+		);
+
+		$this->assertSame( 'changed', $page->get_value( 'first' ) );
+		$this->assertSame( 'dev@example.test', $page->get_value( 'contact' ) );
+		$this->assertSame( 'contact', get_settings_errors( 'sf_demo' )[0]['code'] );
+	}
+
+	/**
+	 * A page with a required field and a validated one.
+	 *
+	 * @return SettingFields
+	 */
+	private function validated_page(): SettingFields {
+		return $this->page(
+			[
+				'fields' => [
+					'first'   => [
+						'type'     => 'text',
+						'label'    => 'First',
+						'tab'      => 'one',
+						'required' => true,
+					],
+					'contact' => [
+						'type'     => 'text',
+						'label'    => 'Contact',
+						'tab'      => 'one',
+						'validate' => 'email',
+					],
+				],
+			]
+		);
+	}
+
+	/**
+	 * What options.php does once every option is updated, then the next load.
+	 *
+	 * Modelled rather than stubbed because the decision is core's and the
+	 * point is to pin what this library feeds it: "Settings saved." is added
+	 * only when nothing has been registered, and everything registered rides
+	 * the transient to the load that follows, which carries settings-updated.
+	 *
+	 * @return void
+	 */
+	private function redirect_back(): void {
+		if ( ! count( get_settings_errors() ) ) {
+			add_settings_error( 'general', 'settings_updated', 'Settings saved.', 'success' );
+		}
+
+		set_transient( 'settings_errors', get_settings_errors(), 30 );
+
+		// The next request: a fresh global, and the argument the redirect carries.
+		$GLOBALS['sf_errors']     = [];
+		$_GET['settings-updated'] = 'true';
+	}
+
+	/**
 	 * Render the page and return what it printed.
 	 *
 	 * @param SettingFields $page The page.
