@@ -93,6 +93,27 @@ final class SetValueTest extends TestCase {
 		$this->assertSame( 'second', $page->get_value( 'other' ) );
 	}
 
+	/**
+	 * Read before the page is registered, an encrypted value is still the
+	 * value.
+	 *
+	 * The helper falls back to the option when the page is not registered
+	 * yet, and it used to hand back what the option held — the ciphertext —
+	 * as though it were the key.
+	 */
+	public function test_an_encrypted_value_is_readable_before_the_page_is_registered(): void {
+		$page = $this->page();
+
+		$page->set_value( 'secret', 'sk_test_example' );
+		$page->set_value( 'plain', 'hello' );
+
+		Registry::instance()->unregister( 'sf_set' );
+
+		$this->assertSame( 'sk_test_example', get_setting_field_value( 'sf_set', 'secret' ) );
+		$this->assertSame( 'hello', get_setting_field_value( 'sf_set', 'plain' ) );
+		$this->assertSame( 'fallback', get_setting_field_value( 'sf_set', 'missing', 'fallback' ) );
+	}
+
 	public function test_an_unknown_field_writes_nothing(): void {
 		$this->assertFalse( $this->page()->set_value( 'nothing', 'x' ) );
 	}

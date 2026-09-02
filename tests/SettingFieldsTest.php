@@ -963,6 +963,84 @@ final class SettingFieldsTest extends TestCase {
 	}
 
 	/**
+	 * The capability the page declares is the one options.php checks.
+	 *
+	 * The declared capability gates the menu, the render and the admin-post
+	 * handlers, but options.php does its own check — against
+	 * `option_page_capability_{$option_group}`, falling back to
+	 * manage_options — before it saves. A page registered for a lower
+	 * capability drew for its users and then refused every save with "Sorry,
+	 * you are not allowed to manage options."
+	 */
+	public function test_the_declared_capability_reaches_options_php(): void {
+		$this->page( [ 'capability' => 'edit_posts' ] );
+
+		$this->assertSame(
+			'edit_posts',
+			apply_filters( 'option_page_capability_sf_demo_group', 'manage_options' )
+		);
+	}
+
+	/**
+	 * Two sections with tabs on one tab of the page get their own ids.
+	 *
+	 * The tab strips were scoped by how many fields the section had, so two
+	 * sections with the same number of fields got the same ids, and the
+	 * second strip drove the first one's panels.
+	 */
+	public function test_two_sections_with_tabs_get_their_own_ids(): void {
+		$page = $this->page(
+			[
+				'sections' => [
+					'first'  => [
+						'title' => 'First',
+						'tab'   => 'one',
+					],
+					'second' => [
+						'title' => 'Second',
+						'tab'   => 'one',
+					],
+				],
+				'fields'   => [
+					'a_tab'   => [
+						'type'    => 'tab',
+						'label'   => 'A',
+						'tab'     => 'one',
+						'section' => 'first',
+					],
+					'a_field' => [
+						'type'    => 'text',
+						'tab'     => 'one',
+						'section' => 'first',
+					],
+					'b_tab'   => [
+						'type'    => 'tab',
+						'label'   => 'B',
+						'tab'     => 'one',
+						'section' => 'second',
+					],
+					'b_field' => [
+						'type'    => 'text',
+						'tab'     => 'one',
+						'section' => 'second',
+					],
+				],
+			]
+		);
+
+		preg_match_all( '/\sid="([^"]+)"/', $this->render( $page ), $found );
+
+		$ids = $found[1];
+
+		$this->assertNotEmpty( $ids );
+		$this->assertSame(
+			[],
+			array_values( array_diff_assoc( $ids, array_unique( $ids ) ) ),
+			'An id appears more than once.'
+		);
+	}
+
+	/**
 	 * A user without the capability is refused, not shown the page.
 	 */
 	public function test_a_user_without_the_capability_is_refused(): void {
@@ -1001,6 +1079,58 @@ final class SettingFieldsTest extends TestCase {
 		update_setting_field_value( 'sf_demo', 'count', 'thirteen' );
 
 		$this->assertSame( 0, $page->get_value( 'count' ) );
+	}
+
+	/**
+	 * The email bridge hands wp-register-emails what it reads.
+	 *
+	 * The editor stores `recipient`, `subject`, `heading` and `body`;
+	 * compose() reads `to`, `subject`, `content` and `context`. The bridge
+	 * used to read a `message` the editor never stored and return a `title`
+	 * nothing consumed, so an owner's edited heading and body were quietly
+	 * thrown away and the plugin's defaults went out instead.
+	 */
+	public function test_the_email_bridge_speaks_the_shape_compose_reads(): void {
+		$page = $this->page(
+			[
+				'fields' => [
+					'receipt' => [
+						'type'      => 'email_editor',
+						'tab'       => 'one',
+						'recipient' => true,
+						'heading'   => true,
+					],
+				],
+			]
+		);
+
+		$this->submit(
+			$page,
+			'one',
+			[
+				'receipt' => [
+					'recipient' => 'owner@example.test, accounts@example.test',
+					'subject'   => 'Order {order_id}',
+					'heading'   => 'Thanks, {customer_name}',
+					'body'      => 'We are packing it now.',
+				],
+			]
+		);
+
+		$this->assertSame(
+			[
+				'to'      => [ 'owner@example.test', 'accounts@example.test' ],
+				'subject' => 'Order {order_id}',
+				'content' => '<p>We are packing it now.</p>',
+				'context' => [ 'title' => 'Thanks, {customer_name}' ],
+			],
+			get_setting_fields_email( 'sf_demo', 'receipt' )
+		);
+
+		// A part left empty is left out, so the registered default stands.
+		$this->submit( $page, 'one', [ 'receipt' => [ 'subject' => 'Only this' ] ] );
+
+		$this->assertSame( [ 'subject' => 'Only this' ], get_setting_fields_email( 'sf_demo', 'receipt' ) );
 	}
 
 	/**

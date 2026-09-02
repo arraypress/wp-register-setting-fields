@@ -10,6 +10,12 @@
  * @since       1.0.0
  */
 
+declare( strict_types=1 );
+
+use ArrayPress\FieldKit\Context\EncryptedContext;
+use ArrayPress\FieldKit\Context\OptionContext;
+use ArrayPress\FieldKit\Field;
+use ArrayPress\FieldKit\Registry as Types;
 use ArrayPress\RegisterSettingFields\Registry;
 use ArrayPress\RegisterSettingFields\SettingFields;
 
@@ -70,6 +76,12 @@ if ( ! function_exists( 'get_setting_field_value' ) ) {
 	 *
 	 * Use this instead of get_option() for registered settings.
 	 *
+	 * Before the page is registered — a read that runs earlier in the load
+	 * than the plugin's own registration — the option is read directly, under
+	 * its id. A constant cannot stand in for a value there, because the
+	 * prefix is the page's configuration; an encrypted value is still
+	 * decrypted, because the value itself says whether it needs to be.
+	 *
 	 * @param string $settings_id Settings ID.
 	 * @param string $field_key   Field key.
 	 * @param mixed  $fallback     Default value if not set.
@@ -85,9 +97,28 @@ if ( ! function_exists( 'get_setting_field_value' ) ) {
 
 		$options = get_option( $settings_id, [] );
 
-		return is_array( $options ) && isset( $options[ $field_key ] )
-			? $options[ $field_key ]
-			: $fallback;
+		if ( ! is_array( $options ) || ! isset( $options[ $field_key ] ) ) {
+			return $fallback;
+		}
+
+		// Nothing here knows whether the field is encrypted, so the read
+		// goes through the kit's decorator as the registered path's does,
+		// with the field marked as though it were: ciphertext the decorator
+		// wrote carries its marker and decrypts, and anything else comes back
+		// as it is. What this used to do was hand the ciphertext back as
+		// though it were the API key.
+		$field = new Field(
+			$field_key,
+			( new Types() )->get( 'text' ),
+			[
+				'type'      => 'text',
+				'encrypted' => true,
+			]
+		);
+
+		$value = ( new EncryptedContext( new OptionContext( $settings_id ) ) )->read( 0, $field );
+
+		return null === $value || '' === $value ? $fallback : $value;
 	}
 }
 

@@ -11,22 +11,32 @@
  * @since       1.0.0
  */
 
+declare( strict_types=1 );
+
 if ( ! function_exists( 'get_setting_fields_email' ) ) {
 	/**
-	 * Get email editor settings for use by wp-register-emails settings_callback.
+	 * What the site owner typed into an email_editor field, in the shape
+	 * wp-register-emails reads.
 	 *
-	 * Reads the stored email_editor field value (enabled, recipient, subject,
-	 * title, subtitle, message) and returns it in the format expected by
-	 * register_email_template's settings_callback.
+	 * The field stores `recipient`, `subject`, `heading` and `body`, and an
+	 * `enabled` toggle if the consumer gave it one. `Emails::compose()` reads
+	 * `enabled`, `to`, `subject`, `content` and `context`. This is the seam
+	 * between the two, and it used to be stale on both sides — it read a
+	 * `message` the field never stored and returned a `title` nothing
+	 * consumed, so an owner's edited heading and body were quietly thrown
+	 * away and the plugin's defaults went out instead.
 	 *
-	 * Usage in register_email_template:
-	 *   'settings_callback' => fn() => get_setting_fields_email( 'my_plugin', 'email_purchase_receipt' ),
+	 *     register_email( 'my_plugin', 'purchase_receipt', [
+	 *         'settings' => fn() => get_setting_fields_email( 'my_plugin', 'email_purchase_receipt' ),
+	 *     ] );
+	 *
+	 * A part the owner left empty is left out, so the email's registered
+	 * default stands in for it.
 	 *
 	 * @param string $settings_id Settings ID (e.g., 'sugarcart').
 	 * @param string $field_key   The email_editor field key (e.g., 'email_purchase_receipt').
 	 *
-	 * @return array Settings array with 'enabled', 'recipient', 'subject', 'title',
-	 *               'subtitle', 'message' keys. Returns empty array if not found.
+	 * @return array{enabled?: bool, to?: string[], subject?: string, content?: string, context?: array{title: string}}
 	 */
 	function get_setting_fields_email( string $settings_id, string $field_key ): array {
 		$value = get_setting_field_value( $settings_id, $field_key );
@@ -41,25 +51,27 @@ if ( ! function_exists( 'get_setting_fields_email' ) ) {
 			$result['enabled'] = (bool) $value['enabled'];
 		}
 
-		if ( ! empty( $value['recipient'] ) ) {
-			$result['recipient'] = sanitize_email( $value['recipient'] );
+		// Several addresses, separated by commas — which is what the field
+		// says beside its recipient box.
+		$to = array_filter( array_map( 'sanitize_email', explode( ',', (string) ( $value['recipient'] ?? '' ) ) ) );
+
+		if ( [] !== $to ) {
+			$result['to'] = array_values( $to );
 		}
 
 		if ( ! empty( $value['subject'] ) ) {
-			$result['subject'] = $value['subject'];
+			$result['subject'] = (string) $value['subject'];
 		}
 
-		if ( ! empty( $value['title'] ) ) {
-			$result['title'] = $value['title'];
+		// The editor stores the body without its <p> tags, as wp_editor
+		// does; wpautop() puts them back.
+		if ( ! empty( $value['body'] ) ) {
+			$result['content'] = wpautop( (string) $value['body'] );
 		}
 
-		if ( ! empty( $value['subtitle'] ) ) {
-			$result['subtitle'] = $value['subtitle'];
-		}
-
-		// wp_editor stores content without <p> tags; wpautop restores them.
-		if ( ! empty( $value['message'] ) ) {
-			$result['message'] = wpautop( $value['message'] );
+		// The heading is the template's title, which sits above the body.
+		if ( ! empty( $value['heading'] ) ) {
+			$result['context'] = [ 'title' => (string) $value['heading'] ];
 		}
 
 		return $result;
@@ -82,10 +94,10 @@ if ( ! function_exists( 'get_setting_fields_email_recipient' ) ) {
 		$value = get_setting_field_value( $settings_id, $field_key );
 
 		if ( is_array( $value ) && ! empty( $value['recipient'] ) && is_email( $value['recipient'] ) ) {
-			return $value['recipient'];
+			return (string) $value['recipient'];
 		}
 
-		return get_option( 'admin_email' );
+		return (string) get_option( 'admin_email', '' );
 	}
 }
 

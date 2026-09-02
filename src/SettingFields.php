@@ -359,6 +359,26 @@ class SettingFields {
 				'default'           => [],
 			]
 		);
+
+		// options.php runs its own capability check before it saves, and it
+		// does not know what the menu was registered with: it asks this
+		// filter and falls back to manage_options. Without it a page
+		// registered for a lower capability drew for its users and then
+		// refused every save with "Sorry, you are not allowed to manage
+		// options."
+		add_filter( 'option_page_capability_' . (string) $this->config['option_group'], [ $this, 'option_page_capability' ] );
+	}
+
+	/**
+	 * The capability options.php checks before it saves this page's option.
+	 *
+	 * The same one that gates the menu, the render and the admin-post
+	 * handlers, so the user who can see the page can save it.
+	 *
+	 * @return string
+	 */
+	public function option_page_capability(): string {
+		return (string) $this->config['capability'];
 	}
 
 	/**
@@ -660,7 +680,7 @@ class SettingFields {
 				printf( '<p class="description">%s</p>', wp_kses_post( (string) $section['description'] ) );
 			}
 
-			$this->render_table( $set, $in_section );
+			$this->render_table( $set, $in_section, (string) $slug );
 		}
 
 		// A field no section claimed still has to appear, or a typo in a
@@ -668,7 +688,7 @@ class SettingFields {
 		$loose = array_diff_key( $fields, array_flip( $shown ) );
 
 		if ( [] !== $loose ) {
-			$this->render_table( $set, $loose );
+			$this->render_table( $set, $loose, '' );
 		}
 	}
 
@@ -677,13 +697,19 @@ class SettingFields {
 	 *
 	 * @param FieldSet $set    The field set.
 	 * @param Field[]  $fields The fields to render.
+	 * @param string   $scope  The section these belong to, or empty for the
+	 *                         fields no section claimed.
 	 *
 	 * @return void
 	 */
-	private function render_table( FieldSet $set, array $fields ): void {
+	private function render_table( FieldSet $set, array $fields, string $scope ): void {
 		$layout = Sections::split( $fields );
 
 		if ( [] !== $layout ) {
+			// Scoped by the section rather than by how many fields it has.
+			// Two sections on one tab with the same number of fields got the
+			// same ids for their tab strips, and the second strip drove the
+			// first one's panels.
 			$sections = Sections::render(
 				$layout,
 				function ( array $group ) use ( $set ): string {
@@ -696,7 +722,7 @@ class SettingFields {
 
 					return (string) ob_get_clean();
 				},
-				$this->id . '-' . count( $fields )
+				$this->id . '-' . $scope
 			);
 
 			echo $sections; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it is built.
@@ -1240,11 +1266,6 @@ class SettingFields {
 	}
 
 	/**
-	 * Get the field configuration.
-	 *
-	 * @return array<string, array<string, mixed>>
-	 */
-	/**
 	 * Write one value, through the same decorators a form save uses.
 	 *
 	 * The counterpart to get_value(), and the only way to set a field marked
@@ -1295,6 +1316,14 @@ class SettingFields {
 		return true;
 	}
 
+	/**
+	 * Get the field configuration, keyed by field key.
+	 *
+	 * As configured, with a badged section's badge copied onto each of its
+	 * fields.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
 	public function get_fields(): array {
 		return $this->fields;
 	}
